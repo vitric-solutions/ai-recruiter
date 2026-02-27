@@ -6,6 +6,11 @@ import MCQ_Interview from "../../models/MCQ_Interview.js";
 import AI_Interview from "../../models/AI_Interview.js";
 import InterviewFeedback from "../../models/feedback.js";
 import Candidate from "../../models/Candidate.js";
+import {
+  sendMCQInterviewLink,
+  sendInterviewCancellationEmail,
+  sendAIInterviewLink,
+} from "../../services/emailService.js";
 
 export const RegisterUser = async (req, res) => {
   const { email, password } = req.body;
@@ -54,7 +59,7 @@ export const RegisterUser = async (req, res) => {
         refreshToken,
       });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ error });
   }
 };
 
@@ -63,12 +68,12 @@ export const LoginUser = async (req, res) => {
 
   try {
     const admin = await Admin.findOne({ email });
-    // console.log(admin);
     if (!admin) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await admin.comparePassword(password);
+
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -103,12 +108,13 @@ export const LoginUser = async (req, res) => {
           _id: admin._id,
           email: admin.email,
           role: admin.role,
+          userName: admin.userName,
         },
         accessToken,
         refreshToken,
       });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ error });
   }
 };
 
@@ -133,7 +139,7 @@ export const getMe = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ error });
   }
 };
 
@@ -262,7 +268,7 @@ export const GetTopPerformance = async (req, res) => {
     console.error("GetTopPerformance Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Server Error",
+      error,
     });
   }
 };
@@ -430,7 +436,7 @@ export const GetTopPerformance = async (req, res) => {
 //     });
 //   } catch (error) {
 //     console.error("GetAllSchedule Error:", error);
-//     return res.status(500).json({ message: "Server Error" });
+//     return res.status(500).json({ error });
 //   }
 // };
 
@@ -608,7 +614,7 @@ export const GetAllSchedule = async (req, res) => {
     });
   } catch (error) {
     console.error("GetAllSchedule Error:", error);
-    return res.status(500).json({ message: "Server Error" });
+    return res.status(500).json({ error });
   }
 };
 
@@ -616,13 +622,6 @@ export const rescheduleInterview = async (req, res) => {
   try {
     const { type, interviewId } = req.params;
     const { candidateId, newStartDate, newEndDate } = req.body;
-    // console.log("id, type, interviewId, candidateId, newStartDate, newEndDate", {
-    //   type,
-    //   interviewId,
-    //   candidateId,
-    //   newStartDate,
-    //   newEndDate,
-    // });
 
     if (!candidateId || !newStartDate || !newEndDate) {
       return res.status(400).json({
@@ -633,9 +632,13 @@ export const rescheduleInterview = async (req, res) => {
     let interview;
 
     if (type === "MCQ") {
-      interview = await MCQ_Interview.findById(interviewId);
+      interview = await MCQ_Interview.findById(interviewId).populate(
+        "candidates.candidateId",
+      );
     } else if (type === "AI") {
-      interview = await AI_Interview.findById(interviewId);
+      interview = await AI_Interview.findById(interviewId).populate(
+        "candidates.candidateId",
+      );
     } else {
       return res.status(400).json({ message: "Invalid interview type" });
     }
@@ -644,13 +647,13 @@ export const rescheduleInterview = async (req, res) => {
       return res.status(404).json({ message: "Interview not found" });
 
     const candidateEntry = interview.candidates.find(
-      (c) => c.candidateId.toString() === candidateId,
+      (c) => c.candidateId._id.toString() === candidateId,
     );
 
     if (!candidateEntry)
       return res.status(404).json({ message: "Candidate not found" });
 
-    // ❌ Don't reschedule completed or cancelled
+    // ❌ Prevent rescheduling completed/cancelled
     if (
       candidateEntry.status === "completed" ||
       candidateEntry.status === "cancelled"
@@ -660,6 +663,7 @@ export const rescheduleInterview = async (req, res) => {
       });
     }
 
+    // ✅ Update Dates
     if (type === "MCQ") {
       candidateEntry.start_Date = new Date(newStartDate);
       candidateEntry.end_Date = new Date(newEndDate);
@@ -672,17 +676,65 @@ export const rescheduleInterview = async (req, res) => {
 
     await interview.save();
 
-    // 🔥 Update Candidate status
+    // 🔥 Update Candidate main status
     await Candidate.findByIdAndUpdate(candidateId, {
       status: "scheduled",
     });
 
+    // ===================================================
+    // 🔥 SEND EMAIL AFTER RESCHEDULE
+    // ===================================================
+
+    const candidate = candidateEntry.candidateId;
+
+    const interviewLink = candidateEntry.interviewLink;
+    const username = candidateEntry.username;
+    const password = candidateEntry.password;
+
+    try {
+      if (type === "MCQ") {
+        await sendMCQInterviewLink(
+          candidate.email,
+          candidate.name,
+          interviewLink,
+          username,
+          password,
+          interview.test_title,
+          interview.difficulty,
+          interview.duration,
+          interview.no_of_questions,
+          interview.passing_score,
+          interview.primary_skill,
+          interview.secondary_skill,
+          new Date(newStartDate),
+          new Date(newEndDate),
+        );
+      } else {
+        const finalMessage = `Your AI Interview has been rescheduled. Please attend within the new time window.`;
+
+        await sendAIInterviewLink(
+          candidate.email,
+          interviewLink,
+          password,
+          `AI Interview Rescheduled - ${interview.testTitle}`,
+          interview.passingScore,
+          finalMessage,
+          new Date(newEndDate),
+          new Date(newStartDate),
+        );
+      }
+
+      console.log("Reschedule email sent to:", candidate.email);
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+    }
+
     res.status(200).json({
-      message: "Interview rescheduled successfully",
+      message: "Interview rescheduled successfully & email sent",
     });
   } catch (error) {
     console.error("Reschedule Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ error });
   }
 };
 
@@ -691,8 +743,6 @@ export const cancelInterview = async (req, res) => {
     const { type, interviewId } = req.params;
     const { candidateId } = req.body;
 
-    // console.log("Cancel Request:", { type, interviewId, candidateId });
-
     if (!candidateId) {
       return res.status(400).json({ message: "candidateId required" });
     }
@@ -700,9 +750,13 @@ export const cancelInterview = async (req, res) => {
     let interview;
 
     if (type === "MCQ") {
-      interview = await MCQ_Interview.findById(interviewId);
+      interview = await MCQ_Interview.findById(interviewId).populate(
+        "candidates.candidateId",
+      );
     } else if (type === "AI") {
-      interview = await AI_Interview.findById(interviewId);
+      interview = await AI_Interview.findById(interviewId).populate(
+        "candidates.candidateId",
+      );
     } else {
       return res.status(400).json({ message: "Invalid interview type" });
     }
@@ -711,27 +765,35 @@ export const cancelInterview = async (req, res) => {
       return res.status(404).json({ message: "Interview not found" });
 
     const candidateEntry = interview.candidates.find(
-      (c) => c.candidateId.toString() === candidateId,
+      (c) => c.candidateId._id.toString() === candidateId,
     );
 
     if (!candidateEntry)
       return res.status(404).json({ message: "Candidate not found" });
 
     candidateEntry.status = "cancelled";
-
     await interview.save();
 
-    // 🔥 Update Candidate status
     await Candidate.findByIdAndUpdate(candidateId, {
       status: "cancelled",
     });
 
+    // 🔥 SEND EMAIL TO BOTH
+    await sendInterviewCancellationEmail(
+      candidateEntry.candidateId.email,
+      candidateEntry.candidateId.name,
+      type,
+      interview.test_title,
+      candidateEntry.start_Date || candidateEntry.scheduledStartDate,
+      "hr@yourcompany.com", // Replace with real HR email
+    );
+
     res.status(200).json({
-      message: "Interview cancelled successfully",
+      message: "Interview cancelled and email sent",
     });
   } catch (error) {
     console.error("Cancel Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ error });
   }
 };
 
@@ -758,7 +820,7 @@ export const getStudentScores = async (req, res) => {
           },
         })
         .lean();
-
+      console.log("aiData", aiData);
       // Compute score for records that don't have it
       const data = aiData.map((item) => {
         if (item.score != null) return item;
@@ -831,7 +893,7 @@ export const getStudentScores = async (req, res) => {
     console.error("getStudentScores Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Server Error",
+      error,
     });
   }
 };

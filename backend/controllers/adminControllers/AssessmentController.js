@@ -765,7 +765,7 @@
 //     res.json({ candidates });
 //   } catch (error) {
 //     console.log(error);
-//     res.status(500).json({ message: "Server error" });
+//     res.status(500).json({error});
 //   }
 // };
 
@@ -820,7 +820,7 @@
 //     });
 //   } catch (error) {
 //     console.error("Update error:", error);
-//     res.status(500).json({ message: "Server error" });
+//     res.status(500).json({error});
 //   }
 // };
 // export const getMCQInterviewById = async (req, res) => {
@@ -857,7 +857,7 @@
 //     res.json({ interview: interview, user: candidate._doc });
 //   } catch (error) {
 //     console.log(error);
-//     res.status(500).json({ message: "Server error" });
+//     res.status(500).json({error});
 //   }
 // };
 
@@ -877,7 +877,7 @@
 //     return res.json({ totalSchedules: total });
 //   } catch (err) {
 //     console.error("Error counting schedules:", err.message);
-//     res.status(500).json({ message: "Server error" });
+//     res.status(500).json({error});
 //   }
 // };
 import MCQ_Interview from "../../models/MCQ_Interview.js";
@@ -1572,7 +1572,7 @@ export const GetCandidatesInInterview = async (req, res) => {
     res.json({ candidates });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({error});
   }
 };
 
@@ -1627,7 +1627,7 @@ export const updateMCQInterview = async (req, res) => {
     });
   } catch (error) {
     console.error("Update error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({error});
   }
 };
 export const getMCQInterviewById = async (req, res) => {
@@ -1664,7 +1664,7 @@ export const getMCQInterviewById = async (req, res) => {
     res.json({ interview: interview, user: candidate._doc });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({error});
   }
 };
 
@@ -1684,6 +1684,6 @@ export const GetAllAssessmentSchedule = async (req, res) => {
     return res.json({ totalSchedules: total });
   } catch (err) {
     console.error("Error counting schedules:", err.message);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({error});
   }
 };

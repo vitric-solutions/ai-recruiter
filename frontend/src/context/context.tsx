@@ -14,6 +14,7 @@ type User = {
   role: "admin" | "super_admin" | "user";
   phone: string;
   name: string;
+  userName:string;
   location: string;
 };
 

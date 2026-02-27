@@ -16,6 +16,7 @@ import BulkUpload from "../../components/Candidates/BulkUpload";
 import toast from "react-hot-toast";
 import { socket } from "../../utils/socket";
 import { adminService } from "../../services/service/adminService";
+import { useLocation } from "react-router-dom";
 
 interface Candidate {
   _id: string;
@@ -290,9 +291,7 @@ const CandidateFormModal = ({
 ───────────────────────────────────────────── */
 const SkillsCell = ({ skillsStr }: { skillsStr: string }) => {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
   const badgeRef = useRef<HTMLSpanElement>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
 
   const skills = skillsStr
     ? skillsStr
@@ -300,34 +299,12 @@ const SkillsCell = ({ skillsStr }: { skillsStr: string }) => {
         .map((s) => s.trim())
         .filter(Boolean)
     : [];
+
   const visible = skills.slice(0, 2);
   const remaining = skills.length - 2;
 
-  const openPopup = () => {
-    if (badgeRef.current) {
-      const rect = badgeRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 6, left: rect.left });
-    }
-    setOpen(true);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (
-        popupRef.current &&
-        !popupRef.current.contains(e.target as Node) &&
-        badgeRef.current &&
-        !badgeRef.current.contains(e.target as Node)
-      )
-        setOpen(false);
-    };
-    document.addEventListener("mouseenter", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
   return (
-    <div className="flex flex-wrap gap-1 items-center">
+    <div className="flex flex-wrap gap-1 items-center relative">
       {visible.map((skill, i) => (
         <span
           key={i}
@@ -336,40 +313,41 @@ const SkillsCell = ({ skillsStr }: { skillsStr: string }) => {
           {skill}
         </span>
       ))}
+
       {remaining > 0 && (
         <>
+          {/* Badge */}
           <span
             ref={badgeRef}
-            onClick={openPopup}
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
             className="px-2 py-1 text-xs bg-indigo-100 text-indigo-600 rounded-md cursor-pointer hover:bg-indigo-200 select-none"
           >
             +{remaining} more
           </span>
+
+          {/* Popup */}
           {open && (
             <div
-              ref={popupRef}
-              style={{
-                position: "fixed",
-                top: pos.top,
-                left: pos.left,
-                zIndex: 9999,
-              }}
-              className="w-92 bg-gray-50 text-black text-xs rounded-lg p-3 shadow-2xl"
+              onMouseEnter={() => setOpen(true)}
+              onMouseLeave={() => setOpen(false)}
+              className="fixed top-2/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-auto bg-white text-black text-sm rounded-lg p-6 shadow-2xl"
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-black">All Skills</span>
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-semibold">All Skills</span>
                 <button
                   onClick={() => setOpen(false)}
-                  className="text-black"
+                  className="text-gray-500 hover:text-black"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex flex-wrap gap-1">
+
+              <div className="flex flex-wrap gap-2">
                 {skills.map((skill, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5  text-black rounded text-xs"
+                    className="px-3 py-1 bg-gray-100 rounded-full text-xs"
                   >
                     {skill}
                   </span>
@@ -382,7 +360,6 @@ const SkillsCell = ({ skillsStr }: { skillsStr: string }) => {
     </div>
   );
 };
-
 /* ─────────────────────────────────────────────
    Action Menu — position: fixed, no scroll clip
 ───────────────────────────────────────────── */
@@ -499,7 +476,9 @@ const ActionMenu = ({
    Main Page
 ───────────────────────────────────────────── */
 const Candidates = () => {
-  const [activeTab, setActiveTab] = useState("list");
+  const location = useLocation();
+
+  const [activeTab, setActiveTab] = useState(location.state?.tab || "list");
   const [activeMenuItem, setActiveMenuItem] = useState("Dashboard");
 
   const [data, setData] = useState<Candidate[]>([]);
@@ -519,7 +498,11 @@ const Candidates = () => {
   const [roleOptions, setRoleOptions] = useState<string[]>([]);
   const [expOptions, setExpOptions] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+  }, [location.state]);
   // Modals
   const [formModal, setFormModal] = useState<{
     open: boolean;
