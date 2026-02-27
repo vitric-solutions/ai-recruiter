@@ -6,6 +6,7 @@ import { FaUsers, FaClipboardList, FaFileAlt, FaRobot } from "react-icons/fa";
 import { Plus, UserPlus, Calendar, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminSocket } from "../../hooks/useAdminSocket";
+import {useAuth} from "../../context/context"
 
 // Stat Card Component
 const StatCard = ({
@@ -32,25 +33,28 @@ const StatCard = ({
     </div>
   );
 };
-
+type NavigateType =
+  | string
+  | {
+      page: string;
+      tab?: string;
+    };
 // Quick Actions Component
 const QuickActions = ({
   onNavigate,
 }: {
-  onNavigate: (page: string) => void;
+  onNavigate: (data: NavigateType) => void;
 }) => {
   const actions = [
     {
       title: "Create New Assessment",
       icon: Plus,
-      bgColor: "bg-indigo-50",
-      textColor: "text-indigo-600",
       navigateTo: "Tests & Assessments",
     },
     {
       title: "Bulk Add Candidates",
       icon: UserPlus,
-      navigateTo: "Candidates",
+      navigateTo: { page: "Candidates", tab: "bulk" },
     },
     {
       title: "Schedule Interviews",
@@ -68,21 +72,20 @@ const QuickActions = ({
     <div className="bg-white rounded-lg p-5 border border-gray-200">
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-gray-900">Quick Actions</h3>
-        <p className="text-xs text-gray-500">Most Common Recruitment tasks</p>
+        <p className="text-xs text-gray-500">
+          Most Common Recruitment tasks
+        </p>
       </div>
+
       <div className="space-y-2">
         {actions.map((action, i) => {
           const Icon = action.icon;
-          const isFirst = i === 0;
+
           return (
             <button
               key={i}
               onClick={() => onNavigate(action.navigateTo)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isFirst
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-gray-700 hover:bg-gray-50"
-              }`}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <Icon className="h-[18px] w-[18px]" />
               <span>{action.title}</span>
@@ -412,6 +415,7 @@ const Dashboard = () => {
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const {user} =useAuth()
 
   const navigate = useNavigate();
 
@@ -544,7 +548,8 @@ const Dashboard = () => {
 
   /* ================= NAVIGATION ================= */
 
-  const handleQuickActionNavigate = (page: string) => {
+ const handleQuickActionNavigate = (data: any) => {
+  if (typeof data === "string") {
     const routeMap: Record<string, string> = {
       Dashboard: "/admin/dashboard",
       Candidates: "/admin/candidates",
@@ -554,13 +559,23 @@ const Dashboard = () => {
       Settings: "/admin/settings",
     };
 
-    navigate(routeMap[page]);
-  };
+    navigate(routeMap[data]);
+  } else {
+    // 👇 Handle object navigation (with tab)
+    const routeMap: Record<string, string> = {
+      Candidates: "/admin/candidates",
+    };
+
+    navigate(routeMap[data.page], {
+      state: { tab: data.tab },
+    });
+  }
+};
 
   /* ================= RENDER ================= */
 
   return (
-    <AdminLayout heading="Hi, Himanshu" showSearch>
+    <AdminLayout heading={`Hi ${user?.userName}`} showSearch>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={FaUsers}

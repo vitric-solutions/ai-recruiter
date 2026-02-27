@@ -95,7 +95,8 @@ const ReportsInsights = () => {
   });
 
   const filteredScores = scores.filter((row) => {
-    const percentage = Math.round((row.totalScore / row.maxScore) * 100);
+    const percentage =
+      row.maxScore > 0 ? Math.round((row.totalScore / row.maxScore) * 100) : 0;
 
     const matchesName =
       !filters.name ||
@@ -413,7 +414,7 @@ const ReportsInsights = () => {
           {/* Header */}
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
-              AI Interview Result & L1 Screening
+              AI Interview Result
             </h2>
             <div className="text-sm text-gray-500">
               Showing{" "}
@@ -425,7 +426,7 @@ const ReportsInsights = () => {
           </div>
 
           {/* Search and Filter */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 bg-white p-2 rounded-sm">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -450,7 +451,7 @@ const ReportsInsights = () => {
               <option value="">All Status</option>
               <option value="hire">Hire</option>
               <option value="consider">Consider</option>
-              <option value="rejected">Rejected</option>
+              <option value="reject">Reject</option>
             </select>
 
             {/* Min Score */}
@@ -717,74 +718,90 @@ const ReportsInsights = () => {
       {/* MCQ Test Tab */}
       {activeTab === "MCQ" && (
         <div className="space-y-4">
-          {/* Filters Card */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-4 text-sm font-semibold text-gray-900">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">
+              MCQ Assessment Result
+            </h2>
+            <div className="text-sm text-gray-500">
+              Showing{" "}
+              {filteredAIScores.length === 0
+                ? "0"
+                : `${(aiCurrentPage - 1) * aiItemsPerPage + 1}-${Math.min(aiCurrentPage * aiItemsPerPage, scores.length)}`}{" "}
+              of {filteredAIScores.length} candidates
             </div>
-
-            <div className="grid grid-cols-5 gap-4 mb-4">
+          </div>
+          {/* Filters Card */}
+          <div className="flex flex-wrap gap-3 bg-white p-2 rounded-sm ">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
-                placeholder="Candidate Name..."
+                placeholder="Search candidate..."
                 value={filters.name}
                 onChange={(e) =>
-                  setFilters({ ...filters, name: e.target.value })
+                  setFilters((f) => ({ ...f, name: e.target.value }))
                 }
-                className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"
-              />
-              <input
-                type="number"
-                placeholder="Min Score %"
-                value={filters.minScore}
-                onChange={(e) =>
-                  setFilters({ ...filters, minScore: e.target.value })
-                }
-                className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"
-              />
-              <input
-                type="number"
-                placeholder="Max Score %"
-                value={filters.maxScore}
-                onChange={(e) =>
-                  setFilters({ ...filters, maxScore: e.target.value })
-                }
-                className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"
-              />
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) =>
-                  setFilters({ ...filters, startDate: e.target.value })
-                }
-                className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"
-              />
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) =>
-                  setFilters({ ...filters, endDate: e.target.value })
-                }
-                className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"
+                className="pl-9 pr-4 py-2 w-56 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-600 outline-none"
               />
             </div>
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() =>
-                  setFilters({
-                    name: "",
-                    minScore: "",
-                    maxScore: "",
-                    startDate: "",
-                    endDate: "",
-                  })
-                }
-                className="px-4 py-2 text-sm bg-blue-700 text-white rounded-lg"
-              >
-                Clear
-              </button>
-            </div>
+            {/* Min Score */}
+            <input
+              type="number"
+              placeholder="Min Score %"
+              value={filters.minScore}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, minScore: e.target.value }))
+              }
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg w-32 focus:ring-2 focus:ring-indigo-600 outline-none"
+            />
+
+            {/* Max Score */}
+            <input
+              type="number"
+              placeholder="Max Score %"
+              value={filters.maxScore}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, maxScore: e.target.value }))
+              }
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg w-32 focus:ring-2 focus:ring-indigo-600 outline-none"
+            />
+
+            {/* Start Date */}
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, startDate: e.target.value }))
+              }
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+            />
+
+            {/* End Date */}
+            <input
+              type="date"
+              value={filters.endDate}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, endDate: e.target.value }))
+              }
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+            />
+
+            {/* Clear Button */}
+            <button
+              onClick={() =>
+                setFilters({
+                  name: "",
+                  minScore: "",
+                  maxScore: "",
+                  startDate: "",
+                  endDate: "",
+                })
+              }
+              className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Clear
+            </button>
           </div>
 
           {/* Table Card */}
@@ -828,7 +845,7 @@ const ReportsInsights = () => {
                 <tbody className="divide-y divide-gray-200">
                   {loading ? (
                     <TableSkeleton />
-                  ) : filteredScores.length === 0 ? (
+                  ) : filteredScores?.length === 0 ? (
                     <tr>
                       <td
                         colSpan={8}
@@ -843,23 +860,23 @@ const ReportsInsights = () => {
                         <td className="px-4 py-4 text-sm">{i + 1}</td>
                         <td className="px-4 py-4">
                           <div className="text-sm font-medium">
-                            {row.candidateId.name}
+                            {row?.candidateId?.name || "N/A"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {row.candidateId.email}
+                            {row?.candidateId?.email || "N/A"}
                           </div>
                         </td>
                         <td className="px-4 py-4 text-sm">
-                          {row.interviewId.test_title}
+                          {row?.interviewId?.test_title || "N/A"}
                         </td>
                         <td className="px-4 py-4 text-sm">
                           {Math.round((row.totalScore / row.maxScore) * 100)}%
                         </td>
                         <td className="px-4 py-4 text-sm">
-                          {row.totalScore}/{row.maxScore}
+                          {row?.totalScore}/{row?.maxScore || "N/A"}
                         </td>
                         <td className="px-4 py-4 text-sm">
-                          {row.interviewId.duration}
+                          {row?.interviewId?.duration || "N/A"}
                         </td>
                         <td className="px-4 py-4 text-sm">
                           {formatDate(row.updatedAt)}
@@ -880,7 +897,7 @@ const ReportsInsights = () => {
             </div>
 
             {/* MCQ Modal */}
-            {selectedScore && selectedScore.examType === "MCQ" && (
+            {selectedScore && selectedScore?.examType === "MCQ" && (
               <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
                 <div className="bg-white w-[1200px] max-h-[95vh] overflow-y-auto rounded-xl shadow-2xl p-6 relative animate-fadeIn">
                   <button
@@ -895,7 +912,7 @@ const ReportsInsights = () => {
                       Exam Detailed Report
                     </h2>
                     <p className="text-sm text-gray-500">
-                      {selectedScore.interviewId.test_title}
+                      {selectedScore?.interviewId?.test_title}
                     </p>
                   </div>
 
@@ -905,14 +922,15 @@ const ReportsInsights = () => {
                         Candidate Details
                       </h3>
                       <p>
-                        <strong>Name:</strong> {selectedScore.candidateId.name}
+                        <strong>Name:</strong> {selectedScore?.candidateId.name}
                       </p>
                       <p>
                         <strong>Email:</strong>{" "}
-                        {selectedScore.candidateId.email}
+                        {selectedScore?.candidateId?.email}
                       </p>
                       <p>
-                        <strong>Role:</strong> {selectedScore.candidateId.role}
+                        <strong>Role:</strong>{" "}
+                        {selectedScore?.candidateId?.role}
                       </p>
                     </div>
 
@@ -922,19 +940,19 @@ const ReportsInsights = () => {
                       </h3>
                       <p>
                         <strong>Difficulty:</strong>{" "}
-                        {selectedScore.interviewId.difficulty}
+                        {selectedScore?.interviewId?.difficulty}
                       </p>
                       <p>
                         <strong>Duration:</strong>{" "}
-                        {selectedScore.interviewId.duration}
+                        {selectedScore?.interviewId?.duration}
                       </p>
                       <p>
                         <strong>Passing Score:</strong>{" "}
-                        {selectedScore.interviewId.passing_score}%
+                        {selectedScore?.interviewId?.passing_score}%
                       </p>
                       <p>
                         <strong>Completed:</strong>{" "}
-                        {formatDate(selectedScore.updatedAt)}
+                        {formatDate(selectedScore?.updatedAt)}
                       </p>
                     </div>
                   </div>
@@ -947,18 +965,18 @@ const ReportsInsights = () => {
                       <div>
                         <p className="text-3xl font-bold text-indigo-600">
                           {Math.round(
-                            (selectedScore.totalScore /
-                              selectedScore.maxScore) *
+                            (selectedScore?.totalScore /
+                              selectedScore?.maxScore) *
                               100,
                           )}
                           %
                         </p>
                         <p className="text-sm text-gray-500">
-                          {selectedScore.totalScore}/{selectedScore.maxScore}
+                          {selectedScore?.totalScore}/{selectedScore?.maxScore}
                         </p>
                       </div>
                       <a
-                        href={selectedScore.pdfPath}
+                        href={selectedScore?.pdfPath}
                         download
                         className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
                       >
@@ -972,7 +990,7 @@ const ReportsInsights = () => {
                       AI Assessment Summary
                     </h3>
                     <p className="text-sm text-gray-700">
-                      {selectedScore.summary}
+                      {selectedScore?.summary}
                     </p>
                   </div>
 
@@ -981,15 +999,15 @@ const ReportsInsights = () => {
                       Question Wise Analysis
                     </h3>
                     <div className="space-y-4">
-                      {selectedScore.scores?.map((q, index) => {
-                        const question = q.questionId;
-                        const candidateAnswer = question.answers?.find(
+                      {selectedScore?.scores?.map((q, index) => {
+                        const question = q?.questionId;
+                        const candidateAnswer = question?.answers?.find(
                           (a: any) =>
-                            a.candidateId === selectedScore.candidateId._id,
+                            a.candidateId === selectedScore?.candidateId?._id,
                         );
                         const isCorrect =
                           candidateAnswer?.answerText ===
-                          question.correctAnswer;
+                          question?.correctAnswer;
 
                         return (
                           <div
@@ -997,16 +1015,16 @@ const ReportsInsights = () => {
                             className="border border-gray-100 rounded-lg p-4 bg-gray-50"
                           >
                             <p className="font-medium text-gray-900 mb-2">
-                              Q{index + 1}. {question.questionText}
+                              Q{index + 1}. {question?.questionText || "N/A"}
                             </p>
-                            {question.options && (
+                            {question?.options && (
                               <div className="space-y-1 mb-3">
-                                {question.options.map(
+                                {question?.options.map(
                                   (opt: string, i: number) => (
                                     <div
                                       key={i}
                                       className={`text-sm px-3 py-1 rounded-md ${
-                                        opt === question.correctAnswer
+                                        opt === question?.correctAnswer
                                           ? "bg-green-100 text-green-700"
                                           : opt === candidateAnswer?.answerText
                                             ? "bg-red-100 text-red-700"

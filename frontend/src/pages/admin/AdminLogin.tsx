@@ -31,6 +31,7 @@ const LoginPage: React.FC = () => {
 
     try {
       const response = await adminService.login(data);
+      console.log(response)
 
       const { accessToken, refreshToken, user } = response;
 
