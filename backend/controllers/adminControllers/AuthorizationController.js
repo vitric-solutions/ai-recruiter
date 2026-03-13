@@ -73,6 +73,7 @@ export const LoginUser = async (req, res) => {
     }
 
     const isMatch = await admin.comparePassword(password);
+
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
