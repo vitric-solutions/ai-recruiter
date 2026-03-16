@@ -468,6 +468,7 @@ router.post("/feedback", async (req, res) => {
   try {
     const {
       interview_id,
+      candidateId,
       userName,
       userEmail,
       feedback,
@@ -592,9 +593,12 @@ router.post("/feedback", async (req, res) => {
     // 4️⃣ Save / Update in Database
     // ===============================
     const doc = await InterviewFeedback.findOneAndUpdate(
-      { interview_id },
+      { interview_id,interview_id,
+      candidateId, },
       {
         $set: {
+          interview_id,
+      candidateId, // 🔥 THIS WAS MISSING
           userName,
           userEmail,
           feedback,
@@ -760,13 +764,11 @@ router.delete("/feedback/:interview_id", async (req, res) => {
 // ─── Validation helpers ─────────────────────────────
 function isValidBody(body) {
   return (
-    typeof body === "object" &&
-    body !== null &&
-    typeof body.prompt === "string" &&
-    body.prompt.trim().length > 0
+    body &&
+    Array.isArray(body.transcript) &&
+    body.transcript.length > 0
   );
 }
-
 function safeJsonParse(raw) {
   try {
     const cleaned = raw.replace(/```json|```/gi, "").trim();
@@ -780,6 +782,7 @@ function safeJsonParse(raw) {
 
 router.post("/ai-feedback", async (req, res) => {
   // 1. Validate
+  console.log("req.body",req.body)
   if (!isValidBody(req.body)) {
     return res.status(400).json({
       feedback: "",
@@ -797,7 +800,7 @@ router.post("/ai-feedback", async (req, res) => {
   }
 
   try {
-    // 2. Call HuggingFace Router (OpenAI-compatible endpoint)
+    // 2. Call Grok Router (OpenAI-compatible endpoint)
   const response = await fetch(
   "https://api.groq.com/openai/v1/chat/completions",
   {
@@ -833,7 +836,7 @@ router.post("/ai-feedback", async (req, res) => {
       console.error("[ai-feedback] HF HTTP error:", response.status, rawText);
       return res.status(response.status).json({
         feedback: "",
-        error: `HuggingFace API error (${response.status})`,
+        error: `Grok API error (${response.status})`,
         details: rawText,
       });
     }
@@ -846,7 +849,7 @@ router.post("/ai-feedback", async (req, res) => {
       console.error("[ai-feedback] HF returned non-JSON:", rawText);
       return res.status(502).json({
         feedback: "",
-        error: "HuggingFace returned a non-JSON response.",
+        error: "Grok returned a non-JSON response.",
         details: rawText,
       });
     }
