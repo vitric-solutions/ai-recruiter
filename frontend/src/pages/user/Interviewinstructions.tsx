@@ -295,8 +295,8 @@
 //             {/* Important Notice — dynamic per type */}
 //             <motion.div className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-amber-500/20" {...fadeUp(0.25)}>
 //               <div className="flex items-center gap-2 mb-3">
-//                 <AlertTriangle className="h-4 w-4 text-amber-400" />
-//                 <h3 className="text-amber-400 font-semibold text-sm">Important Notice</h3>
+//                 <AlertTriangle className="h-4 w-4 text-gray-400" />
+//                 <h3 className="text-gray-400 font-semibold text-sm">Important Notice</h3>
 //               </div>
 //               <div className="space-y-2">
 //                 {notice.map((item) => (
@@ -688,14 +688,14 @@ const InterviewInstructions: React.FC = () => {
             {/* Important Notice */}
             <motion.div className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-amber-500/20" {...fadeUp(0.25)}>
               <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle className="h-4 w-4 text-amber-400" />
-                <h3 className="text-amber-400 font-semibold text-sm">Important Notice</h3>
+                <AlertTriangle className="h-4 w-4 text-gray-400" />
+                <h3 className="text-gray-400 font-semibold text-sm">Important Notice</h3>
               </div>
               <div className="space-y-2">
                 {notice.map((item) => (
                   <div key={item} className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                    <p className="text-amber-300/70 text-xs">{item}</p>
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-200 mt-1.5 shrink-0" />
+                    <p className="text-gray-400 text-xs">{item}</p>
                   </div>
                 ))}
               </div>

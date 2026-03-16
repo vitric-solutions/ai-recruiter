@@ -371,14 +371,15 @@ export const UpdateCandidate = async (req, res) => {
       });
     }
 
-    if (!["active", "inactive"].includes(candidate_status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status value. Allowed: active, inactive.",
-      });
-    }
+    // if (!["active", "inactive"].includes(candidate_status)) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Invalid status value. Allowed: active, inactive.",
+    //   });
+    // }
 
     const candidate = await Candidate.findById(id);
+    console.log("candidte",candidate)
     // console.log(candidate)
 
     if (!candidate) {
@@ -398,6 +399,7 @@ export const UpdateCandidate = async (req, res) => {
     }
 
     candidate.candidate_status = candidate_status;
+    console.log("candidate.candidate_status",candidate.candidate_status)
     await candidate.save();
 
     const io = getIO();

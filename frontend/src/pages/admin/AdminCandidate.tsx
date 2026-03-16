@@ -881,12 +881,12 @@ const Candidates = () => {
           ) : data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="text-gray-400 mb-2">No candidates found</div>
-              <button
+              {/* <button
                 onClick={() => setFormModal({ open: true, mode: "add" })}
                 className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
               >
                 Add your first candidate
-              </button>
+              </button> */}
             </div>
           ) : (
             <>
