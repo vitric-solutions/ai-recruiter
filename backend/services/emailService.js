@@ -4,15 +4,25 @@ import nodemailer from "nodemailer";
 dotenv.config();
 
 
-// Email transporter configuration
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  service: "gmail",
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS
   },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+transporter.verify(function (error, success) {
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("Server is ready to send emails");
+  }
 });
 
 // Format date helper

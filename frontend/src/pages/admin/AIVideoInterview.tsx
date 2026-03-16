@@ -3,7 +3,7 @@ import {
   type DragEvent,
   type ChangeEvent,
   useEffect,
-  useRef
+  useRef,
 } from "react";
 import toast from "react-hot-toast";
 import { CheckCircle2, X } from "lucide-react";
@@ -55,92 +55,151 @@ export default function InterviewSetup() {
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
- const handleFileDrop = async (e: DragEvent<HTMLDivElement>) => {
-  e.preventDefault();
-  const droppedFile = e.dataTransfer.files[0];
+  const [jdLoading, setJdLoading] = useState(false);
+  const [candidatesLoading, setCandidatesLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [jdAnalysis, setJdAnalysis] = useState<any>(null);
+  const [scoredCandidates, setScoredCandidates] = useState<any[]>([]);
+  const [groqLoading, setGroqLoading] = useState(false);
+  const [reDirect, setReDirect] = useState(false);
 
-  if (!droppedFile || !/\.(pdf|docx?|txt)$/i.test(droppedFile.name)) {
-    toast.error("Invalid file type");
-    return;
-  }
+  const handleFileDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const droppedFile = e.dataTransfer.files[0];
 
-  // Simulate input change
-  const fakeEvent = {
-    target: { files: [droppedFile] },
-  } as any;
-
-  await handleFileChange(fakeEvent);
-};
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
-
- const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-  const selectedFile = e.target.files?.[0];
-  if (!selectedFile || !/\.(pdf|docx?|txt)$/i.test(selectedFile.name)) {
-    toast.error("Invalid file type");
-    return;
-  }
-
-  setFileName(selectedFile.name);
-  setFile(selectedFile);
-
-  try {
-    const fd = new FormData();
-    fd.append("jobDescription", selectedFile);
-
-    const res = await adminService.analyzeJD(fd);
-    const analysis = res.analysis;
-
-    if (!analysis) return;
-
-    // 🔥 Map difficulty
-    const difficultyLevel =
-      mapExperienceToDifficulty(
-        analysis?.experienceLevel,
-        analysis?.experienceYears
-      ) || "";
-
-    const autoQuestions = getDefaultQuestions(difficultyLevel);
-    const autoDuration = getDefaultDuration(difficultyLevel);
-
-    // 🔥 Auto-fill without overwriting user values
-    setPosition((prev) => prev || analysis?.jobTitle || "");
-    setDescription((prev) => prev || analysis?.jobSummary || analysis?.fullJobDescription || "");
-    setDifficulty((prev) => prev || difficultyLevel);
-    setNumberOfQuestions((prev) => prev || autoQuestions);
-    setDuration((prev) => prev || autoDuration);
-    setPassingScore((prev) => prev || "70");
-
-    // 🔥 Merge skills (requiredSkills + niceToHaveSkills)
-    const combinedSkills = [
-      ...(analysis?.requiredSkills || []),
-      ...(analysis?.niceToHaveSkills || []),
-    ];
-
-    if (combinedSkills.length > 0) {
-      setSkills((prev) => {
-        const unique = new Set([...prev, ...combinedSkills]);
-        return Array.from(unique);
-      });
+    if (!droppedFile || !/\.(pdf|docx?|txt)$/i.test(droppedFile.name)) {
+      toast.error("Invalid file type");
+      return;
     }
 
-    toast.success("JD analyzed & fields auto-filled ✅");
-  } catch (error: any) {
-    console.error(error);
-    toast.error("Failed to analyze JD");
-  }
-};
+    // Simulate input change
+    const fakeEvent = {
+      target: { files: [droppedFile] },
+    } as any;
 
+    await handleFileChange(fakeEvent);
+  };
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile || !/\.(pdf|docx?|txt)$/i.test(selectedFile.name)) {
+      toast.error("Invalid file type");
+      return;
+    }
+
+    setFileName(selectedFile.name);
+    setFile(selectedFile);
+
+    try {
+      setJdLoading(true);
+      const fd = new FormData();
+      fd.append("jobDescription", selectedFile);
+
+      const res = await adminService.analyzeJD(fd);
+      const analysis = res.analysis;
+
+      if (!analysis) return;
+      setJdAnalysis(analysis);
+
+      // 🔥 Map difficulty
+      const difficultyLevel =
+        mapExperienceToDifficulty(
+          analysis?.experienceLevel,
+          analysis?.experienceYears,
+        ) || "";
+
+      const autoQuestions = getDefaultQuestions(difficultyLevel);
+      const autoDuration = getDefaultDuration(difficultyLevel);
+
+      // 🔥 Auto-fill without overwriting user values
+      setPosition((prev) => prev || analysis?.jobTitle || "");
+      setDescription(
+        (prev) =>
+          prev || analysis?.jobSummary || analysis?.fullJobDescription || "",
+      );
+      setDifficulty((prev) => prev || difficultyLevel);
+      setNumberOfQuestions((prev) => prev || autoQuestions);
+      setDuration((prev) => prev || autoDuration);
+      setPassingScore((prev) => prev || "70");
+
+      // 🔥 Merge skills (requiredSkills + niceToHaveSkills)
+      const combinedSkills = [
+        ...(analysis?.requiredSkills || []),
+        ...(analysis?.niceToHaveSkills || []),
+      ];
+
+      if (combinedSkills.length > 0) {
+        setSkills((prev) => {
+          const unique = new Set([...prev, ...combinedSkills]);
+          return Array.from(unique);
+        });
+      }
+
+      toast.success("JD analyzed & fields auto-filled ✅");
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Failed to analyze JD");
+    } finally {
+      setJdLoading(false);
+    }
+  };
+
+  const scoreCandidatesWithGroq = async (
+    candidates: any[],
+    jdAnalysis: any,
+  ) => {
+    if (!jdAnalysis || candidates.length === 0) return candidates;
+
+    const requiredSkills = jdAnalysis.requiredSkills || [];
+
+    const filtered = candidates.filter((c: any) => {
+      const candidateSkills = (c.skills || c.key_Skills || c.primarySkill || "")
+        .toString()
+        .toLowerCase();
+
+      return requiredSkills.some((skill: string) =>
+        candidateSkills.includes(skill.toLowerCase()),
+      );
+    });
+
+    return filtered;
+  };
+  useEffect(() => {
+    const runAI = async () => {
+      try {
+        if (jdAnalysis && candidates.length > 0) {
+          setGroqLoading(true);
+
+          const filtered = await scoreCandidatesWithGroq(
+            candidates,
+            jdAnalysis,
+          );
+
+          setScoredCandidates(filtered);
+        } else {
+          setScoredCandidates(candidates);
+        }
+      } catch (error) {
+        console.error("AI filtering error:", error);
+      } finally {
+        setGroqLoading(false);
+      }
+    };
+
+    runAI();
+  }, [jdAnalysis, candidates]);
   const handleGenerateAndSendInvites = async () => {
     try {
       if (!file) {
         toast.error("Please upload job description file");
         return;
       }
-      
+
       setLoading(true);
-      
+
       const formData = new FormData();
-      
+
       formData.append("jobDescription", file);
       formData.append("position", position);
       formData.append("description", description);
@@ -149,17 +208,19 @@ export default function InterviewSetup() {
       formData.append("passingScore", passingScore);
       formData.append("secondaryJobDescription", secondaryJobDescription);
       formData.append("numberOfQuestions", numberOfQuestions);
-      
+
       skills.forEach((skill) => {
         formData.append("skills", skill);
       });
-      
+
       const response = await adminService.generateAIInterview(formData);
       console.log("Interview Created:", response);
       setCreatedJobId(response.jobId);
-      
+
       setIsGenerated(true);
-      setInterviewLink(`${import.meta.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${response.jobId}`);
+      setInterviewLink(
+        `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${response.jobId}`,
+      );
 
       setSubject("Invitations to Complete Your AI Video Interview");
 
@@ -211,10 +272,13 @@ export default function InterviewSetup() {
   const onNavigateToInterviewSetup = async (assessment: any) => {
     console.log("Navigating to Interview Setup with assessment:", assessment);
     setActiveTab("setup");
-   
-    setInterviewLink(`${import.meta.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${assessment.jobId}`);
+
+    setInterviewLink(
+      `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${assessment.jobId}`,
+    );
 
     try {
+      setReDirect(true);
       const res = await adminService.getDraft(assessment._id);
       const data = res.data; // ✅ correct structure
 
@@ -254,6 +318,8 @@ export default function InterviewSetup() {
       );
     } catch (error) {
       console.error("Failed to load interview", error);
+    } finally {
+      setReDirect(false);
     }
   };
 
@@ -261,27 +327,31 @@ export default function InterviewSetup() {
 
   const fetchCandidates = async () => {
     try {
+      setCandidatesLoading(true);
+
       const res: any = await adminService.getAllCandidate(1, 100, "all");
       setCandidates(res.data);
       setFilteredCandidates(res.data);
     } catch (error) {
       console.error("Failed to fetch candidates", error);
+    } finally {
+      setCandidatesLoading(false);
     }
   };
 
   // ================= SEARCH FILTER =================
 
   useEffect(() => {
-    const filtered = candidates.filter((c: any) =>
+    const filtered = scoredCandidates.filter((c: any) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
+
     setFilteredCandidates(filtered);
-  }, [searchTerm, candidates]);
+  }, [searchTerm, scoredCandidates]);
 
   // ================= SEND INVITATIONS =================
 
   const handleSendInvitations = async () => {
-
     try {
       setLoading(true);
       if (!createdJobId) return toast.error("Create interview first");
@@ -303,8 +373,10 @@ export default function InterviewSetup() {
       setSelectedCandidates([]);
       setActiveTab("template");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to send invitations");
-    }finally {
+      toast.error(
+        error.response?.data?.message || "Failed to send invitations",
+      );
+    } finally {
       setLoading(false);
     }
   };
@@ -325,17 +397,6 @@ export default function InterviewSetup() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const handleCopyLink = () => {
-    navigator.clipboard
-      .writeText(interviewLink)
-      .then(() => {
-        toast.success("Link copied to clipboard!");
-      })
-      .catch((err) => {
-        console.error("Failed to copy link: ", err);
-      });
-  };
 
   const handleUpdateInterview = async () => {
     if (!editingId) return;
@@ -401,6 +462,7 @@ export default function InterviewSetup() {
     setActiveTab("setup");
 
     try {
+      setEditLoading(true);
       const res = await adminService.getDraft(assessment._id);
       console.log("Fetched Interview for Editing:", res);
       const data = res.data;
@@ -418,56 +480,57 @@ export default function InterviewSetup() {
       setSkills(data.skills || []);
     } catch (error) {
       console.error("Failed to load interview", error);
+    } finally {
+      setEditLoading(false);
     }
   };
 
   // ================= AI AUTO FILL HELPERS =================
 
-const mapExperienceToDifficulty = (level?: string, years?: string) => {
-  if (!level && !years) return "";
+  const mapExperienceToDifficulty = (level?: string, years?: string) => {
+    if (!level && !years) return "";
 
-  const lvl = level?.toLowerCase();
+    const lvl = level?.toLowerCase();
 
-  if (lvl?.includes("entry") || lvl?.includes("junior")) return "Easy";
-  if (lvl?.includes("mid")) return "Medium";
-  if (lvl?.includes("senior") || lvl?.includes("lead")) return "Hard";
+    if (lvl?.includes("entry") || lvl?.includes("junior")) return "Easy";
+    if (lvl?.includes("mid")) return "Medium";
+    if (lvl?.includes("senior") || lvl?.includes("lead")) return "Hard";
 
-  const y = Number(years);
-  if (!isNaN(y)) {
-    if (y <= 1) return "Easy";
-    if (y <= 4) return "Medium";
-    return "Hard";
-  }
+    const y = Number(years);
+    if (!isNaN(y)) {
+      if (y <= 1) return "Easy";
+      if (y <= 4) return "Medium";
+      return "Hard";
+    }
 
-  return "";
-};
+    return "";
+  };
 
-const getDefaultQuestions = (difficulty: string) => {
-  switch (difficulty) {
-    case "Easy":
-      return "10";
-    case "Medium":
-      return "15";
-    case "Hard":
-      return "20";
-    default:
-      return "";
-  }
-};
+  const getDefaultQuestions = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "10";
+      case "Medium":
+        return "15";
+      case "Hard":
+        return "20";
+      default:
+        return "";
+    }
+  };
 
-const getDefaultDuration = (difficulty: string) => {
-  switch (difficulty) {
-    case "Easy":
-      return "15 minutes";
-    case "Medium":
-      return "30 minutes";
-    case "Hard":
-      return "60 minutes";
-    default:
-      return "";
-  }
-};
-
+  const getDefaultDuration = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "15 minutes";
+      case "Medium":
+        return "30 minutes";
+      case "Hard":
+        return "60 minutes";
+      default:
+        return "";
+    }
+  };
 
   return (
     <>
@@ -476,16 +539,38 @@ const getDefaultDuration = (difficulty: string) => {
         subheading="AI-powered video interviews"
         showSearch={false}
       >
+        {/* ── Full-page loader overlay ── */}
+        {(loading || jdLoading || editLoading || reDirect || groqLoading) && (
+          <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-40 flex flex-col items-center justify-center gap-4">
+            <div className="relative flex items-center justify-center">
+              <div className="h-16 w-16 rounded-full border-4 border-indigo-100" />
+              <div className="absolute h-13 w-13 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
+            </div>
 
-{/* 
-  {loading && (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-[#4318FF] rounded-full animate-spin" />
-        <p className="text-sm text-gray-500 font-medium">Please wait...</p>
-      </div>
-    </div>
-  )} */}
+            <p className="text-sm font-medium text-indigo-700">
+              {jdLoading
+                ? "Analyzing Job Description..."
+                : groqLoading
+                  ? "AI is ranking candidates by JD match..."
+                  : editLoading
+                    ? "Updating interview details..."
+                    : reDirect
+                      ? "Redirecting to interview page..."
+                      : "Please wait..."}
+            </p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-indigo-200 border-t-[#4318FF] rounded-full animate-spin" />
+              <p className="text-sm text-gray-500 font-medium">
+                Please wait...
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="min-h-screen">
           {/* Tabs */}
@@ -621,7 +706,7 @@ const getDefaultDuration = (difficulty: string) => {
                     </div>
                   )}
 
-                   <h3 className="text-gray-800 pb-2 text-xs sm:text-sm mt-4">
+                  <h3 className="text-gray-800 pb-2 text-xs sm:text-sm mt-4">
                     Position
                   </h3>
                   <input
@@ -641,7 +726,6 @@ const getDefaultDuration = (difficulty: string) => {
                     onChange={(e) => setDescription(e.target.value)}
                   ></textarea>
 
-                 
                   <div className="w-full flex items-center justify-between gap-5">
                     <div className="w-full md:w-1/2">
                       <h3 className="text-gray-800 pb-2 text-xs sm:text-sm">
@@ -663,7 +747,7 @@ const getDefaultDuration = (difficulty: string) => {
                       </h3>
                       <input
                         type="text"
-                        placeholder="10"
+                        placeholder="e.g. 10"
                         className="w-full p-2 mb-3 border border-gray-300 rounded-lg outline-none text-xs sm:text-sm"
                         value={numberOfQuestions}
                         onChange={(e) => {
@@ -918,7 +1002,14 @@ const getDefaultDuration = (difficulty: string) => {
 
                             {/* List */}
                             <div className="max-h-48 overflow-y-auto">
-                              {filteredCandidates.length === 0 ? (
+                              {candidatesLoading ? (
+                                <div className="flex items-center justify-center py-6">
+                                  <div className="flex items-center gap-2 text-indigo-600 text-sm">
+                                    <div className="h-4 w-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                    Loading candidates...
+                                  </div>
+                                </div>
+                              ) : filteredCandidates.length === 0 ? (
                                 <div className="px-4 py-3 text-sm text-gray-500 text-center">
                                   No candidates found
                                 </div>
@@ -1028,10 +1119,10 @@ const getDefaultDuration = (difficulty: string) => {
                               type="datetime-local"
                               value={
                                 startDate
-                                  ? startDate.toISOString().substring(0,16)
+                                  ? startDate.toISOString().substring(0, 16)
                                   : ""
                               }
-                              min={new Date().toISOString().substring(0,16)}
+                              min={new Date().toISOString().substring(0, 16)}
                               onChange={(e) => {
                                 const value = e.target.value;
                                 const selected = value ? new Date(value) : null;
@@ -1064,13 +1155,13 @@ const getDefaultDuration = (difficulty: string) => {
                               type="datetime-local"
                               value={
                                 endDate
-                                  ? endDate.toISOString().substring(0,16)
+                                  ? endDate.toISOString().substring(0, 16)
                                   : ""
                               }
                               min={
                                 startDate
-                                  ? startDate.toISOString().substring(0,16)
-                                  : new Date().toISOString().substring(0,16)
+                                  ? startDate.toISOString().substring(0, 16)
+                                  : new Date().toISOString().substring(0, 16)
                               }
                               onChange={(e) => {
                                 const value = e.target.value;
@@ -1091,7 +1182,7 @@ const getDefaultDuration = (difficulty: string) => {
                       <div className="w-full mt-6 flex justify-end gap-2 flex-wrap">
                         <button
                           onClick={handleSendInvitations}
-                           disabled={loading}
+                          disabled={loading}
                           className="flex items-center gap-2 px-4 py-2 bg-[#4318FF] text-white rounded-md text-xs sm:text-sm"
                         >
                           <img src={SendEmail} alt="send" className="w-4 h-4" />
