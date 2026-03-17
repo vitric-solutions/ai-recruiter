@@ -706,11 +706,6 @@ import {
   Shield,
   CreditCard,
   BookOpen,
-  Eye,
-  Sun,
-  Crosshair,
-  ZoomIn,
-  Smile,
   XCircle,
   ScanLine,
 } from "lucide-react";
@@ -775,32 +770,6 @@ const validateAadhaarWithOCR = async (
   }
 };
 
-// ─── Aadhaar OCR validation (dataUrl — camera capture) ───────────────────────
-// const validateAadhaarDataUrl = async (
-//   dataUrl: string
-// ): Promise<{ isValid: boolean; reason: string }> => {
-//   try {
-//     const { data: { text } } = await Tesseract.recognize(dataUrl, "eng", { logger: () => {} });
-//     const upper = text.toUpperCase();
-//     const hasAadhaarKeyword = /AADHAAR|AADHAR|UIDAI/.test(upper) || /\bUID\b/.test(upper);
-//     const has12Digit =
-//       /\d{4}[\s\-]?\d{4}[\s\-]?\d{4}/.test(upper) ||
-//       /[X\d]{4}[\s\-]?[X\d]{4}[\s\-]?[X\d]{4}/i.test(upper);
-//     const hasGovt = /GOVERNMENT\s+OF\s+INDIA|GOVT\.?\s+OF\s+INDIA/.test(upper);
-//     const passed = [hasAadhaarKeyword, has12Digit, hasGovt].filter(Boolean).length;
-//     if (passed >= 2) return { isValid: true, reason: "Aadhaar card detected via OCR" };
-//     const missing: string[] = [];
-//     if (!hasAadhaarKeyword) missing.push("Aadhaar/UIDAI text");
-//     if (!has12Digit) missing.push("12-digit number");
-//     if (!hasGovt) missing.push('"Govt of India" text');
-//     return {
-//       isValid: false,
-//       reason: `Could not verify as Aadhaar card. Missing: ${missing.join(", ")}. Ensure the entire card is visible, well-lit, and held steady.`,
-//     };
-//   } catch {
-//     return { isValid: true, reason: "OCR check skipped due to an error" };
-//   }
-// };
 
 // ─── Passport OCR validation ──────────────────────────────────────────────────
 const validatePassportWithOCR = async (
@@ -835,157 +804,14 @@ const validatePassportWithOCR = async (
 // ═══════════════════════════════════════════════════════════════════════════════
 // ─── SELFIE FACE LOGIC ────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
-const ptDist = (a: faceapi.Point, b: faceapi.Point) =>
-  Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
-const eyeAspectRatio = (pts: faceapi.Point[]): number => {
-  if (pts.length < 6) return 1;
-  return (ptDist(pts[1], pts[5]) + ptDist(pts[2], pts[4])) / (2 * ptDist(pts[0], pts[3]));
-};
 
-const EAR_THRESHOLD = 0.2;
 
-const getFrameBrightness = (canvas: HTMLCanvasElement): number => {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return 128;
-  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  let total = 0, count = 0;
-  for (let i = 0; i < data.length; i += 40) {
-    total += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    count++;
-  }
-  return count > 0 ? total / count : 128;
-};
 
-interface LiveChecks {
-  faceFound: boolean;
-  multipleFaces: boolean;
-  eyesOpen: boolean;
-  centered: boolean;
-  faceSize: "ok" | "too-far" | "too-close";
-  lightingOk: boolean;
-  frontal: boolean;
-  confidence: number;
-  allPassed: boolean;
-}
 
-const DEFAULT_CHECKS: LiveChecks = {
-  faceFound: false, multipleFaces: false, eyesOpen: false,
-  centered: false, faceSize: "too-far", lightingOk: false,
-  frontal: false, confidence: 0, allPassed: false,
-};
 
-const analyzeFrame = async (
-  video: HTMLVideoElement,
-  canvas: HTMLCanvasElement
-): Promise<LiveChecks> => {
-  const ctx = canvas.getContext("2d");
-  if (!ctx || !video.videoWidth) return DEFAULT_CHECKS;
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  ctx.drawImage(video, 0, 0);
 
-  const brightness = getFrameBrightness(canvas);
-  const lightingOk = brightness > 60 && brightness < 230;
 
-  let detections: faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }, faceapi.FaceLandmarks68>[];
-  try {
-    detections = await faceapi
-      .detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.4 }))
-      .withFaceLandmarks(true);
-  } catch {
-    return { ...DEFAULT_CHECKS, lightingOk };
-  }
-
-  if (detections.length === 0) return { ...DEFAULT_CHECKS, lightingOk };
-  if (detections.length > 1)
-    return { ...DEFAULT_CHECKS, lightingOk, faceFound: true, multipleFaces: true };
-
-  const { detection, landmarks } = detections[0];
-  const box = detection.box;
-  const imgW = canvas.width, imgH = canvas.height;
-
-  const faceArea = (box.width * box.height) / (imgW * imgH);
-  let faceSize: LiveChecks["faceSize"] = "ok";
-  if (faceArea < 0.06) faceSize = "too-far";
-  else if (faceArea > 0.55) faceSize = "too-close";
-
-  const faceCx = box.x + box.width / 2, faceCy = box.y + box.height / 2;
-  const centered =
-    Math.abs(faceCx / imgW - 0.5) < 0.20 && Math.abs(faceCy / imgH - 0.5) < 0.22;
-
-  const eyesOpen =
-    eyeAspectRatio(landmarks.getLeftEye()) > EAR_THRESHOLD &&
-    eyeAspectRatio(landmarks.getRightEye()) > EAR_THRESHOLD;
-
-  let frontal = true;
-  const nose = landmarks.getNose(), jaw = landmarks.getJawOutline();
-  if (nose?.length && jaw?.length) {
-    const jawW = jaw[jaw.length - 1].x - jaw[0].x;
-    if (jawW > 0)
-      frontal = Math.abs(nose[nose.length - 1].x - (jaw[0].x + jawW / 2)) / jawW < 0.28;
-  }
-
-  const confidence = detection.score;
-  const faceFound = confidence > 0.45;
-  const allPassed =
-    faceFound && eyesOpen && centered && faceSize === "ok" && lightingOk && frontal && confidence >= 0.55;
-
-  return { faceFound, multipleFaces: false, eyesOpen, centered, faceSize, lightingOk, frontal, confidence, allPassed };
-};
-
-const validateCapturedImage = async (
-  imageDataUrl: string
-): Promise<{ isValid: boolean; reason: string }> => {
-  try {
-    await loadFaceModels();
-    const img = document.createElement("img");
-    img.src = imageDataUrl;
-    await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(); });
-
-    const detections = await faceapi
-      .detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.45 }))
-      .withFaceLandmarks(true);
-
-    if (detections.length === 0)
-      return { isValid: false, reason: "No face detected. Please ensure your face is clearly visible and well-lit." };
-    if (detections.length > 1)
-      return { isValid: false, reason: "Multiple faces detected. Please make sure only you are in the frame." };
-
-    const { detection, landmarks } = detections[0];
-    if (detection.score < 0.55)
-      return { isValid: false, reason: "Face not clearly detected. Please improve lighting and ensure your face fills the frame." };
-
-    const earL = eyeAspectRatio(landmarks.getLeftEye());
-    const earR = eyeAspectRatio(landmarks.getRightEye());
-    if (earL < EAR_THRESHOLD || earR < EAR_THRESHOLD)
-      return { isValid: false, reason: "Your eyes appear to be closed. Please keep your eyes open and look at the camera." };
-
-    if (!landmarks.getLeftEye()?.length || !landmarks.getRightEye()?.length)
-      return { isValid: false, reason: "Eyes not clearly visible. Please remove sunglasses or any obstruction and try again." };
-
-    const nose2 = landmarks.getNose(), jaw2 = landmarks.getJawOutline();
-    if (nose2?.length && jaw2?.length) {
-      const jawW = jaw2[jaw2.length - 1].x - jaw2[0].x;
-      if (jawW > 0 && Math.abs(nose2[nose2.length - 1].x - (jaw2[0].x + jawW / 2)) / jawW > 0.28)
-        return { isValid: false, reason: "Please face the camera directly. Your face appears to be turned to the side." };
-    }
-
-    return { isValid: true, reason: "Face verified successfully" };
-  } catch {
-    return { isValid: true, reason: "Face check skipped due to an error" };
-  }
-};
-
-// ─── Live check pills ─────────────────────────────────────────────────────────
-// const CHECK_PILLS: { key: string; label: string; icon: React.ReactNode; pass: (c: LiveChecks) => boolean | null }[] = [
-//   { key: "face",     label: "Face",        icon: <User size={10} />,       pass: (c) => c.faceFound ? true : false },
-//   { key: "eyes",     label: "Eyes Open",   icon: <Eye size={10} />,        pass: (c) => c.faceFound ? c.eyesOpen : null },
-//   { key: "light",    label: "Lighting",    icon: <Sun size={10} />,        pass: (c) => c.lightingOk },
-//   { key: "center",   label: "Centered",    icon: <Crosshair size={10} />,  pass: (c) => c.faceFound ? c.centered : null },
-//   { key: "distance", label: "Distance",    icon: <ZoomIn size={10} />,     pass: (c) => c.faceFound ? c.faceSize === "ok" : null },
-//   { key: "frontal",  label: "Looking Fwd", icon: <Smile size={10} />,      pass: (c) => c.faceFound ? c.frontal : null },
-// ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = "document" | "selfie";
@@ -1006,7 +832,6 @@ type CardCamStatus =
 // ─── Component ────────────────────────────────────────────────────────────────
 const IdentityVerification: React.FC = () => {
   const navigate = useNavigate();
-  const interviewId = sessionStorage.getItem("interviewId");
 
   const [currentStep, setCurrentStep] = useState<Step>("document");
   const [docType, setDocType] = useState<DocType>("aadhaar");
@@ -1019,12 +844,9 @@ const IdentityVerification: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── selfie camera state ──────────────────────────────────────────────────────
-  const [cameraStatus, setCameraStatus] = useState<CameraStatus>("idle");
-  const [ setCapturedImage] = useState<string | null>(null);
-  const [ setScanLinePos] = useState(0);
-  const [liveChecks, setLiveChecks] = useState<LiveChecks>(DEFAULT_CHECKS);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [setFaceValidationError] = useState<string | null>(null);
+  const [cameraStatus, _] = useState<CameraStatus>("idle");
+ 
+  const [____, setCountdown] = useState<number | null>(null);
   const [modelsReady, setModelsReady] = useState(false);
 console.log(modelsReady)
   // ── card-camera state (new) ──────────────────────────────────────────────────
@@ -1035,17 +857,14 @@ console.log(modelsReady)
   const [cardFrozenFrame, setCardFrozenFrame] = useState<string | null>(null);
 
   // ── refs: selfie ─────────────────────────────────────────────────────────────
-  const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const liveCanvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number | null>(null);
-  const scanRef = useRef({ pos: 0, dir: 1 });
   const liveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownValRef = useRef(3);
-  const isCaptureScheduled = useRef(false);
-  const readyToCaptureRef = useRef(false);
+
 
   // ── refs: card camera (new) ──────────────────────────────────────────────────
   const cardVideoRef = useRef<HTMLVideoElement>(null);
@@ -1274,16 +1093,6 @@ console.log(modelsReady)
 
   const stopScan = () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
 
-  const startScanAnimation = () => {
-    const animate = () => {
-      scanRef.current.pos += scanRef.current.dir * 1.5;
-      if (scanRef.current.pos >= 100) scanRef.current.dir = -1;
-      if (scanRef.current.pos <= 0) scanRef.current.dir = 1;
-      setScanLinePos(scanRef.current.pos);
-      animFrameRef.current = requestAnimationFrame(animate);
-    };
-    animFrameRef.current = requestAnimationFrame(animate);
-  };
 
   const stopStream = () => {
     if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
@@ -1298,104 +1107,11 @@ console.log(modelsReady)
     setCountdown(null); countdownValRef.current = 3;
   };
 
-  const scheduleCapture = useCallback(() => {
-    if (isCaptureScheduled.current) return;
-    isCaptureScheduled.current = true;
-    countdownValRef.current = 3;
-    setCountdown(3);
-    countdownRef.current = setInterval(() => {
-      countdownValRef.current -= 1;
-      if (countdownValRef.current <= 0) { stopCountdown(); doCapture(); }
-      else setCountdown(countdownValRef.current);
-    }, 1000);
-  }, []);
 
-  const doCapture = useCallback(async () => {
-    stopLiveAnalysis();
-    const liveCanvas = liveCanvasRef.current, video = videoRef.current;
-    if (!liveCanvas || !video) { setCameraStatus("idle"); return; }
-    liveCanvas.width = video.videoWidth || 480;
-    liveCanvas.height = video.videoHeight || 360;
-    const ctx = liveCanvas.getContext("2d");
-    if (!ctx) { setCameraStatus("idle"); return; }
-    ctx.drawImage(video, 0, 0);
-    const img = liveCanvas.toDataURL("image/jpeg", 0.90);
 
-    stopStream();
-    setCapturedImage(img);
-    setCameraStatus("validating");
-    setFaceValidationError(null);
 
-    const result = await validateCapturedImage(img);
-    if (!result.isValid) {
-      setFaceValidationError(result.reason);
-      setCapturedImage(null);
-      setCameraStatus("idle");
-      setLiveChecks(DEFAULT_CHECKS);
-      isCaptureScheduled.current = false;
-      readyToCaptureRef.current = false;
-      return;
-    }
+  
 
-    (async () => {
-      try {
-        const blob = await (await fetch(img)).blob();
-        const file = new File([blob], "selfie.jpg", { type: blob.type || "image/jpeg" });
-        const userId = getInterviewId();
-        if (userId) await userService.selfieVerification(userId, file);
-      } catch (error) {
-        console.error("Photo upload error:", error);
-        toast.error("Photo upload failed. Please try again.");
-      }
-    })();
-
-    setCameraStatus("processing");
-    scanRef.current = { pos: 0, dir: 1 };
-    startScanAnimation();
-    setTimeout(() => { stopScan(); setCameraStatus("completed"); toast.success("Photo captured successfully!"); }, 3000);
-  }, []);
-
-  const startLiveAnalysis = useCallback(() => {
-    liveIntervalRef.current = setInterval(async () => {
-      if (!videoRef.current || !liveCanvasRef.current) return;
-      const checks = await analyzeFrame(videoRef.current, liveCanvasRef.current);
-      setLiveChecks(checks);
-      if (checks.allPassed && !readyToCaptureRef.current) {
-        readyToCaptureRef.current = true;
-        scheduleCapture();
-      } else if (!checks.allPassed && readyToCaptureRef.current) {
-        readyToCaptureRef.current = false;
-        isCaptureScheduled.current = false;
-        stopCountdown();
-      }
-    }, 350);
-  }, [scheduleCapture]);
-
-  // const startCamera = useCallback(async () => {
-  //   setFaceValidationError(null);
-  //   setLiveChecks(DEFAULT_CHECKS);
-  //   isCaptureScheduled.current = false;
-  //   readyToCaptureRef.current = false;
-  //   try {
-  //     const stream = await navigator.mediaDevices.getUserMedia({
-  //       video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-  //     });
-  //     streamRef.current = stream;
-  //     if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
-  //     setCameraStatus("active");
-  //     startLiveAnalysis();
-  //   } catch {
-  //     toast.error("Failed to access camera. Please allow camera permission and try again.");
-  //     setCameraStatus("idle");
-  //   }
-  // }, [startLiveAnalysis]);
-
-  // const handleRetake = () => {
-  //   stopStream(); stopLiveAnalysis(); stopCountdown(); stopScan();
-  //   setCapturedImage(null); setCameraStatus("idle"); setScanLinePos(0);
-  //   setLiveChecks(DEFAULT_CHECKS); setFaceValidationError(null);
-  //   isCaptureScheduled.current = false; readyToCaptureRef.current = false;
-  // };
 
   const handleBack = () => navigate(-1);
 //  const handleComplete = () => navigate(userPath("instructions", interviewId), { replace: true });
@@ -1404,27 +1120,7 @@ console.log(modelsReady)
     return () => { stopStream(); stopLiveAnalysis(); stopCountdown(); stopScan(); stopCardCamera(); };
   }, []);
 
-  // ─── Derived UI values ────────────────────────────────────────────────────────
-  const passedCount = liveChecks.faceFound
-    ? [liveChecks.eyesOpen, liveChecks.centered, liveChecks.faceSize === "ok", liveChecks.lightingOk, liveChecks.frontal].filter(Boolean).length
-    : 0;
-  // const ovalStroke = liveChecks.allPassed ? "#22c55e" : passedCount >= 3 ? "#f59e0b" : liveChecks.faceFound ? "#f59e0b" : "#ef4444";
-
-  const getPrimaryMessage = (): { text: string; color: string } => {
-    if (!liveChecks.faceFound) return { text: "Position your face inside the oval guide", color: "text-white" };
-    if (liveChecks.multipleFaces) return { text: "Only one person allowed in the frame", color: "text-red-400" };
-    if (!liveChecks.lightingOk) return { text: "Improve lighting — find a brighter spot", color: "text-amber-400" };
-    if (liveChecks.faceSize === "too-far") return { text: "Move closer to the camera", color: "text-amber-400" };
-    if (liveChecks.faceSize === "too-close") return { text: "Move a little further away", color: "text-amber-400" };
-    if (!liveChecks.centered) return { text: "Center your face in the oval", color: "text-amber-400" };
-    if (!liveChecks.frontal) return { text: "Look directly at the camera", color: "text-amber-400" };
-    if (!liveChecks.eyesOpen) return { text: "Please open your eyes and look at the camera", color: "text-red-400" };
-    if (liveChecks.allPassed && countdown !== null) return { text: `Hold still — capturing in ${countdown}…`, color: "text-green-400" };
-    if (liveChecks.allPassed) return { text: "Great! Hold still…", color: "text-green-400" };
-    return { text: "Adjusting…", color: "text-white" };
-  };
-  // const guidance = getPrimaryMessage();
-
+  
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#050A24] bg-[radial-gradient(circle_at_100%_0%,rgba(45,85,251,0.45),transparent_50%),radial-gradient(circle_at_0%_100%,rgba(45,85,251,0.35),transparent_50%)]">

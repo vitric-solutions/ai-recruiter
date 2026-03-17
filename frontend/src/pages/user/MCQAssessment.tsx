@@ -107,8 +107,7 @@ const MCQAssessment: React.FC = () => {
   const [savingAnswer, setSavingAnswer] = useState(false);
   const [finalSubmitting, setFinalSubmitting] = useState(false);
   const [phase, setPhase] = useState<"quiz" | "result">("quiz");
-  const [totalScore, setTotalScore] = useState(0);
-  console.log(totalScore)
+  const [_, setTotalScore] = useState(0);
 
   // ── Proctoring state ──
   const [violationCount, setViolationCount] = useState(0);
@@ -157,25 +156,14 @@ const MCQAssessment: React.FC = () => {
     });
   }, []);
 
-const handleAlertClose = useCallback(() => {
-  if (violationCountRef.current >= MAX_VIOLATIONS) {
-    setActiveAlert(null);
-
-    // stop everything
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (faceCheckIntervalRef.current) clearInterval(faceCheckIntervalRef.current);
-    if (audioCheckIntervalRef.current) clearInterval(audioCheckIntervalRef.current);
-
-    if (procStreamRef.current) {
-      procStreamRef.current.getTracks().forEach((t) => t.stop());
+  const handleAlertClose = useCallback(() => {
+    if (violationCountRef.current >= MAX_VIOLATIONS) {
+      setActiveAlert(null);
+      triggerAutoFail();
+    } else {
+      setActiveAlert(null);
     }
-
-    // redirect to result page
-    navigate(`/user/${id}/assessment-complete`);
-  } else {
-    setActiveAlert(null);
-  }
-}, [navigate, id]);
+  }, [triggerAutoFail]);
 
   // ── Fetch questions ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -210,7 +198,8 @@ const handleAlertClose = useCallback(() => {
       }));
       const res = await userService.finalSubmitMCQAssessment(id!, { answers: answersArray });
       if (res){
-        navigate(userPath("complete", id));
+       
+navigate(userPath("complete", id));
       setTotalScore(res?.totalScore ?? 0);
 
       }
@@ -932,7 +921,7 @@ const handleAlertClose = useCallback(() => {
                 }`}
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               >
-                {activeAlert.count >= MAX_VIOLATIONS ? "Exit Assessment" : "I Understand"}
+                {activeAlert.count >= MAX_VIOLATIONS ? "View Results" : "I Understand"}
               </motion.button>
             </motion.div>
           </div>
@@ -987,9 +976,6 @@ const handleAlertClose = useCallback(() => {
 };
 
 export default MCQAssessment;
-
-
-
 // import React, { useEffect, useState, useRef, useCallback } from "react";
 // import { useParams, useNavigate } from "react-router-dom";
 // import Vapi from "@vapi-ai/web";
