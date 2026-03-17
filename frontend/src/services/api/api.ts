@@ -117,7 +117,7 @@ class Api implements IApi {
     }
 
     if (err.response) {
-      handleErrResult(err.response);
+      handleErrResult(err);
     } else if (err.request) {
       console.error("No response received:", err.request);
     } else {

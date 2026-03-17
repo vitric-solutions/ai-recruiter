@@ -45,7 +45,7 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
 
   useEffect(() => {
     
-    let isMounted = true;
+  
     const loadAssessments = async () => {
       setTemplatesLoading(true);
       try {
@@ -65,10 +65,6 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
     };
 
     loadAssessments();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   /* ================= FILTER LOGIC ================= */
