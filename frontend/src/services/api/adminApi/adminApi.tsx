@@ -18,7 +18,7 @@ class AdminApi {
     UPDATE_AI_TEMPLATE: "/admin/interview/template",
     SEND_AI_INVITES: "/admin/interview/send-invites",
     GET_AI: "/admin/interviews/list",
-    DELETE_CANDIDATE: "/admin/candidate",
+    UPDATE_CANDIDATE: "/admin/candidate",
     GET_ME: "/admin/me",
     UPLOAD_JD: "/admin/analyze",
     UPLOAD_RESUME: "/admin/resume/analyze",
@@ -80,7 +80,7 @@ class AdminApi {
   }
   // update Candidate
   updateCandidate(id: string, data: any) {
-    return api._patch(`${this._url.DELETE_CANDIDATE}/${id}`, data);
+    return api._patch(`${this._url.UPDATE_CANDIDATE}/${id}`, data);
   }
 
   //send invites

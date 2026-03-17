@@ -41,7 +41,7 @@ const InterviewFeedbackSchema = new mongoose.Schema(
       confidenceScore: { type: Number, min: 0, max: 100 },
       confidenceLabel: {
         type: String,
-        enum: ["High Confidence", "Moderate Confidence", "Low Confidence"],
+        enum: ["High", "Moderate", "Low"],
       },
 
       behavioralInsights: [InsightSchema],

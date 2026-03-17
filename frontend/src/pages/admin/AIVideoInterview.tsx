@@ -17,6 +17,7 @@ import Calender from "../../assets/admin/calender.png";
 import Bookmark from "../../assets/admin/assessment/bookmark.png";
 import Edit from "../../assets/admin/assessment/edit1.png";
 import ActiveInterviews from "../../components/admin/AI Interview/ActiveInterviews";
+import { userPath } from "../../routes/EncryptRoute";
 import { adminService } from "../../services/service/adminService";
 
 export default function InterviewSetup() {
@@ -54,6 +55,7 @@ export default function InterviewSetup() {
   //edit
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [useTemplateMode, setUseTemplateMode] = useState(false);
 
   const [jdLoading, setJdLoading] = useState(false);
   const [candidatesLoading, setCandidatesLoading] = useState(false);
@@ -219,7 +221,7 @@ export default function InterviewSetup() {
 
       setIsGenerated(true);
       setInterviewLink(
-        `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${response.jobId}`,
+        `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}${userPath("loginWithId", response.jobId)},`,
       );
 
       setSubject("Invitations to Complete Your AI Video Interview");
@@ -272,9 +274,10 @@ export default function InterviewSetup() {
   const onNavigateToInterviewSetup = async (assessment: any) => {
     console.log("Navigating to Interview Setup with assessment:", assessment);
     setActiveTab("setup");
+    setUseTemplateMode(true);
 
     setInterviewLink(
-      `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${assessment.jobId}`,
+      `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}${userPath("loginWithId", assessment.jobId)}`,
     );
 
     try {
@@ -460,6 +463,7 @@ export default function InterviewSetup() {
   const handleEditAssessment = async (assessment: any) => {
     console.log("Editing assessment:", assessment);
     setActiveTab("setup");
+    setUseTemplateMode(false); // ✅ ADD THIS LINE
 
     try {
       setEditLoading(true);
@@ -614,7 +618,11 @@ export default function InterviewSetup() {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full">
                 {/* Left: AI Generator */}
-                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm">
+                <div
+                  className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm relative ${
+                    useTemplateMode ? "opacity-90 pointer-events-none" : ""
+                  }`}
+                >
                   <div className="flex items-center mb-4">
                     <div className="p-2 rounded-lg">
                       <img
@@ -854,7 +862,7 @@ export default function InterviewSetup() {
                     )}
 
                     {/* ================= CREATE MODE ================= */}
-                    {!editMode && !isGenerated && (
+                    {!editMode && !isGenerated && !useTemplateMode && (
                       <div className="flex justify-end gap-4">
                         <button
                           onClick={handleDraft}

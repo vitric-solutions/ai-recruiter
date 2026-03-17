@@ -1336,6 +1336,7 @@ export const AssessmentInvitationByID = async (req, res) => {
     const { assessmentId } = req.params;
     const { candidateIds, start_date, end_date } = req.body;
 
+    // ✅ Validation
     if (!candidateIds || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
@@ -1351,9 +1352,9 @@ export const AssessmentInvitationByID = async (req, res) => {
           : candidateIds;
 
       if (!Array.isArray(candidateArray) || candidateArray.length === 0) {
-        throw new Error("Invalid array");
+        throw new Error();
       }
-    } catch (err) {
+    } catch {
       return res.status(400).json({
         success: false,
         message: "Please select at least one candidate",
@@ -1362,14 +1363,15 @@ export const AssessmentInvitationByID = async (req, res) => {
 
     const startDate = new Date(start_date);
     const endDate = new Date(end_date);
-    if (!start_date || !end_date) {
+
+    if (isNaN(startDate) || isNaN(endDate)) {
       return res.status(400).json({
         success: false,
-        message: "Start date and end date are required",
+        message: "Invalid date format",
       });
     }
 
-    if (endDate.getTime() <= startDate.getTime()) {
+    if (endDate <= startDate) {
       return res.status(400).json({
         success: false,
         message: "End date must be after start date",
@@ -1387,27 +1389,116 @@ export const AssessmentInvitationByID = async (req, res) => {
 
     const scheduledCandidates = [];
     const skippedCandidates = [];
+    const invitedEmails = [];
+    const skippedEmails = [];
     const emailResults = [];
+
+    const now = new Date();
 
     for (const candId of candidateArray) {
       const candidate = await Candidate.findById(candId);
       if (!candidate) continue;
 
-      // 🔥 STRICT CHECK: already invited?
-      const alreadyInvited = interview.candidates.find(
-        (c) => c.candidateId.toString() === candId.toString(),
+      const existingIndex = interview.candidates.findIndex(
+        (c) => c.candidateId.toString() === candId.toString()
       );
 
-      if (alreadyInvited) {
-        skippedCandidates.push({
-          candidate: candidate.email,
-          reason: "Already invited",
-        });
-        continue; // ❌ skip sending again
+      let isBlocked = false;
+
+      if (existingIndex !== -1) {
+        const existingEntry = interview.candidates[existingIndex];
+
+        const invitedDate = new Date(
+          existingEntry.createdAt || existingEntry.start_Date
+        );
+
+        const diffDays = (now - invitedDate) / (1000 * 60 * 60 * 24);
+
+        // ❌ within 7 days → skip
+        if (diffDays < 7) {
+          isBlocked = true;
+        } else {
+          // ✅ AFTER 7 DAYS → UPDATE EXISTING ENTRY
+          const username = `user_${Math.random()
+            .toString(36)
+            .substring(2, 10)}`;
+          const password = Math.random().toString(36).slice(-8);
+
+          const interviewLink = `${
+            process.env.FRONTEND_URL || "http://localhost:5173"
+          }/user/login/${interview._id}`;
+
+          interview.candidates[existingIndex] = {
+            ...existingEntry,
+            interviewLink,
+            username,
+            password,
+            start_Date: startDate,
+            end_Date: endDate,
+            status: "scheduled",
+            assignedQuestions: [],
+          };
+
+          scheduledCandidates.push({
+            candidateId: candidate._id,
+            email: candidate.email,
+            name: candidate.name,
+          });
+
+          invitedEmails.push(candidate.email);
+
+          // send email
+          try {
+            await sendMCQInterviewLink(
+              candidate.email,
+              candidate.name,
+              interviewLink,
+              username,
+              password,
+              interview.test_title,
+              interview.difficulty,
+              interview.duration,
+              interview.no_of_questions,
+              interview.passing_score,
+              interview.primary_skill,
+              interview.secondary_skill,
+              startDate,
+              endDate
+            );
+
+            emailResults.push({
+              candidate: candidate.email,
+              status: "sent",
+            });
+          } catch {
+            emailResults.push({
+              candidate: candidate.email,
+              status: "failed",
+            });
+          }
+
+          continue;
+        }
       }
 
-      const username = `user_${Math.random().toString(36).substring(2, 10)}`;
+      // 🔴 Skip if within 7 days
+      if (isBlocked) {
+        skippedCandidates.push({
+          candidateId: candidate._id,
+          email: candidate.email,
+          reason: "Already invited within 7 days",
+        });
+
+        skippedEmails.push(candidate.email);
+        continue;
+      }
+
+      // ✅ NEW ENTRY (first time)
+      const username = `user_${Math.random()
+        .toString(36)
+        .substring(2, 10)}`;
       const password = Math.random().toString(36).slice(-8);
+
       const interviewLink = `${
         process.env.FRONTEND_URL || "http://localhost:5173"
       }/user/login/${interview._id}`;
@@ -1426,10 +1517,12 @@ export const AssessmentInvitationByID = async (req, res) => {
       interview.candidates.push(entry);
 
       scheduledCandidates.push({
-        ...entry,
-        name: candidate.name,
+        candidateId: candidate._id,
         email: candidate.email,
+        name: candidate.name,
       });
+
+      invitedEmails.push(candidate.email);
 
       try {
         await sendMCQInterviewLink(
@@ -1446,36 +1539,59 @@ export const AssessmentInvitationByID = async (req, res) => {
           interview.primary_skill,
           interview.secondary_skill,
           startDate,
-          endDate,
+          endDate
         );
 
-        emailResults.push({ candidate: candidate.email, status: "sent" });
-      } catch (emailError) {
+        emailResults.push({
+          candidate: candidate.email,
+          status: "sent",
+        });
+      } catch {
         emailResults.push({
           candidate: candidate.email,
           status: "failed",
-          error: emailError.message,
         });
       }
     }
 
     await interview.save();
 
+    // 🔴 All skipped
+    if (scheduledCandidates.length === 0 && skippedEmails.length > 0) {
+      return res.status(200).json({
+        success: true,
+        isPartial: true,
+        message: "All candidates already invited within 7 days",
+        invitedEmails: [],
+        skippedEmails,
+      });
+    }
+
+    // 🟡 Partial
+    if (skippedEmails.length > 0) {
+      return res.status(200).json({
+        success: true,
+        isPartial: true,
+        message: "Some candidates skipped (within 7 days)",
+        invitedEmails,
+        skippedEmails,
+      });
+    }
+
+    // 🟢 Full success
     return res.status(200).json({
       success: true,
-      message: "Invitation process completed",
-      data: {
-        scheduledCandidates,
-        skippedCandidates,
-        emailResults,
-      },
+      isPartial: false,
+      message: "All candidates invited successfully",
+      invitedEmails,
     });
+
   } catch (error) {
-    console.error("Error sending invites:", error);
+    console.error("Invite Error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to send invites",
-      error: error.message,
     });
   }
 };
@@ -1569,10 +1685,11 @@ export const GetCandidatesInInterview = async (req, res) => {
       return bTime - aTime;
     });
 
-    res.json({ candidates });``
+    res.json({ candidates });
+    ``;
   } catch (error) {
     console.log(error);
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 };
 
@@ -1627,7 +1744,7 @@ export const updateMCQInterview = async (req, res) => {
     });
   } catch (error) {
     console.error("Update error:", error);
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 };
 export const getMCQInterviewById = async (req, res) => {
@@ -1664,7 +1781,7 @@ export const getMCQInterviewById = async (req, res) => {
     res.json({ interview: interview, user: candidate._doc });
   } catch (error) {
     console.log(error);
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 };
 
@@ -1684,6 +1801,6 @@ export const GetAllAssessmentSchedule = async (req, res) => {
     return res.json({ totalSchedules: total });
   } catch (err) {
     console.error("Error counting schedules:", err.message);
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 };
