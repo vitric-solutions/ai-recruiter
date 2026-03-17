@@ -34,15 +34,16 @@ export default function InterviewSetup() {
   const [numberOfQuestions, setNumberOfQuestions] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [loading, setLoading] = useState(false);
-  const [ setSubject] = useState("");
+  const [subject, setSubject] = useState("");
   const [messageBody, setMessageBody] = useState("");
-  const [setInterviewLink] = useState("");
+  const [interviewLink,setInterviewLink] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [isGenerated, setIsGenerated] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
-
+  console.log(interviewLink)
+  console.log(subject)
   // Candidate States
   const [candidates, setCandidates] = useState<any[]>([]);
   const [filteredCandidates, setFilteredCandidates] = useState<any[]>([]);
@@ -422,7 +423,7 @@ const handleSendInvitations = async () => {
     setLoading(false);
   }
 };
-  const candidateDropdownRef = useRef(null);
+ const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (

@@ -161,25 +161,69 @@ const matchStyles: Record<string, { badge: string; card: string }> = {
     card: "",
   },
 };
+type FormErrors = {
+  candidates?: string;
+  startDate?: string;
+  endDate?: string;
+  testTitle?: string;
+  noOfQuestions?: string;
+  primarySkill?: string;
+  passingScore?: string;
+  examLevel?: string;
+  duration?: string;
+  jobDescription?: string;
+  jobDescriptionText?: string;
+};
+type SubmitStatus = {
+  type: "success" | "error";
+  message: string;
+} | null;
+
+type JDAnalysis = {
+  jobTitle?: string;
+  requiredSkills?: string[];
+  niceToHaveSkills?: string[];
+  experienceLevel?: string;
+  experienceYears?: string;
+  fullJobDescription?: string;
+  primarySkill?: string;
+  secondarySkill?: string;
+  jobDescription?: string;
+};
+type FormDataType = {
+  candidates: Candidate[];
+  startDate: string;
+  endDate: string;
+  testTitle: string;
+  noOfQuestions: string;
+  primarySkill: string;
+  passingScore: string;
+  secondarySkill: string;
+  examLevel: string;
+  duration: string;
+  jobDescription: File | string | null;
+  secondry_jobDescription: string;
+  jobDescriptionText: string;
+};
 
 const TestsAssessments = () => {
   const [activeTab, setActiveTab] = useState("create");
   const [activeMenuItem, setActiveMenuItem] = useState("Dashboard");
-  const [formData, setFormData] = useState(EMPTY_FORM);
-  const [errors, setErrors] = useState({});
+ const [formData, setFormData] = useState<FormDataType>(EMPTY_FORM);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [candidatesList, setCandidatesList] = useState([]);
   const [scoredCandidates, setScoredCandidates] = useState<any[]>([]); // Groq-scored list
   const [groqLoading, setGroqLoading] = useState(false);
   const [showCandidateDropdown, setShowCandidateDropdown] = useState(false);
   const [candidateSearch, setCandidateSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null);
+ const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
   const [mode, setMode] = useState("create");
-  const [id, setActiveAssessmentId] = useState(null);
+  const [id, setActiveAssessmentId] = useState<string | null>(null);
   const [assessments, setAssessments] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [jdLoading, setJdLoading] = useState(false);
-  const [jdAnalysis, setJdAnalysis] = useState(null);
+ const [jdAnalysis, setJdAnalysis] = useState<JDAnalysis | null>(null);
   const [jdError, setJdError] = useState(null);
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
@@ -188,7 +232,7 @@ const TestsAssessments = () => {
 
     const [reDirect,setReDirect]=useState(false)
   
-  const candidateDropdownRef = useRef(null);
+  const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -384,10 +428,13 @@ const TestsAssessments = () => {
     setScoredCandidates(candidatesList); // reset to unscored
   };
 
-  const handleInputChange = (field: any, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
-  };
+ const handleInputChange = (field: keyof FormErrors, value: any) => {
+  setFormData((prev) => ({ ...prev, [field]: value }));
+
+  if (errors[field]) {
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  }
+};
 
   const mapExperienceToLevel = (level?: string, years?: string) => {
     if (!level && !years) return "";
@@ -413,14 +460,14 @@ const TestsAssessments = () => {
     }
   };
 
-  const getDefaultDuration = (questions: string) => {
-    const q = Number(questions);
-    if (!q) return "";
-    if (q <= 20) return "30 min";
-    if (q <= 30) return "60 min";
-    if (q <= 40) return "90 min";
-    return "120 min";
-  };
+  // const getDefaultDuration = (questions: string) => {
+  //   const q = Number(questions);
+  //   if (!q) return "";
+  //   if (q <= 20) return "30 min";
+  //   if (q <= 30) return "60 min";
+  //   if (q <= 40) return "90 min";
+  //   return "120 min";
+  // };
 
   const handleFileUpload = async (e: any) => {
     const file = e.target.files[0];
@@ -454,7 +501,8 @@ const TestsAssessments = () => {
             analysis?.experienceYears
           ) || "";
         const defaultQuestions = getDefaultQuestionsByLevel(difficulty);
-        const defaultDuration = getDefaultDuration(defaultQuestions);
+        console.log(defaultQuestions)
+        // const defaultDuration = getDefaultDuration(defaultQuestions);
         setFormData((prev) => ({
           ...prev,
           jobDescriptionText: analysis?.fullJobDescription || "",
@@ -635,6 +683,7 @@ const TestsAssessments = () => {
     }
     setLoading(true);
     try {
+      if (!id) return;
       await adminService.updateAssessmentTemplate(id, buildFd());
       showToast("success", "Assessment updated successfully!", 2000);
       setTimeout(() => {
