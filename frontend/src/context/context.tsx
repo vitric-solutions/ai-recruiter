@@ -23,6 +23,8 @@ type InterviewInfo = {
   // Core fields coming from backend AI_Interview document
   interviewId: string;                    // _id
   position: string;
+  type: string;
+  jobPosition: string;
   description?: string;
   jobDescription?: string;                // path or short preview
   difficulty: "Easy" | "Medium" | "Hard" | string; // string fallback
@@ -34,6 +36,11 @@ type InterviewInfo = {
 
   // Candidate-specific runtime info (very useful during interview)
   candidateId?: string;
+  username?: string;
+  candidateName?: string;
+  questions?: string;
+  questionList?: string;
+
   candidateStatus?: 
     | "scheduled"
     | "pending"

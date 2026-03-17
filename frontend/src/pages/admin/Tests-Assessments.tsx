@@ -29,17 +29,21 @@ const EMPTY_FORM = {
   jobDescription: "",
   secondry_jobDescription: "",
   jobDescriptionText: "",
-
 };
 
 // ─── Groq candidate scorer ────────────────────────────────────────────────────
 const scoreCandidatesWithGroq = async (
   candidates: any[],
-  jdAnalysis: any
+  jdAnalysis: any,
 ): Promise<any[]> => {
-  console.log(candidates)
-  console.log(jdAnalysis)
-  if (!import.meta.env.VITE_GROQ_API_KEY || !jdAnalysis || candidates.length === 0) return candidates;
+  console.log(candidates);
+  console.log(jdAnalysis);
+  if (
+    !import.meta.env.VITE_GROQ_API_KEY ||
+    !jdAnalysis ||
+    candidates.length === 0
+  )
+    return candidates;
 
   const jobTitle = jdAnalysis.jobTitle || "";
   // const experienceYears = jdAnalysis.experienceYears || "";
@@ -47,31 +51,27 @@ const scoreCandidatesWithGroq = async (
   const niceToHaveSkills: string[] = jdAnalysis.niceToHaveSkills || [];
 
   // Build a compact candidate list for the prompt
-const candidateSummaries = candidates.map((c, i) => ({
-  index: i,
-  name: c.name,
-  role: c.role || c.jobTitle || c.designation || "",
-  experience:
-    c.experience ||
-    c.experienceYears ||
-    c.yearsOfExperience ||
-    c.year_of_experience ||
-    "",
-
-  skills: Array.isArray(c.skills)
-    ? c.skills.join(", ")
-    : Array.isArray(c.key_Skills)
-    ? c.key_Skills.join(", ")
-    : c.skills ||
-      c.key_Skills ||
-      c.primarySkill ||
-      c.secondarySkill ||
+  const candidateSummaries = candidates.map((c, i) => ({
+    index: i,
+    name: c.name,
+    role: c.role || c.jobTitle || c.designation || "",
+    experience:
+      c.experience ||
+      c.experienceYears ||
+      c.yearsOfExperience ||
+      c.year_of_experience ||
       "",
 
-  email: c.email,
-}));
+    skills: Array.isArray(c.skills)
+      ? c.skills.join(", ")
+      : Array.isArray(c.key_Skills)
+        ? c.key_Skills.join(", ")
+        : c.skills || c.key_Skills || c.primarySkill || c.secondarySkill || "",
 
-const prompt = `You are a technical recruiter AI.
+    email: c.email,
+  }));
+
+  const prompt = `You are a technical recruiter AI.
 
 Score candidates based primarily on **skill match** with the required skills.
 
@@ -98,22 +98,25 @@ Return JSON array with:
 IMPORTANT:
 Return ONLY JSON array.`;
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.2,
+          max_tokens: 2048,
+        }),
       },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2,
-        max_tokens: 2048,
-      }),
-    });
- console.log("response",response)
+    );
+    console.log("response", response);
     const data = await response.json();
-    console.log("data",data)
+    console.log("data", data);
     const raw = data.choices?.[0]?.message?.content?.trim() || "[]";
 
     // Strip any accidental markdown fences
@@ -139,8 +142,6 @@ Return ONLY JSON array.`;
     return candidates;
   }
 };
-
-
 
 // ─── Match label badge styles ─────────────────────────────────────────────────
 const matchStyles: Record<string, { badge: string; card: string }> = {
@@ -173,12 +174,27 @@ type FormErrors = {
   duration?: string;
   jobDescription?: string;
   jobDescriptionText?: string;
+   secondarySkill?: string;
 };
 type SubmitStatus = {
   type: "success" | "error";
   message: string;
 } | null;
+type Candidate = {
+  _id: string;
+  name: string;
+  email: string;
+  role?: string;
+  skills?: string[] | string;
+  key_Skills?: string[] | string;
+  primarySkill?: string;
+  secondarySkill?: string;
 
+  // AI scoring
+  matchScore?: number;
+  matchLabel?: string;
+  matchReason?: string;
+};
 type JDAnalysis = {
   jobTitle?: string;
   requiredSkills?: string[];
@@ -209,7 +225,7 @@ type FormDataType = {
 const TestsAssessments = () => {
   const [activeTab, setActiveTab] = useState("create");
   const [activeMenuItem, setActiveMenuItem] = useState("Dashboard");
- const [formData, setFormData] = useState<FormDataType>(EMPTY_FORM);
+  const [formData, setFormData] = useState<FormDataType>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [candidatesList, setCandidatesList] = useState([]);
   const [scoredCandidates, setScoredCandidates] = useState<any[]>([]); // Groq-scored list
@@ -217,23 +233,23 @@ const TestsAssessments = () => {
   const [showCandidateDropdown, setShowCandidateDropdown] = useState(false);
   const [candidateSearch, setCandidateSearch] = useState("");
   const [loading, setLoading] = useState(false);
- const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
+  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
   const [mode, setMode] = useState("create");
   const [id, setActiveAssessmentId] = useState<string | null>(null);
   const [assessments, setAssessments] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [jdLoading, setJdLoading] = useState(false);
- const [jdAnalysis, setJdAnalysis] = useState<JDAnalysis | null>(null);
+  const [jdAnalysis, setJdAnalysis] = useState<JDAnalysis | null>(null);
   const [jdError, setJdError] = useState(null);
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [candidatesLoading, setCandidatesLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(null);
 
-    const [reDirect,setReDirect]=useState(false)
-  
-  const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [reDirect, setReDirect] = useState(false);
 
+  const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
+  const skills = jdAnalysis?.requiredSkills ?? [];
   useEffect(() => {
     const handler = (e: any) => {
       if (
@@ -256,53 +272,52 @@ const TestsAssessments = () => {
 
   // When jdAnalysis arrives AND we have candidates, run Groq scoring
   useEffect(() => {
-  if (jdAnalysis && candidatesList.length > 0) {
-    runGroqScoring(candidatesList, jdAnalysis);
-  } else {
-    setScoredCandidates(candidatesList);
-  }
-}, [jdAnalysis, candidatesList]);
-  
+    if (jdAnalysis && candidatesList.length > 0) {
+      runGroqScoring(candidatesList, jdAnalysis);
+    } else {
+      setScoredCandidates(candidatesList);
+    }
+  }, [jdAnalysis, candidatesList]);
+
   useAdminSocket({
     "interview-submitted": () => {
       fetchAssessments();
     },
   });
 
- const runGroqScoring = async (candidates: any[], analysis: any) => {
-  setGroqLoading(true);
+  const runGroqScoring = async (candidates: any[], analysis: any) => {
+    setGroqLoading(true);
 
-  try {
-    const requiredSkills = analysis?.requiredSkills || [];
+    try {
+      const requiredSkills = analysis?.requiredSkills || [];
 
-    const filtered = candidates.filter((c) => {
-      const skills = (
-        c.skills ||
-        c.key_Skills ||
-        c.primarySkill ||
-        ""
-      ).toLowerCase();
+      const filtered = candidates.filter((c) => {
+        const skills = (
+          c.skills ||
+          c.key_Skills ||
+          c.primarySkill ||
+          ""
+        ).toLowerCase();
 
-      return requiredSkills.some((skill: string) =>
-        skills.includes(skill.toLowerCase())
+        return requiredSkills.some((skill: string) =>
+          skills.includes(skill.toLowerCase()),
+        );
+      });
+
+      const scored = await scoreCandidatesWithGroq(filtered, analysis);
+
+      const sorted = [...scored].sort(
+        (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0),
       );
-    });
 
-    const scored = await scoreCandidatesWithGroq(filtered, analysis);
-
-    const sorted = [...scored].sort(
-      (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0)
-    );
-
-    setScoredCandidates(sorted);
-
-  } catch (err) {
-    console.error("Groq scoring failed:", err);
-    setScoredCandidates(candidates);
-  } finally {
-    setGroqLoading(false);
-  }
-};
+      setScoredCandidates(sorted);
+    } catch (err) {
+      console.error("Groq scoring failed:", err);
+      setScoredCandidates(candidates);
+    } finally {
+      setGroqLoading(false);
+    }
+  };
 
   const fetchCandidates = async () => {
     try {
@@ -321,7 +336,7 @@ const TestsAssessments = () => {
     setTemplatesLoading(true);
     try {
       const response = await adminService.getAssesments();
-      console.log(response)
+      console.log(response);
       setAssessments(response.data?.data || response.data || []);
     } catch (err) {
       console.error("Error fetching assessments:", err);
@@ -368,7 +383,7 @@ const TestsAssessments = () => {
 
   const handleEditTemplate = async (item: any) => {
     setEditLoading(item._id);
-    setReDirect(true)
+    setReDirect(true);
     try {
       const response = await adminService.getAssesments(item._id);
       const data = response.data;
@@ -414,7 +429,7 @@ const TestsAssessments = () => {
       showToast("error", "Failed to load assessment for editing");
     } finally {
       setEditLoading(null);
-      setReDirect(false)
+      setReDirect(false);
     }
   };
 
@@ -428,13 +443,16 @@ const TestsAssessments = () => {
     setScoredCandidates(candidatesList); // reset to unscored
   };
 
- const handleInputChange = (field: keyof FormErrors, value: any) => {
-  setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof FormDataType, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
-  if (errors[field]) {
-    setErrors((prev) => ({ ...prev, [field]: "" }));
-  }
-};
+    if (field in errors) {
+  setErrors((prev) => ({
+    ...prev,
+    [field]: "",
+  }));
+}
+  };
 
   const mapExperienceToLevel = (level?: string, years?: string) => {
     if (!level && !years) return "";
@@ -453,10 +471,14 @@ const TestsAssessments = () => {
 
   const getDefaultQuestionsByLevel = (level: string) => {
     switch (level) {
-      case "Easy": return "20";
-      case "Intermediate": return "30";
-      case "Advanced": return "40";
-      default: return "";
+      case "Easy":
+        return "20";
+      case "Intermediate":
+        return "30";
+      case "Advanced":
+        return "40";
+      default:
+        return "";
     }
   };
 
@@ -498,10 +520,10 @@ const TestsAssessments = () => {
         const difficulty =
           mapExperienceToLevel(
             analysis?.experienceLevel,
-            analysis?.experienceYears
+            analysis?.experienceYears,
           ) || "";
         const defaultQuestions = getDefaultQuestionsByLevel(difficulty);
-        console.log(defaultQuestions)
+        console.log(defaultQuestions);
         // const defaultDuration = getDefaultDuration(defaultQuestions);
         setFormData((prev) => ({
           ...prev,
@@ -523,7 +545,7 @@ const TestsAssessments = () => {
     } catch (err: any) {
       setJdError(
         err?.response?.data?.message ||
-          "Failed to analyze JD. You can proceed manually."
+          "Failed to analyze JD. You can proceed manually.",
       );
     } finally {
       setJdLoading(false);
@@ -542,20 +564,20 @@ const TestsAssessments = () => {
 
   const toggleCandidateSelection = (candidate: any) => {
     const isSelected = formData.candidates.some(
-      (c: any) => c._id === candidate._id
+      (c: any) => c._id === candidate._id,
     );
     handleInputChange(
       "candidates",
       isSelected
         ? formData.candidates.filter((c: any) => c._id !== candidate._id)
-        : [...formData.candidates, candidate]
+        : [...formData.candidates, candidate],
     );
   };
 
   const removeCandidateChip = (id: any) => {
     handleInputChange(
       "candidates",
-      formData.candidates.filter((c: any) => c._id !== id)
+      formData.candidates.filter((c: any) => c._id !== id),
     );
   };
 
@@ -563,20 +585,24 @@ const TestsAssessments = () => {
   const filteredCandidates = scoredCandidates?.filter((c: any) =>
     `${c.name} ${c.role || ""} ${c.email}`
       .toLowerCase()
-      .includes(candidateSearch.toLowerCase())
+      .includes(candidateSearch.toLowerCase()),
   );
 
-  const showToast = (type:any, message :any, duration = 4000) => {
+  const showToast = (type: any, message: any, duration = 4000) => {
     setSubmitStatus({ type, message });
     setTimeout(() => setSubmitStatus(null), duration);
   };
 
   const validateForm = (requireCandidates = false) => {
     const newErrors: any = {};
-    if (!formData.testTitle?.trim()) newErrors.testTitle = "Test title is required";
-    if (!formData.noOfQuestions) newErrors.noOfQuestions = "Number of questions is required";
-    if (!formData.primarySkill?.trim()) newErrors.primarySkill = "Primary skill is required";
-    if (!formData.passingScore) newErrors.passingScore = "Passing score is required";
+    if (!formData.testTitle?.trim())
+      newErrors.testTitle = "Test title is required";
+    if (!formData.noOfQuestions)
+      newErrors.noOfQuestions = "Number of questions is required";
+    if (!formData.primarySkill?.trim())
+      newErrors.primarySkill = "Primary skill is required";
+    if (!formData.passingScore)
+      newErrors.passingScore = "Passing score is required";
     if (!formData.examLevel) newErrors.examLevel = "Exam level is required";
     if (!formData.duration) newErrors.duration = "Duration is required";
     if (!formData.startDate) newErrors.startDate = "Start date is required";
@@ -595,7 +621,8 @@ const TestsAssessments = () => {
       }
     }
     if (requireCandidates && formData.candidates.length === 0) {
-      newErrors.candidates = "Please select at least one candidate to send invites";
+      newErrors.candidates =
+        "Please select at least one candidate to send invites";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -622,7 +649,7 @@ const TestsAssessments = () => {
       fd.append("end_date", formData.endDate);
       fd.append(
         "candidates",
-        JSON.stringify(formData.candidates.map((c:any) => c._id))
+        JSON.stringify(formData.candidates.map((c: any) => c._id)),
       );
     }
     return fd;
@@ -644,7 +671,10 @@ const TestsAssessments = () => {
         fetchAssessments();
       }, 2000);
     } catch (err: any) {
-      showToast("error", err.response?.data?.message || "Failed to create template");
+      showToast(
+        "error",
+        err.response?.data?.message || "Failed to create template",
+      );
     } finally {
       setLoading(false);
     }
@@ -652,7 +682,10 @@ const TestsAssessments = () => {
 
   const handleGenerateAndSendInvites = async () => {
     if (!validateForm(true)) {
-      showToast("error", "Please fill all required fields and select candidates");
+      showToast(
+        "error",
+        "Please fill all required fields and select candidates",
+      );
       return;
     }
     setLoading(true);
@@ -661,7 +694,7 @@ const TestsAssessments = () => {
       showToast(
         "success",
         `Invitations sent to ${formData.candidates.length} candidate(s)!`,
-        2000
+        2000,
       );
       setTimeout(() => {
         setFormData(EMPTY_FORM);
@@ -670,7 +703,10 @@ const TestsAssessments = () => {
         fetchAssessments();
       }, 2000);
     } catch (err: any) {
-      showToast("error", err.response?.data?.message || "Failed to send invites");
+      showToast(
+        "error",
+        err.response?.data?.message || "Failed to send invites",
+      );
     } finally {
       setLoading(false);
     }
@@ -694,102 +730,102 @@ const TestsAssessments = () => {
         fetchAssessments();
       }, 2000);
     } catch (err: any) {
-      showToast("error", err.response?.data?.message || "Failed to update assessment");
+      showToast(
+        "error",
+        err.response?.data?.message || "Failed to update assessment",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-const handleInviteOnly = async () => {
-  const newErrors :any = {};
+  const handleInviteOnly = async () => {
+    const newErrors: any = {};
 
-  if (formData.candidates.length === 0)
-    newErrors.candidates = "Please select at least one candidate";
+    if (formData.candidates.length === 0)
+      newErrors.candidates = "Please select at least one candidate";
 
-  if (!formData.startDate)
-    newErrors.startDate = "Start date is required";
+    if (!formData.startDate) newErrors.startDate = "Start date is required";
 
-  if (!formData.endDate)
-    newErrors.endDate = "End date is required";
+    if (!formData.endDate) newErrors.endDate = "End date is required";
 
-  if (
-    formData.startDate &&
-    formData.endDate &&
-    new Date(formData.endDate) < new Date(formData.startDate)
-  )
-    newErrors.endDate = "End date must be on or after start date";
+    if (
+      formData.startDate &&
+      formData.endDate &&
+      new Date(formData.endDate) < new Date(formData.startDate)
+    )
+      newErrors.endDate = "End date must be on or after start date";
 
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    showToast("error", "Please select candidates and set valid dates");
-    return;
-  }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast("error", "Please select candidates and set valid dates");
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const res = await adminService.sendInvites(id, {
-      candidateIds: formData.candidates.map((c) => c._id),
-      start_date: formData.startDate,
-      end_date: formData.endDate,
-    });
+    try {
+      const res = await adminService.sendInvites(id, {
+        candidateIds: formData.candidates.map((c) => c._id),
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+      });
 
-    console.log("FULL RESPONSE:", res);
+      console.log("FULL RESPONSE:", res);
 
-    const data = res.data;
+      const data = res.data;
 
-    // ✅ CORRECT DATA
-    const invited = res.invitedEmails || [];
-    const skipped = res.skippedEmails || [];
+      // ✅ CORRECT DATA
+      const invited = res.invitedEmails || [];
+      const skipped = res.skippedEmails || [];
 
-    console.log("invited:", invited);
-    console.log("skipped:", skipped);
+      console.log("invited:", invited);
+      console.log("skipped:", skipped);
 
-    // 🔥 CASE 1: ONLY SKIPPED
-    if (res.isPartial && invited.length === 0 && skipped.length > 0) {
+      // 🔥 CASE 1: ONLY SKIPPED
+      if (res.isPartial && invited.length === 0 && skipped.length > 0) {
+        showToast(
+          "error",
+          `All selected candidates are already invited: ${skipped.join(", ")}`,
+        );
+      }
+
+      // 🔥 CASE 2: PARTIAL (both)
+      else if (data.isPartial) {
+        if (invited.length > 0) {
+          showToast("success", `Invited: ${invited.join(", ")}`);
+        }
+
+        if (skipped.length > 0) {
+          setTimeout(() => {
+            showToast("error", `Already invited: ${skipped.join(", ")}`);
+          }, 300);
+        }
+      }
+
+      // ✅ CASE 3: FULL SUCCESS
+      else {
+        showToast(
+          "success",
+          `Invitations sent to ${invited.length} candidate(s)!`,
+        );
+      }
+
+      setTimeout(() => {
+        setFormData(EMPTY_FORM);
+        setMode("create");
+      }, 2000);
+    } catch (err: any) {
+      console.log("ERROR:", err);
+
       showToast(
         "error",
-        `All selected candidates are already invited: ${skipped.join(", ")}`
+        err.response?.data?.message || "Failed to send invites",
       );
+    } finally {
+      setLoading(false);
     }
-
-    // 🔥 CASE 2: PARTIAL (both)
-    else if (data.isPartial) {
-      if (invited.length > 0) {
-        showToast("success", `Invited: ${invited.join(", ")}`);
-      }
-
-      if (skipped.length > 0) {
-        setTimeout(() => {
-          showToast("error", `Already invited: ${skipped.join(", ")}`);
-        }, 300);
-      }
-    }
-
-    // ✅ CASE 3: FULL SUCCESS
-    else {
-      showToast(
-        "success",
-        `Invitations sent to ${invited.length} candidate(s)!`
-      );
-    }
-
-    setTimeout(() => {
-      setFormData(EMPTY_FORM);
-      setMode("create");
-    }, 2000);
-
-  } catch (err:any) {
-    console.log("ERROR:", err);
-
-    showToast(
-      "error",
-      err.response?.data?.message || "Failed to send invites"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleViewCandidates = (assessment: any) => {
     setSelectedAssessment(assessment);
@@ -803,7 +839,7 @@ const handleInviteOnly = async () => {
 
   // ─── Helpers for candidate dropdown rendering ────────────────────────────
   const hasGroqScores = scoredCandidates.some(
-    (c) => c.matchScore !== undefined
+    (c) => c.matchScore !== undefined,
   );
 
   return (
@@ -815,7 +851,12 @@ const handleInviteOnly = async () => {
       onMenuItemClick={setActiveMenuItem}
     >
       {/* ── Full-page loader overlay ── */}
-      {(loading || jdLoading || candidatesLoading || !!editLoading || groqLoading ||reDirect) && (
+      {(loading ||
+        jdLoading ||
+        candidatesLoading ||
+        !!editLoading ||
+        groqLoading ||
+        reDirect) && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-40 flex flex-col items-center justify-center gap-4">
           <div className="relative flex items-center justify-center">
             <div className="h-16 w-16 rounded-full border-4 border-indigo-100" />
@@ -825,13 +866,14 @@ const handleInviteOnly = async () => {
             {jdLoading
               ? "Analyzing Job Description..."
               : groqLoading
-              ? "AI is ranking candidates by JD match..."
-              :reDirect ? "Redirecting to assessment page..."
-              : !editLoading
-              ? "Loading assessment..."
-              : candidatesLoading
-              ? "Loading candidates..."
-              : "Please wait..."}
+                ? "AI is ranking candidates by JD match..."
+                : reDirect
+                  ? "Redirecting to assessment page..."
+                  : !editLoading
+                    ? "Loading assessment..."
+                    : candidatesLoading
+                      ? "Loading candidates..."
+                      : "Please wait..."}
           </p>
         </div>
       )}
@@ -851,7 +893,9 @@ const handleInviteOnly = async () => {
           )}
           <span
             className={`text-sm font-medium ${
-              submitStatus.type === "success" ? "text-green-800" : "text-red-800"
+              submitStatus.type === "success"
+                ? "text-green-800"
+                : "text-red-800"
             }`}
           >
             {submitStatus.message}
@@ -898,15 +942,15 @@ const handleInviteOnly = async () => {
                 {mode === "edit"
                   ? "Edit Assessment"
                   : mode === "prefill"
-                  ? "Send Invites"
-                  : "Create New Assessment"}
+                    ? "Send Invites"
+                    : "Create New Assessment"}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
                 {mode === "edit"
                   ? "Update the assessment details below"
                   : mode === "prefill"
-                  ? "Select candidates and set dates to send invites"
-                  : "Set up a new MCQ-based assessment for your candidates"}
+                    ? "Select candidates and set dates to send invites"
+                    : "Set up a new MCQ-based assessment for your candidates"}
               </p>
             </div>
           </div>
@@ -953,7 +997,7 @@ const handleInviteOnly = async () => {
                     </span>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {formData.candidates.map((c:any) => (
+                      {formData.candidates.map((c: any) => (
                         <span
                           key={c._id}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-md"
@@ -1020,12 +1064,14 @@ const handleInviteOnly = async () => {
                       ) : (
                         filteredCandidates?.map((candidate) => {
                           const isSelected = formData.candidates.some(
-                            (c: any) => c._id === candidate._id
+                            (c: any) => c._id === candidate._id,
                           );
                           const label = candidate.matchLabel;
-                          const style = matchStyles[label] || matchStyles["Low Match"];
+                          const style =
+                            matchStyles[label] || matchStyles["Low Match"];
                           const score = candidate.matchScore;
-                          const isLowMatch = label === "Low Match" || score === undefined;
+                          const isLowMatch =
+                            label === "Low Match" || score === undefined;
 
                           return (
                             <div
@@ -1034,8 +1080,8 @@ const handleInviteOnly = async () => {
                                 isSelected
                                   ? "bg-indigo-50 hover:bg-indigo-100"
                                   : isLowMatch && hasGroqScores
-                                  ? "opacity-50 hover:opacity-75 hover:bg-gray-50"
-                                  : "hover:bg-gray-50"
+                                    ? "opacity-50 hover:opacity-75 hover:bg-gray-50"
+                                    : "hover:bg-gray-50"
                               }`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1084,8 +1130,8 @@ const handleInviteOnly = async () => {
                                         score >= 70
                                           ? "bg-emerald-100 text-emerald-700"
                                           : score >= 40
-                                          ? "bg-amber-100 text-amber-700"
-                                          : "bg-gray-100 text-gray-500"
+                                            ? "bg-amber-100 text-amber-700"
+                                            : "bg-gray-100 text-gray-500"
                                       }`}
                                     >
                                       {score}%
@@ -1114,7 +1160,9 @@ const handleInviteOnly = async () => {
                   type="datetime-local"
                   value={formData.startDate}
                   min={new Date().toISOString().slice(0, 16)}
-                  onChange={(e) => handleInputChange("startDate", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("startDate", e.target.value)
+                  }
                   className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
                     errors.startDate
                       ? "border-red-300 bg-red-50 ring-2 ring-red-100 focus:ring-red-200"
@@ -1124,7 +1172,9 @@ const handleInviteOnly = async () => {
                 {errors.startDate && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.startDate}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.startDate}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1152,7 +1202,9 @@ const handleInviteOnly = async () => {
                 {errors.endDate && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.endDate}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.endDate}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1168,7 +1220,9 @@ const handleInviteOnly = async () => {
                   type="text"
                   placeholder="e.g., Frontend Developer Assessment"
                   value={formData.testTitle}
-                  onChange={(e) => handleInputChange("testTitle", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("testTitle", e.target.value)
+                  }
                   disabled={mode === "prefill"}
                   className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
                     errors.testTitle
@@ -1179,7 +1233,9 @@ const handleInviteOnly = async () => {
                 {errors.testTitle && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.testTitle}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.testTitle}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1189,7 +1245,9 @@ const handleInviteOnly = async () => {
                 </label>
                 <select
                   value={formData.noOfQuestions}
-                  onChange={(e) => handleInputChange("noOfQuestions", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("noOfQuestions", e.target.value)
+                  }
                   disabled={mode === "prefill"}
                   className={`w-full px-4 py-2.5 border rounded-lg outline-none appearance-none bg-white transition-all ${
                     errors.noOfQuestions
@@ -1207,7 +1265,9 @@ const handleInviteOnly = async () => {
                 {errors.noOfQuestions && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.noOfQuestions}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.noOfQuestions}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1223,7 +1283,9 @@ const handleInviteOnly = async () => {
                   type="text"
                   placeholder="e.g., React.js"
                   value={formData.primarySkill}
-                  onChange={(e) => handleInputChange("primarySkill", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("primarySkill", e.target.value)
+                  }
                   disabled={mode === "prefill"}
                   className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
                     errors.primarySkill
@@ -1234,7 +1296,9 @@ const handleInviteOnly = async () => {
                 {errors.primarySkill && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.primarySkill}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.primarySkill}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1248,7 +1312,9 @@ const handleInviteOnly = async () => {
                   min="0"
                   max="100"
                   value={formData.passingScore}
-                  onChange={(e) => handleInputChange("passingScore", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("passingScore", e.target.value)
+                  }
                   disabled={mode === "prefill"}
                   className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
                     errors.passingScore
@@ -1259,7 +1325,9 @@ const handleInviteOnly = async () => {
                 {errors.passingScore && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.passingScore}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.passingScore}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1275,7 +1343,9 @@ const handleInviteOnly = async () => {
                   type="text"
                   placeholder="e.g., TypeScript"
                   value={formData.secondarySkill}
-                  onChange={(e) => handleInputChange("secondarySkill", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("secondarySkill", e.target.value)
+                  }
                   disabled={mode === "prefill"}
                   className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none ${
                     mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""
@@ -1288,7 +1358,9 @@ const handleInviteOnly = async () => {
                 </label>
                 <select
                   value={formData.examLevel}
-                  onChange={(e) => handleInputChange("examLevel", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("examLevel", e.target.value)
+                  }
                   disabled={mode === "prefill"}
                   className={`w-full px-4 py-2.5 border rounded-lg outline-none appearance-none bg-white transition-all ${
                     errors.examLevel
@@ -1304,7 +1376,9 @@ const handleInviteOnly = async () => {
                 {errors.examLevel && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.examLevel}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.examLevel}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1318,7 +1392,9 @@ const handleInviteOnly = async () => {
                 </label>
                 <select
                   value={formData.duration}
-                  onChange={(e) => handleInputChange("duration", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("duration", e.target.value)
+                  }
                   disabled={mode === "prefill"}
                   className={`w-full px-4 py-2.5 border rounded-lg outline-none appearance-none bg-white transition-all ${
                     errors.duration
@@ -1335,7 +1411,9 @@ const handleInviteOnly = async () => {
                 {errors.duration && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.duration}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.duration}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1354,7 +1432,9 @@ const handleInviteOnly = async () => {
                     }`}
                   >
                     <Upload className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Upload PDF or DOC</span>
+                    <span className="text-sm text-gray-600">
+                      Upload PDF or DOC
+                    </span>
                     <input
                       id="jd-upload"
                       type="file"
@@ -1411,20 +1491,17 @@ const handleInviteOnly = async () => {
                           )}
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {jdAnalysis.requiredSkills
-                            ?.slice(0, 4)
-                            .map((skill: string) => (
-                              <span
-                                key={skill}
-                                className="px-2 py-0.5 bg-white border border-green-200 text-green-700 text-xs rounded-full"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          {jdAnalysis.requiredSkills?.length > 4 && (
-                            <span className="text-xs text-green-600 self-center">
-                              +{jdAnalysis.requiredSkills.length - 4} more
+                          {skills.slice(0, 4).map((skill: string) => (
+                            <span
+                              key={skill}
+                              className="px-2 py-0.5 bg-white border border-green-200 text-green-700 text-xs rounded-full"
+                            >
+                              {skill}
                             </span>
+                          ))}
+
+                          {skills.length > 4 && (
+                            <span>+{skills.length - 4} more</span>
                           )}
                         </div>
                       </div>
@@ -1434,7 +1511,9 @@ const handleInviteOnly = async () => {
                 {errors.jobDescription && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">{errors.jobDescription}</span>
+                    <span className="text-xs text-red-600">
+                      {errors.jobDescription}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1622,7 +1701,8 @@ const handleInviteOnly = async () => {
                   Medium: "bg-sky-50 text-sky-600 border-sky-200",
                 };
                 const diffStyle =
-                  difficultyStyles[item.difficulty] ?? difficultyStyles["Medium"];
+                  difficultyStyles[item.difficulty] ??
+                  difficultyStyles["Medium"];
 
                 return (
                   <div
@@ -1688,11 +1768,14 @@ const handleInviteOnly = async () => {
                       {item.createdAt && (
                         <p className="text-xs text-gray-400 mb-3">
                           Created{" "}
-                          {new Date(item.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                          {new Date(item.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            },
+                          )}
                         </p>
                       )}
                       <div className="flex gap-2">

@@ -75,7 +75,7 @@
 // //   const spotlightPipRef = useRef<HTMLVideoElement>(null);
 // //   const gridUserRef = useRef<HTMLVideoElement>(null);
 
-// //   const attachStream = useCallback((ref: React.RefObject<HTMLVideoElement>) => {
+// //   const attachStream = useCallback((ref: React.RefObject<HTMLVideoElement | null>) => {
 // //     if (ref.current && streamRef.current) {
 // //       ref.current.srcObject = streamRef.current;
 // //       ref.current.play().catch(() => {});
@@ -149,7 +149,7 @@
 // //   /* ── User video tile helper ──────────────────────────────────────────────── */
 // //   const UserVideo = ({
 // //     vidRef, showName = true,
-// //   }: { vidRef: React.RefObject<HTMLVideoElement>; showName?: boolean }) => (
+// //   }: { vidRef: React.RefObject<HTMLVideoElement | null>; showName?: boolean }) => (
 // //     <>
 // //       <video
 // //         ref={vidRef}
@@ -669,7 +669,7 @@
 // //   const behaviorTrackerRef = useRef(new BehaviorTracker());
 
 // //   /* ── Camera setup ─────────────────────────────────────────────────────── */
-// //   const attachStream = useCallback((ref: React.RefObject<HTMLVideoElement>) => {
+// //   const attachStream = useCallback((ref: React.RefObject<HTMLVideoElement | null>) => {
 // //     if (ref.current && streamRef.current) {
 // //       ref.current.srcObject = streamRef.current;
 // //       ref.current.play().catch(() => {});
@@ -1021,7 +1021,7 @@
 // //   );
 
 // //   /* ── Shared User video tile ──────────────────────────────────────────── */
-// //   const UserVideo = ({ vidRef }: { vidRef: React.RefObject<HTMLVideoElement> }) => (
+// //   const UserVideo = ({ vidRef }: { vidRef: React.RefObject<HTMLVideoElement | null> }) => (
 // //     <>
 // //       <video
 // //         ref={vidRef} muted playsInline
@@ -1574,7 +1574,7 @@
 // //   }, []);
 
 // //   /* ── Camera setup ─────────────────────────────────────────────────────── */
-// //   const attachStream = useCallback((ref: React.RefObject<HTMLVideoElement>) => {
+// //   const attachStream = useCallback((ref: React.RefObject<HTMLVideoElement | null>) => {
 // //     if (ref.current && streamRef.current) {
 // //       ref.current.srcObject = streamRef.current;
 // //       ref.current.play().catch(() => {});
@@ -2435,9 +2435,9 @@
 
 // // class HeyGenService {
 // //   private avatar: any=null; private sessionData: any=null;
-// //   private videoRef: React.RefObject<HTMLVideoElement>;
+// //   private videoRef: React.RefObject<HTMLVideoElement | null>;
 // //   onStateChange?: (speaking:boolean)=>void; onStreamReady?: ()=>void;
-// //   constructor(v: React.RefObject<HTMLVideoElement>) { this.videoRef=v; }
+// //   constructor(v: React.RefObject<HTMLVideoElement | null>) { this.videoRef=v; }
 // //   async init(): Promise<boolean> {
 // //     try {
 // //       const mod = await import("@heygen/streaming-avatar" as any);
@@ -2569,7 +2569,7 @@
 // // });
 
 // // // ─── AVATAR TILE ─────────────────────────────────────────────────────────────
-// // interface AvatarTileProps{mode:AvatarMode;state:AvatarState;heygenVideoRef:React.RefObject<HTMLVideoElement>;ganAiVideoUrl:string|null;ganAiLoading:boolean;heygenReady:boolean;}
+// // interface AvatarTileProps{mode:AvatarMode;state:AvatarState;heygenVideoRef:React.RefObject<HTMLVideoElement | null>;ganAiVideoUrl:string|null;ganAiLoading:boolean;heygenReady:boolean;}
 // // const AvatarTile=React.memo(({mode,state,heygenVideoRef,ganAiVideoUrl,ganAiLoading,heygenReady}:AvatarTileProps)=>{
 // //   const ganRef=useRef<HTMLVideoElement>(null);
 // //   useEffect(()=>{if(ganAiVideoUrl&&ganRef.current){ganRef.current.src=ganAiVideoUrl;ganRef.current.play().catch(()=>{});}},[ganAiVideoUrl]);
@@ -3496,9 +3496,9 @@
 
 // class HeyGenService {
 //   private avatar: any=null; private sessionData: any=null;
-//   private videoRef: React.RefObject<HTMLVideoElement>;
+//   private videoRef: React.RefObject<HTMLVideoElement | null>;
 //   onStateChange?: (speaking:boolean)=>void; onStreamReady?: ()=>void;
-//   constructor(v: React.RefObject<HTMLVideoElement>) { this.videoRef=v; }
+//   constructor(v: React.RefObject<HTMLVideoElement | null>) { this.videoRef=v; }
 //   async init(): Promise<boolean> {
 //     try {
 //       const mod = await import("@heygen/streaming-avatar" as any);
@@ -3631,7 +3631,7 @@
 // });
 
 // // ─── AVATAR TILE ─────────────────────────────────────────────────────────────
-// interface AvatarTileProps{mode:AvatarMode;state:AvatarState;heygenVideoRef:React.RefObject<HTMLVideoElement>;ganAiVideoUrl:string|null;ganAiLoading:boolean;heygenReady:boolean;}
+// interface AvatarTileProps{mode:AvatarMode;state:AvatarState;heygenVideoRef:React.RefObject<HTMLVideoElement | null>;ganAiVideoUrl:string|null;ganAiLoading:boolean;heygenReady:boolean;}
 // const AvatarTile=React.memo(({mode,state,heygenVideoRef,ganAiVideoUrl,ganAiLoading,heygenReady}:AvatarTileProps)=>{
 //   const ganRef=useRef<HTMLVideoElement>(null);
 //   useEffect(()=>{if(ganAiVideoUrl&&ganRef.current){ganRef.current.src=ganAiVideoUrl;ganRef.current.play().catch(()=>{});}},[ganAiVideoUrl]);
@@ -4797,12 +4797,12 @@ const ganAi = {
 class HeyGenService {
   private avatar: any = null;
   private sessionData: any = null;
-  private videoRef: React.RefObject<HTMLVideoElement>;
+  private videoRef: React.RefObject<HTMLVideoElement | null>;
   onStateChange?: (speaking: boolean) => void;
   onStreamReady?: () => void;
-  constructor(v: React.RefObject<HTMLVideoElement>) {
-    this.videoRef = v;
-  }
+ constructor(v: React.RefObject<HTMLVideoElement | null>) {
+  this.videoRef = v;
+}
   async init(): Promise<boolean> {
     try {
       const mod = await import("@heygen/streaming-avatar" as any);
@@ -5282,7 +5282,7 @@ const AnimatedAvatar = React.memo(({ state }: { state: AvatarState }) => {
 interface AvatarTileProps {
   mode: AvatarMode;
   state: AvatarState;
-  heygenVideoRef: React.RefObject<HTMLVideoElement>;
+  heygenVideoRef: React.RefObject<HTMLVideoElement | null>;
   ganAiVideoUrl: string | null;
   ganAiLoading: boolean;
   heygenReady: boolean;
@@ -5565,8 +5565,9 @@ const VideoInterview: React.FC = () => {
     "unknown",
   );
   const [noFaceVisible, setNoFaceVisible] = useState(false);
-  const [ setVapiReady] = useState(false);
-  const [setHeygenStreamLive] = useState(false);
+  const [, setHeygenStreamLive] = useState(false);
+const [, setVapiReady] = useState(false);
+
   const [avatarMode] = useState<AvatarMode>(
     USE_HEYGEN ? "heygen" : USE_GANAI ? "ganai" : "animated",
   );
@@ -6358,7 +6359,7 @@ const VideoInterview: React.FC = () => {
       }
     });
 
-    inst.on("user-speech-start", () => {
+   (inst as any).on("user-speech-start", () => {
       if (!micOnRef.current) return;
       setIsListening(true);
       lastSpeechRef.current = Date.now();
@@ -6366,7 +6367,7 @@ const VideoInterview: React.FC = () => {
       silenceWarnCount.current = 0;
     });
 
-    inst.on("user-speech-end", () => {
+   (inst as any).on("user-speech-end", () => {
       setIsListening(false);
       if (!micOnRef.current) return;
       if (userTranscriptBuf.current.trim()) {
