@@ -3,7 +3,7 @@ import Comment from "../assets/icons/report/comment2.png";
 import Calendar from "../assets/icons/report/calendar.png";
 import CheckMark from "../assets/icons/report/check1.png";
 // import FeedbackPopup from "../components/admin/Report/PopUP/FeedbackPopUp";
-import { useState } from "react";
+// import { useState } from "react";
 
 interface VideoInterviewResultCardProps {
   candidate: string;

@@ -17,7 +17,7 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
   if (!isOpen || !candidateData) return null;
 
   const { interviews } = candidateData;
-  const BASE_URL = import.meta.env.VITE_BASE_URL;
+  // const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const [examFilter, setExamFilter] = useState("all");
   const [resultFilter, setResultFilter] = useState("all");
