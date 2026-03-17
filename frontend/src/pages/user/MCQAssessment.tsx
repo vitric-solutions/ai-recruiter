@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { userService } from "../../services/service/userService";
 import * as faceapi from "@vladmandic/face-api";
+import { userPath } from "../../routes/EncryptRoute";
 
 // ─── face-api model source ────────────────────────────────────────────────────
 const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
@@ -155,14 +156,25 @@ const MCQAssessment: React.FC = () => {
     });
   }, []);
 
-  const handleAlertClose = useCallback(() => {
-    if (violationCountRef.current >= MAX_VIOLATIONS) {
-      setActiveAlert(null);
-      triggerAutoFail();
-    } else {
-      setActiveAlert(null);
+const handleAlertClose = useCallback(() => {
+  if (violationCountRef.current >= MAX_VIOLATIONS) {
+    setActiveAlert(null);
+
+    // stop everything
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (faceCheckIntervalRef.current) clearInterval(faceCheckIntervalRef.current);
+    if (audioCheckIntervalRef.current) clearInterval(audioCheckIntervalRef.current);
+
+    if (procStreamRef.current) {
+      procStreamRef.current.getTracks().forEach((t) => t.stop());
     }
-  }, [triggerAutoFail]);
+
+    // redirect to result page
+    navigate(`/user/${id}/assessment-complete`);
+  } else {
+    setActiveAlert(null);
+  }
+}, [navigate, id]);
 
   // ── Fetch questions ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -197,7 +209,7 @@ const MCQAssessment: React.FC = () => {
       }));
       const res = await userService.finalSubmitMCQAssessment(id!, { answers: answersArray });
       if (res){
-        navigate(`/user/${id}/assessment-complete`);
+        navigate(userPath("complete", id));
       setTotalScore(res?.totalScore ?? 0);
 
       }
@@ -919,7 +931,7 @@ const MCQAssessment: React.FC = () => {
                 }`}
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               >
-                {activeAlert.count >= MAX_VIOLATIONS ? "View Results" : "I Understand"}
+                {activeAlert.count >= MAX_VIOLATIONS ? "Exit Assessment" : "I Understand"}
               </motion.button>
             </motion.div>
           </div>
@@ -974,6 +986,9 @@ const MCQAssessment: React.FC = () => {
 };
 
 export default MCQAssessment;
+
+
+
 // import React, { useEffect, useState, useRef, useCallback } from "react";
 // import { useParams, useNavigate } from "react-router-dom";
 // import Vapi from "@vapi-ai/web";

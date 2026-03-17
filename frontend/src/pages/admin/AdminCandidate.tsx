@@ -140,9 +140,11 @@ const CandidateFormModal = ({
     }
     setSaving(true);
     try {
+      console.log("form",form)
       if (mode === "edit" && candidate) {
         // ── Edit ──────────────────────────────
         const res = await adminService.updateCandidate(candidate._id, form);
+        console.log("res",res)
         const updated = res?.data?.data ??
           res?.data ?? { ...candidate, ...form };
         onSuccess(updated as Candidate);

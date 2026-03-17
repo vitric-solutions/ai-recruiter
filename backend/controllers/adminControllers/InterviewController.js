@@ -437,8 +437,23 @@ export const UpdateAIInterview = async (req, res) => {
       "duration",
       "passingScore",
       "numberOfQuestions",
-      "skills",
     ];
+    if (req.body.skills) {
+  let skills = req.body.skills;
+
+  // If single value convert to array
+  if (!Array.isArray(skills)) {
+    skills = [skills];
+  }
+
+  // Flatten nested arrays
+  skills = skills.flat(Infinity);
+
+  // Convert everything to string
+  skills = skills.map((s) => String(s));
+
+  interview.skills = skills;
+}
 
     allowedFields.forEach((field) => {
       if (

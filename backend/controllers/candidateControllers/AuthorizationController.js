@@ -362,7 +362,9 @@ export const getCandidateProfile = async (req, res) => {
 export const UpdateCandidate = async (req, res) => {
   try {
     const { id } = req.params;
-    const { candidate_status } = req.body;
+    const updateData = req.body;
+
+    console.log("updateData:", updateData);
 
     if (!id) {
       return res.status(400).json({
@@ -371,16 +373,7 @@ export const UpdateCandidate = async (req, res) => {
       });
     }
 
-    // if (!["active", "inactive"].includes(candidate_status)) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Invalid status value. Allowed: active, inactive.",
-    //   });
-    // }
-
     const candidate = await Candidate.findById(id);
-    console.log("candidte",candidate)
-    // console.log(candidate)
 
     if (!candidate) {
       return res.status(404).json({
@@ -389,17 +382,9 @@ export const UpdateCandidate = async (req, res) => {
       });
     }
 
-    // Prevent unnecessary DB write
-    if (candidate.candidate_status === candidate_status) {
-      return res.status(200).json({
-        success: true,
-        message: "Status already up to date.",
-        data: candidate,
-      });
-    }
+    // update candidate fields
+    Object.assign(candidate, updateData);
 
-    candidate.candidate_status = candidate_status;
-    console.log("candidate.candidate_status",candidate.candidate_status)
     await candidate.save();
 
     const io = getIO();
@@ -407,19 +392,12 @@ export const UpdateCandidate = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Candidate marked as ${candidate_status}.`,
+      message: "Candidate updated successfully.",
       data: candidate,
     });
 
   } catch (error) {
     console.error("UpdateCandidate Error:", error);
-
-    if (error.code === 11000) {
-      return res.status(500).json({
-        success: false,
-        message: "Duplicate value detected.",
-      });
-    }
 
     return res.status(500).json({
       success: false,

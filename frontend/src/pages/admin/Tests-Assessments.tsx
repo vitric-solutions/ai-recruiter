@@ -649,45 +649,96 @@ const TestsAssessments = () => {
     }
   };
 
-  const handleInviteOnly = async () => {
-    const newErrors: any = {};
-    if (formData.candidates.length === 0)
-      newErrors.candidates = "Please select at least one candidate";
-    if (!formData.startDate) newErrors.startDate = "Start date is required";
-    if (!formData.endDate) newErrors.endDate = "End date is required";
-    if (
-      formData.startDate &&
-      formData.endDate &&
-      new Date(formData.endDate) < new Date(formData.startDate)
-    )
-      newErrors.endDate = "End date must be on or after start date";
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      showToast("error", "Please select candidates and set valid dates");
-      return;
+const handleInviteOnly = async () => {
+  const newErrors = {};
+
+  if (formData.candidates.length === 0)
+    newErrors.candidates = "Please select at least one candidate";
+
+  if (!formData.startDate)
+    newErrors.startDate = "Start date is required";
+
+  if (!formData.endDate)
+    newErrors.endDate = "End date is required";
+
+  if (
+    formData.startDate &&
+    formData.endDate &&
+    new Date(formData.endDate) < new Date(formData.startDate)
+  )
+    newErrors.endDate = "End date must be on or after start date";
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    showToast("error", "Please select candidates and set valid dates");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await adminService.sendInvites(id, {
+      candidateIds: formData.candidates.map((c) => c._id),
+      start_date: formData.startDate,
+      end_date: formData.endDate,
+    });
+
+    console.log("FULL RESPONSE:", res);
+
+    const data = res.data;
+
+    // ✅ CORRECT DATA
+    const invited = res.invitedEmails || [];
+    const skipped = res.skippedEmails || [];
+
+    console.log("invited:", invited);
+    console.log("skipped:", skipped);
+
+    // 🔥 CASE 1: ONLY SKIPPED
+    if (res.isPartial && invited.length === 0 && skipped.length > 0) {
+      showToast(
+        "error",
+        `All selected candidates are already invited: ${skipped.join(", ")}`
+      );
     }
-    setLoading(true);
-    try {
-      await adminService.sendInvites(id, {
-        candidateIds: formData.candidates.map((c) => c._id),
-        start_date: formData.startDate,
-        end_date: formData.endDate,
-      });
+
+    // 🔥 CASE 2: PARTIAL (both)
+    else if (data.isPartial) {
+      if (invited.length > 0) {
+        showToast("success", `Invited: ${invited.join(", ")}`);
+      }
+
+      if (skipped.length > 0) {
+        setTimeout(() => {
+          showToast("error", `Already invited: ${skipped.join(", ")}`);
+        }, 300);
+      }
+    }
+
+    // ✅ CASE 3: FULL SUCCESS
+    else {
       showToast(
         "success",
-        `Invitations sent to ${formData.candidates.length} candidate(s)!`,
-        2000
+        `Invitations sent to ${invited.length} candidate(s)!`
       );
-      setTimeout(() => {
-        setFormData(EMPTY_FORM);
-        setMode("create");
-      }, 2000);
-    } catch (err: any) {
-      showToast("error", err.response?.data?.message || "Failed to send invites");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    setTimeout(() => {
+      setFormData(EMPTY_FORM);
+      setMode("create");
+    }, 2000);
+
+  } catch (err) {
+    console.log("ERROR:", err);
+
+    showToast(
+      "error",
+      err.response?.data?.message || "Failed to send invites"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleViewCandidates = (assessment: any) => {
     setSelectedAssessment(assessment);

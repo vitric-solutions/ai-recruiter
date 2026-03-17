@@ -1,4 +1,3 @@
-
 // import React, { useEffect, useState } from "react";
 // import { ArrowLeft, User, Briefcase, LayoutGrid, Monitor, BookOpen, AlertTriangle, Clock, FileText, Video } from "lucide-react";
 // import { motion } from "framer-motion";
@@ -375,12 +374,25 @@
 // export default InterviewInstructions;
 
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, User, Briefcase, LayoutGrid, Monitor, BookOpen, AlertTriangle, Clock, FileText, Video, Maximize } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  Briefcase,
+  LayoutGrid,
+  Monitor,
+  BookOpen,
+  AlertTriangle,
+  Clock,
+  FileText,
+  Video,
+  Maximize,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { adminService } from "../../services/service/adminService";
 import { userService } from "../../services/service/userService";
 import { useAuth } from "../../context/context";
+import { userPath } from "../../routes/EncryptRoute"
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 18 },
@@ -454,9 +466,16 @@ const MCQ_STRUCTURE = [
 ];
 
 const AI_STRUCTURE = [
-  { step: 1, title: "AI Video Interview", sub: "Behavioral & technical questions" },
+  {
+    step: 1,
+    title: "AI Video Interview",
+    sub: "Behavioral & technical questions",
+  },
   { step: 2, title: "Response Analysis", sub: "AI evaluates your answers" },
 ];
+
+const AITitle = [{ step: 1, title: "Interview Process Overview" }];
+const MCQTitle = [{ step: 1, title: "MCQ Test Process Overview" }];
 
 // ── Fullscreen helper ─────────────────────────────────────────────────────────
 async function requestFullscreen(): Promise<boolean> {
@@ -485,6 +504,8 @@ const InterviewInstructions: React.FC = () => {
   const guidelines = isMCQ ? MCQ_GUIDELINES : AI_GUIDELINES;
   const notice = isMCQ ? MCQ_NOTICE : AI_NOTICE;
   const structure = isMCQ ? MCQ_STRUCTURE : AI_STRUCTURE;
+  const instructions = isMCQ ? MCQTitle : AITitle;
+  
 
   useEffect(() => {
     const fetchInterviewInstruction = async (id: string) => {
@@ -516,10 +537,10 @@ const InterviewInstructions: React.FC = () => {
             examType: "MCQ",
             count: parseInt(interview?.no_of_questions),
           },
-          id!
+          id!,
         );
 
-        navigate(`/user/${id}/mcq-assessment`, {
+        navigate(userPath("mcq", id), {
           state: { title: interview?.title, time: interview?.duration },
         });
       } catch (error) {
@@ -531,7 +552,7 @@ const InterviewInstructions: React.FC = () => {
       // Request fullscreen before navigating to video interview
       await requestFullscreen();
 
-      navigate(`/user/${id}/video-interview`, {
+      navigate(userPath("videoInterview", id), {
         state: { title: interview?.title, time: interview?.duration },
       });
     }
@@ -542,13 +563,26 @@ const InterviewInstructions: React.FC = () => {
       {/* Orbs */}
       <motion.div
         className="absolute -top-20 -right-20 w-[200px] h-[200px] bg-[#2D55FB] rounded-full mix-blend-multiply filter blur-3xl opacity-30"
-        animate={{ x: [0, 30, -20, 0], y: [0, -50, 20, 0], scale: [1, 1.1, 0.9, 1] }}
+        animate={{
+          x: [0, 30, -20, 0],
+          y: [0, -50, 20, 0],
+          scale: [1, 1.1, 0.9, 1],
+        }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute -bottom-20 -left-20 w-[200px] h-[200px] bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30"
-        animate={{ x: [0, -40, 30, 0], y: [0, 40, -30, 0], scale: [1, 0.9, 1.1, 1] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        animate={{
+          x: [0, -40, 30, 0],
+          y: [0, 40, -30, 0],
+          scale: [1, 0.9, 1.1, 1],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2,
+        }}
       />
 
       <div className="relative z-10 min-h-screen">
@@ -568,15 +602,21 @@ const InterviewInstructions: React.FC = () => {
         {/* Content */}
         <div className="flex justify-center px-4 sm:px-6 py-6 pb-12">
           <div className="w-full max-w-2xl space-y-4">
-
             {/* Title */}
             <motion.div className="text-center mb-6" {...fadeUp(0)}>
-              <h1 className="text-white text-2xl sm:text-3xl font-bold mb-2">Interview Process Overview</h1>
-              <p className="text-gray-400 text-sm">Please read these instructions carefully before proceeding</p>
+              <h1 className="text-white text-2xl sm:text-3xl font-bold mb-2">
+                {instructions[0].title}
+              </h1>
+              <p className="text-gray-400 text-sm">
+                Please read these instructions carefully before proceeding
+              </p>
             </motion.div>
 
             {/* Job Card */}
-            <motion.div className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10" {...fadeUp(0.1)}>
+            <motion.div
+              className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10"
+              {...fadeUp(0.1)}
+            >
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-9 h-9 rounded-lg bg-[#2D55FB]/20 flex items-center justify-center">
                   <Briefcase className="h-4 w-4 text-[#2D55FB]" />
@@ -585,16 +625,21 @@ const InterviewInstructions: React.FC = () => {
                   <h2 className="text-white font-semibold text-sm sm:text-base">
                     {interview?.test_title ?? interview?.position ?? ""}
                   </h2>
-                  <p className="text-gray-500 text-xs">Vitric Business Solutions</p>
+                  <p className="text-gray-500 text-xs">
+                    Vitric Business Solutions
+                  </p>
                 </div>
               </div>
               <div className="border-t border-white/5 pt-3">
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-3.5 w-3.5 text-[#2D55FB]" />
-                  <span className="text-[#2D55FB] text-xs font-medium">Job Description</span>
+                  <span className="text-[#2D55FB] text-xs font-medium">
+                    Job Description
+                  </span>
                 </div>
                 <p className="text-gray-400 text-xs leading-relaxed">
-                  {(interview?.jobDescriptionText || interview?.description) ?? "No job description provided."}
+                  {(interview?.jobDescriptionText || interview?.description) ??
+                    "No job description provided."}
                 </p>
               </div>
             </motion.div>
@@ -610,7 +655,9 @@ const InterviewInstructions: React.FC = () => {
                       <Video className="h-4 w-4 text-[#2D55FB]" />
                     )}
                   </div>
-                  <h3 className="text-white font-semibold text-xs sm:text-sm">Assessment Structure</h3>
+                  <h3 className="text-white font-semibold text-xs sm:text-sm">
+                    Assessment Structure
+                  </h3>
                 </div>
                 <div className="space-y-2.5">
                   {structure.map(({ step, title, sub }) => (
@@ -619,7 +666,9 @@ const InterviewInstructions: React.FC = () => {
                         {step}
                       </div>
                       <div>
-                        <p className="text-white text-xs font-medium">{title}</p>
+                        <p className="text-white text-xs font-medium">
+                          {title}
+                        </p>
                         <p className="text-gray-500 text-xs">{sub}</p>
                       </div>
                     </div>
@@ -632,7 +681,9 @@ const InterviewInstructions: React.FC = () => {
                   <div className="w-8 h-8 rounded-lg bg-[#2D55FB]/20 flex items-center justify-center">
                     <Monitor className="h-4 w-4 text-[#2D55FB]" />
                   </div>
-                  <h3 className="text-white font-semibold text-xs sm:text-sm">Technical Requirements</h3>
+                  <h3 className="text-white font-semibold text-xs sm:text-sm">
+                    Technical Requirements
+                  </h3>
                 </div>
                 <div className="space-y-2">
                   {(isMCQ
@@ -659,19 +710,26 @@ const InterviewInstructions: React.FC = () => {
             </motion.div>
 
             {/* Interview Guidelines */}
-            <motion.div className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10" {...fadeUp(0.2)}>
+            <motion.div
+              className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10"
+              {...fadeUp(0.2)}
+            >
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-[#2D55FB]/20 flex items-center justify-center">
                   <BookOpen className="h-4 w-4 text-[#2D55FB]" />
                 </div>
                 <h3 className="text-white font-semibold text-sm">
-                  {isMCQ ? "MCQ Assessment Guidelines" : "Video Interview Guidelines"}
+                  {isMCQ
+                    ? "MCQ Assessment Guidelines"
+                    : "Video Interview Guidelines"}
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {[guidelines.primary, guidelines.secondary].map((section) => (
                   <div key={section.label}>
-                    <p className="text-gray-400 text-xs font-medium mb-2">{section.label}</p>
+                    <p className="text-gray-400 text-xs font-medium mb-2">
+                      {section.label}
+                    </p>
                     <div className="space-y-2">
                       {section.items.map((item) => (
                         <div key={item} className="flex items-start gap-2">
@@ -686,10 +744,15 @@ const InterviewInstructions: React.FC = () => {
             </motion.div>
 
             {/* Important Notice */}
-            <motion.div className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-amber-500/20" {...fadeUp(0.25)}>
+            <motion.div
+              className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-amber-500/20"
+              {...fadeUp(0.25)}
+            >
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle className="h-4 w-4 text-gray-400" />
-                <h3 className="text-gray-400 font-semibold text-sm">Important Notice</h3>
+                <h3 className="text-gray-400 font-semibold text-sm">
+                  Important Notice
+                </h3>
               </div>
               <div className="space-y-2">
                 {notice.map((item) => (
@@ -702,33 +765,47 @@ const InterviewInstructions: React.FC = () => {
             </motion.div>
 
             {/* Time Summary */}
-            <motion.div className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10" {...fadeUp(0.3)}>
+            <motion.div
+              className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10"
+              {...fadeUp(0.3)}
+            >
               <div className="grid grid-cols-2 divide-x divide-white/10">
                 <div className="flex flex-col items-center gap-1 pr-4">
                   {isMCQ ? (
                     <>
                       <FileText className="h-6 w-6 text-[#2D55FB] mb-1" />
-                      <p className="text-white text-lg font-bold">{interview?.duration ?? "15 min"}</p>
+                      <p className="text-white text-lg font-bold">
+                        {interview?.duration ?? "15 min"}
+                      </p>
                       <p className="text-gray-500 text-xs">MCQ Assessment</p>
                     </>
                   ) : (
                     <>
                       <Video className="h-6 w-6 text-[#2D55FB] mb-1" />
-                      <p className="text-white text-lg font-bold">{interview?.duration ?? "30 min"}</p>
-                      <p className="text-gray-500 text-xs">AI Video Interview</p>
+                      <p className="text-white text-lg font-bold">
+                        {interview?.duration ?? "30 min"}
+                      </p>
+                      <p className="text-gray-500 text-xs">
+                        AI Video Interview
+                      </p>
                     </>
                   )}
                 </div>
                 <div className="flex flex-col items-center gap-1 pl-4">
                   <AlertTriangle className="h-6 w-6 text-[#2D55FB] mb-1" />
-                  <p className="text-white text-lg font-bold">{interview?.difficulty ?? "—"}</p>
+                  <p className="text-white text-lg font-bold">
+                    {interview?.difficulty ?? "—"}
+                  </p>
                   <p className="text-gray-500 text-xs">Difficulty Level</p>
                 </div>
               </div>
             </motion.div>
 
             {/* CTA */}
-            <motion.div className="flex flex-col items-center gap-3 pt-2" {...fadeUp(0.35)}>
+            <motion.div
+              className="flex flex-col items-center gap-3 pt-2"
+              {...fadeUp(0.35)}
+            >
               <motion.button
                 onClick={handleStartAssessment}
                 disabled={isLoading}
@@ -744,8 +821,19 @@ const InterviewInstructions: React.FC = () => {
                       fill="none"
                       viewBox="0 0 24 24"
                     >
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      />
                     </svg>
                     Setting up your assessment...
                   </>
@@ -757,11 +845,11 @@ const InterviewInstructions: React.FC = () => {
                 )}
               </motion.button>
               <p className="text-gray-600 text-xs text-center">
-                By clicking "Start Assessment", you confirm that you have read and understood all instructions.
-                The assessment will open in fullscreen with all keyboard shortcuts disabled.
+                By clicking "Start Assessment", you confirm that you have read
+                and understood all instructions. The assessment will open in
+                fullscreen with all keyboard shortcuts disabled.
               </p>
             </motion.div>
-
           </div>
         </div>
       </div>

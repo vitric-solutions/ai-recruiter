@@ -180,9 +180,9 @@ function generatePDF(data) {
 
     const sp = speechPatterns || {};
     const metrics = [
-      { label: "Clarity Score",     value: sp.clarityScore    != null ? `${Math.round(sp.clarityScore * 20)}%` : "N/A", color: C.accent },
+      { label: "Clarity Score",     value: sp.clarityScore    != null ? `${Math.round(sp.clarityScore)}%` : "N/A", color: C.accent },
       { label: "Avg Response Time", value: sp.avgResponseTime || "N/A",                                                  color: C.teal   },
-      { label: "Confidence Level",  value: sp.confidenceLevel != null ? `${Math.round(sp.confidenceLevel * 20)}%` : "N/A", color: C.blue },
+      { label: "Confidence Level",  value: sp.confidenceLevel != null ? `${Math.round(sp.confidenceLevel)}%` : "N/A", color: C.blue },
       { label: "Complexity Score",  value: sp.complexityScore != null ? String(sp.complexityScore) : "N/A",              color: C.orange },
     ];
 
