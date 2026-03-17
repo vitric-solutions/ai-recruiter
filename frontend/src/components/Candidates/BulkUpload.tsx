@@ -27,7 +27,7 @@ const BulkUpload = () => {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: (results:any) => {
         setPreviewData(results.data.slice(0, 5)); // show first 5 rows
       },
     });

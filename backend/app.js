@@ -16,36 +16,37 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  "http://192.168.31.223:5173",
-  "http://192.168.31.230:5173",
-  "http://192.168.31.222:5173",
-
+  "http://127.0.0.1:5173",
+  "http://192.168.31.231:5173/",
   process.env.FRONTEND_URL,
 ];
 
+// normalize helper
+const normalizeOrigin = (origin) => {
+  if (!origin) return origin;
+  return origin.replace(/\/$/, ""); // remove trailing slash
+};
+
 const corsOptions = {
   origin: function (origin, callback) {
+    // ✅ allow requests without origin (Postman, mobile apps)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    const isAllowed = allowedOrigins.some(
+      (o) => normalizeOrigin(o) === normalizedOrigin
+    );
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      console.log("❌ Blocked CORS:", origin); // 🔥 DEBUG
+      callback(new Error(`CORS blocked: ${origin}`));
     }
   },
 
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-  ],
-
   credentials: true,
-
-  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));

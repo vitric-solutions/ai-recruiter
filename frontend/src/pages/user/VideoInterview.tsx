@@ -4707,8 +4707,6 @@ import {
   Volume2,
   X,
   Maximize,
-  Wifi,
-  CheckCircle2,
   Eye,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -5539,7 +5537,7 @@ const VideoInterview: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const interview_id = id || "";
-  const candidateId=sessionStorage.getItem("candidateDetails")
+  const candidateId :any=sessionStorage.getItem("candidateDetails")
   const cand_id=JSON.parse(candidateId)
 
   const [screen, setScreen] = useState<Screen>("lobby");
@@ -5567,8 +5565,8 @@ const VideoInterview: React.FC = () => {
     "unknown",
   );
   const [noFaceVisible, setNoFaceVisible] = useState(false);
-  const [vapiReady, setVapiReady] = useState(false);
-  const [heygenStreamLive, setHeygenStreamLive] = useState(false);
+  const [ setVapiReady] = useState(false);
+  const [setHeygenStreamLive] = useState(false);
   const [avatarMode] = useState<AvatarMode>(
     USE_HEYGEN ? "heygen" : USE_GANAI ? "ganai" : "animated",
   );

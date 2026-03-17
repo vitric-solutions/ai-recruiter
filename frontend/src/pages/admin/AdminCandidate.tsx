@@ -4,7 +4,6 @@ import ViewCandidateModal from "../../components/Candidates/ViewCandidate";
 import ViewCandidateReportModal from "../../components/Candidates/ViewCandidateReport";
 import {
   Plus,
-  Filter,
   MoreVertical,
   Search,
   SlidersHorizontal,
@@ -491,7 +490,7 @@ const Candidates = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [experienceFilter, setExperienceFilter] = useState("");

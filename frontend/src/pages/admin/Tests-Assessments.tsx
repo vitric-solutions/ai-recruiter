@@ -26,9 +26,10 @@ const EMPTY_FORM = {
   secondarySkill: "",
   examLevel: "",
   duration: "",
-  jobDescription: null,
+  jobDescription: "",
   secondry_jobDescription: "",
   jobDescriptionText: "",
+
 };
 
 // ─── Groq candidate scorer ────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ const scoreCandidatesWithGroq = async (
   if (!import.meta.env.VITE_GROQ_API_KEY || !jdAnalysis || candidates.length === 0) return candidates;
 
   const jobTitle = jdAnalysis.jobTitle || "";
-  const experienceYears = jdAnalysis.experienceYears || "";
+  // const experienceYears = jdAnalysis.experienceYears || "";
   const requiredSkills: string[] = jdAnalysis.requiredSkills || [];
   const niceToHaveSkills: string[] = jdAnalysis.niceToHaveSkills || [];
 
@@ -276,6 +277,7 @@ const TestsAssessments = () => {
     setTemplatesLoading(true);
     try {
       const response = await adminService.getAssesments();
+      console.log(response)
       setAssessments(response.data?.data || response.data || []);
     } catch (err) {
       console.error("Error fetching assessments:", err);
@@ -516,7 +518,7 @@ const TestsAssessments = () => {
       .includes(candidateSearch.toLowerCase())
   );
 
-  const showToast = (type, message, duration = 4000) => {
+  const showToast = (type:any, message :any, duration = 4000) => {
     setSubmitStatus({ type, message });
     setTimeout(() => setSubmitStatus(null), duration);
   };
@@ -572,7 +574,7 @@ const TestsAssessments = () => {
       fd.append("end_date", formData.endDate);
       fd.append(
         "candidates",
-        JSON.stringify(formData.candidates.map((c) => c._id))
+        JSON.stringify(formData.candidates.map((c:any) => c._id))
       );
     }
     return fd;
@@ -650,7 +652,7 @@ const TestsAssessments = () => {
   };
 
 const handleInviteOnly = async () => {
-  const newErrors = {};
+  const newErrors :any = {};
 
   if (formData.candidates.length === 0)
     newErrors.candidates = "Please select at least one candidate";
@@ -728,7 +730,7 @@ const handleInviteOnly = async () => {
       setMode("create");
     }, 2000);
 
-  } catch (err) {
+  } catch (err:any) {
     console.log("ERROR:", err);
 
     showToast(
@@ -776,7 +778,7 @@ const handleInviteOnly = async () => {
               : groqLoading
               ? "AI is ranking candidates by JD match..."
               :reDirect ? "Redirecting to assessment page..."
-              : !!editLoading
+              : !editLoading
               ? "Loading assessment..."
               : candidatesLoading
               ? "Loading candidates..."
@@ -902,7 +904,7 @@ const handleInviteOnly = async () => {
                     </span>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {formData.candidates.map((c) => (
+                      {formData.candidates.map((c:any) => (
                         <span
                           key={c._id}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-md"

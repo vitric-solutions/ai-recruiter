@@ -5,6 +5,7 @@ import Candidate from "../../models/Candidate.js";
 import Score from "../../models/Score.js";
 import { sendAIInterviewLink } from "../../services/emailService.js";
 import mongoose from "mongoose";
+import { encryptPath } from "../../utils/routeEncrypt.js";
 import InterviewFeedback from "../../models/feedback.js";
 export const CreateAITemplate = async (req, res) => {
   try {
@@ -174,7 +175,6 @@ export const GetAllAIInterview = async (req, res) => {
        GET SINGLE INTERVIEW
     ====================================================== */
     if (id) {
-
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({
           success: false,
@@ -204,27 +204,25 @@ export const GetAllAIInterview = async (req, res) => {
       // console.log("feedbacks",feedbacks)
 
       const feedbackMap = new Map();
-      console.log("feedbackMap",feedbackMap)
+      console.log("feedbackMap", feedbackMap);
 
-     feedbacks.forEach((f) => {
-  if (f?.candidateId) {
-    feedbackMap.set(String(f.candidateId), f);
-  }
-});
+      feedbacks.forEach((f) => {
+        if (f?.candidateId) {
+          feedbackMap.set(String(f.candidateId), f);
+        }
+      });
 
       // ===== Attach feedback to candidates
       const updatedCandidates = interview.candidates.map((candidate) => {
-        
-        const candidateId =
-        candidate?.candidateId?._id?.toString()
-      
-        console.log("candidate",candidateId)
+        const candidateId = candidate?.candidateId?._id?.toString();
+
+        console.log("candidate", candidateId);
 
         const matchedFeedback = candidateId
           ? feedbackMap.get(candidateId)
           : null;
 
-          // console.log("matchedFeedback",matchedFeedback)
+        // console.log("matchedFeedback",matchedFeedback)
 
         return {
           ...candidate.toObject(),
@@ -265,9 +263,7 @@ export const GetAllAIInterview = async (req, res) => {
     const feedbackMap = {};
 
     feedbacks.forEach((f) => {
-
       if (f?.candidateId && f?.interview_id) {
-
         const key = `${String(f.interview_id)}_${String(f.candidateId)}`;
 
         feedbackMap[key] = f;
@@ -276,9 +272,7 @@ export const GetAllAIInterview = async (req, res) => {
 
     // ===== Attach feedback to interviews
     const updatedInterviews = interviews.map((interview) => {
-
       const updatedCandidates = interview.candidates.map((candidate) => {
-
         const candidateId =
           candidate?.candidateId?._id?.toString() ||
           candidate?.candidateId?.toString();
@@ -308,9 +302,7 @@ export const GetAllAIInterview = async (req, res) => {
       totalInterviews: updatedInterviews.length,
       interviews: updatedInterviews,
     });
-
   } catch (error) {
-
     console.error("Get AI Interview Error:", error);
 
     return res.status(500).json({
@@ -318,7 +310,6 @@ export const GetAllAIInterview = async (req, res) => {
       message: "Server error",
       error: error.message,
     });
-
   }
 };
 
@@ -336,14 +327,18 @@ export const AIInterviewInvitation = async (req, res) => {
       !testTitle
     ) {
       return res.status(400).json({
+        success: false,
         message: "All fields are required.",
       });
     }
 
     const interview = await AI_Interview.findById(jobId);
-    // console.log("Interview found:", interview);
+
     if (!interview) {
-      return res.status(404).json({ message: "Interview not found." });
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found.",
+      });
     }
 
     const candidates = await Candidate.find({
@@ -352,13 +347,110 @@ export const AIInterviewInvitation = async (req, res) => {
 
     if (candidates.length !== candidateIds.length) {
       return res.status(400).json({
+        success: false,
         message: "Some candidate IDs are invalid.",
       });
     }
 
+    const scheduledCandidates = [];
+    const skippedCandidates = [];
+    const invitedEmails = [];
+    const skippedEmails = [];
+    const emailResults = [];
+
+    const now = new Date();
+
+    // 🔥 helper to generate encrypted link
+    const generateInterviewLink = (interviewId) => {
+      // keep ID separate
+      const basePath = encryptPath("/user/login");
+
+      return `${
+        process.env.FRONTEND_URL || "http://localhost:5173"
+      }${basePath}/${interviewId}`; // 👈 append raw ID
+    };
+
     for (const candidate of candidates) {
-      const interviewLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${interview._id}`;
-      const username = `user_${Math.random().toString(36).substring(2, 10)}`;
+      const existingIndex = interview.candidates.findIndex(
+        (c) =>
+          c?.candidateId &&
+          c.candidateId.toString() === candidate._id.toString(),
+      );
+
+      let isBlocked = false;
+
+      if (existingIndex !== -1) {
+        const existingEntry = interview.candidates[existingIndex];
+
+        const invitedDate = new Date(
+          existingEntry.createdAt || existingEntry.scheduledStartDate,
+        );
+
+        const diffDays = (now - invitedDate) / (1000 * 60 * 60 * 24);
+
+        // ❌ within 7 days
+        if (diffDays < 7) {
+          isBlocked = true;
+        } else {
+          // ✅ UPDATE AFTER 7 DAYS
+          const interviewLink = generateInterviewLink(interview._id);
+          const password = randomUUID().slice(0, 8);
+
+          interview.candidates[existingIndex] = {
+            ...existingEntry,
+            interviewLink,
+            password,
+            scheduledStartDate: new Date(startDate),
+            scheduledEndDate: new Date(endDate),
+            emailBody: messageBody,
+          };
+
+          const finalMessage = messageBody
+            .replace("[Candidate Name]", candidate.name)
+            .replace("[Job Role]", testTitle);
+
+          try {
+            await sendAIInterviewLink(
+              candidate.email,
+              interviewLink,
+              password,
+              `AI Interview Invitation - ${testTitle}`,
+              interview.passingScore,
+              finalMessage,
+              new Date(endDate),
+              new Date(startDate),
+            );
+
+            emailResults.push({ candidate: candidate.email, status: "sent" });
+          } catch {
+            emailResults.push({ candidate: candidate.email, status: "failed" });
+          }
+
+          scheduledCandidates.push({
+            candidateId: candidate._id,
+            email: candidate.email,
+            name: candidate.name,
+          });
+
+          invitedEmails.push(candidate.email);
+          continue;
+        }
+      }
+
+      // 🔴 SKIP
+      if (isBlocked) {
+        skippedCandidates.push({
+          candidateId: candidate._id,
+          email: candidate.email,
+          reason: "Already invited within 7 days",
+        });
+
+        skippedEmails.push(candidate.email);
+        continue;
+      }
+
+      // ✅ NEW ENTRY
+      const interviewLink = generateInterviewLink(interview._id);
       const password = randomUUID().slice(0, 8);
 
       interview.candidates.push({
@@ -374,28 +466,68 @@ export const AIInterviewInvitation = async (req, res) => {
         .replace("[Candidate Name]", candidate.name)
         .replace("[Job Role]", testTitle);
 
-      await sendAIInterviewLink(
-        candidate.email,
-        interviewLink,
-        password,
-        `AI Interview Invitation - ${testTitle}`,
-        interview.passingScore,
-        finalMessage,
-        new Date(endDate),
-        new Date(startDate),
-      );
+      try {
+        await sendAIInterviewLink(
+          candidate.email,
+          interviewLink,
+          password,
+          `AI Interview Invitation - ${testTitle}`,
+          interview.passingScore,
+          finalMessage,
+          new Date(endDate),
+          new Date(startDate),
+        );
+
+        emailResults.push({ candidate: candidate.email, status: "sent" });
+      } catch {
+        emailResults.push({ candidate: candidate.email, status: "failed" });
+      }
+
+      scheduledCandidates.push({
+        candidateId: candidate._id,
+        email: candidate.email,
+        name: candidate.name,
+      });
+
+      invitedEmails.push(candidate.email);
     }
 
-    interview.status = "scheduled";
     await interview.save();
 
-    res.status(200).json({
-      message: "Invitations sent successfully",
-      totalCandidates: candidates.length,
+    // 🔴 ALL SKIPPED
+    if (scheduledCandidates.length === 0 && skippedEmails.length > 0) {
+      return res.status(200).json({
+        success: true,
+        isPartial: true,
+        message: "All candidates already invited within 7 days",
+        invitedEmails: [],
+        skippedEmails,
+      });
+    }
+
+    // 🟡 PARTIAL
+    if (skippedEmails.length > 0) {
+      return res.status(200).json({
+        success: true,
+        isPartial: true,
+        message: "Some candidates skipped (within 7 days)",
+        invitedEmails,
+        skippedEmails,
+      });
+    }
+
+    // 🟢 FULL SUCCESS
+    return res.status(200).json({
+      success: true,
+      isPartial: false,
+      message: "All candidates invited successfully",
+      invitedEmails,
     });
   } catch (error) {
-    console.error("Error sending invitations:", error);
-    res.status(500).json({
+    console.error("AI Invite Error:", error);
+
+    return res.status(500).json({
+      success: false,
       message: "Server error",
       error: error.message,
     });
@@ -439,21 +571,21 @@ export const UpdateAIInterview = async (req, res) => {
       "numberOfQuestions",
     ];
     if (req.body.skills) {
-  let skills = req.body.skills;
+      let skills = req.body.skills;
 
-  // If single value convert to array
-  if (!Array.isArray(skills)) {
-    skills = [skills];
-  }
+      // If single value convert to array
+      if (!Array.isArray(skills)) {
+        skills = [skills];
+      }
 
-  // Flatten nested arrays
-  skills = skills.flat(Infinity);
+      // Flatten nested arrays
+      skills = skills.flat(Infinity);
 
-  // Convert everything to string
-  skills = skills.map((s) => String(s));
+      // Convert everything to string
+      skills = skills.map((s) => String(s));
 
-  interview.skills = skills;
-}
+      interview.skills = skills;
+    }
 
     allowedFields.forEach((field) => {
       if (
@@ -552,7 +684,14 @@ export const ScheduleAiInterview = async (req, res) => {
         continue;
       }
 
-      const interviewLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/candidate/login/${interviewId}`;
+      const generateInterviewLink = (interviewId) => {
+        const basePath = encryptPath("/user/login"); // ✅ only encrypt static part
+
+        return `${
+          process.env.FRONTEND_URL || "http://localhost:5173"
+        }${basePath}/${interviewId}`; // ✅ append ID raw (NOT encrypted)
+      };
+      const interviewLink = generateInterviewLink(interviewId);
       const password = Math.random().toString(36).slice(-8);
 
       const personalizedBody = messageBody

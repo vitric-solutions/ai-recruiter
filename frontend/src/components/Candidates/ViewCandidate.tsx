@@ -11,7 +11,6 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  User,
   Layers,
 } from "lucide-react";
 
