@@ -7,6 +7,7 @@ import { Plus, UserPlus, Calendar, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminSocket } from "../../hooks/useAdminSocket";
 import {useAuth} from "../../context/context"
+import { adminPath } from "../../routes/EncryptRoute";
 
 // Stat Card Component
 const StatCard = ({
@@ -551,19 +552,19 @@ const Dashboard = () => {
  const handleQuickActionNavigate = (data: any) => {
   if (typeof data === "string") {
     const routeMap: Record<string, string> = {
-      Dashboard: "/admin/dashboard",
-      Candidates: "/admin/candidates",
-      "Tests & Assessments": "/admin/tests",
-      "AI Video Interview": "/admin/video",
-      "Reports & Insights": "/admin/reports",
-      Settings: "/admin/settings",
+      Dashboard: `/admin${adminPath("dashboard")}`,
+      Candidates: `/admin${adminPath("candidates")}`,
+      "Tests & Assessments": `/admin${adminPath("tests")}`,
+      "AI Video Interview": `/admin${adminPath("video")}`,
+      "Reports & Insights": `/admin${adminPath("reports")}`,
+      Settings: `/admin${adminPath("settings")}`,
     };
 
     navigate(routeMap[data]);
   } else {
     // 👇 Handle object navigation (with tab)
     const routeMap: Record<string, string> = {
-      Candidates: "/admin/candidates",
+      Candidates: `/admin${adminPath("candidates")}`,
     };
 
     navigate(routeMap[data.page], {

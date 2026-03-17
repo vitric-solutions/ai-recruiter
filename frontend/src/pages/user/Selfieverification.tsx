@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import * as faceapi from "@vladmandic/face-api";
+import { userPath } from "../../routes/EncryptRoute";
 
 // ─── face-api.js model source ─────────────────────────────────────────────────
 // Option A (CDN – no setup needed):
@@ -143,7 +144,7 @@ const SelfieVerification: React.FC = () => {
   const navigate = useNavigate();
 const interviewId = sessionStorage.getItem("interviewId");
   const handleComplete = () =>
-    navigate(`/user/${interviewId}/interview-instruction`, { replace: true });
+    navigate(userPath("instructions", interviewId), { replace: true });
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);

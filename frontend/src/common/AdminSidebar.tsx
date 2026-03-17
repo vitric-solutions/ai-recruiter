@@ -13,14 +13,15 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/context";
+import { adminPath } from "../routes/EncryptRoute";
 
 const navItems = [
-  { title: "Dashboard",         icon: Home,     path: "/admin/dashboard" },
-  { title: "Candidates",        icon: Users,    path: "/admin/candidates" },
-  { title: "Tests & Assessments", icon: FileText, path: "/admin/tests" },
-  { title: "AI Video Interview", icon: Video,    path: "/admin/video" },
-  { title: "Reports & Insights", icon: BarChart3, path: "/admin/reports" },
-  { title: "Settings",          icon: Settings, path: "/admin/settings" },
+  { title: "Dashboard",         icon: Home,     path: `/admin${adminPath("dashboard")}` },
+  { title: "Candidates",        icon: Users,    path: `/admin${adminPath("candidates")}` },
+  { title: "Tests & Assessments", icon: FileText, path: `/admin${adminPath("tests")}` },
+  { title: "AI Video Interview", icon: Video,    path: `/admin${adminPath("video")}` },
+  { title: "Reports & Insights", icon: BarChart3, path: `/admin${adminPath("reports")}` },
+  { title: "Settings",          icon: Settings, path: `/admin${adminPath("settings")}` },
 ];
 
 const SIDEBAR_OPEN  = 240; // px
@@ -152,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onToggle }) => {
       {/* ── Logout ── */}
       <div className="pb-5 border-t border-gray-100 pt-3">
         <button
-          onClick={async () => { await logout(); navigate("/admin/login"); }}
+          onClick={async () => { await logout(); navigate(`/admin${adminPath("login")}`); }}
           title={!open ? "Logout" : undefined}
           className={`relative w-full flex items-center gap-3 py-2.5 font-medium
             text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors group

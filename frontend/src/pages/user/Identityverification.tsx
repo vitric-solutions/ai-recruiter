@@ -1400,7 +1400,7 @@ const IdentityVerification: React.FC = () => {
   };
 
   const handleBack = () => navigate(-1);
-  const handleComplete = () => navigate(`/user/${interviewId}/interview-instruction`, { replace: true });
+ const handleComplete = () => navigate(userPath("instructions", interviewId), { replace: true });
 
   useEffect(() => {
     return () => { stopStream(); stopLiveAnalysis(); stopCountdown(); stopScan(); stopCardCamera(); };

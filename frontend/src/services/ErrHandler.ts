@@ -1,4 +1,5 @@
 import type { AxiosError } from "axios";
+import { adminPath } from "../routes/EncryptRoute";
 
 export const handleErrResult = (err: AxiosError) => {
   const status = err.response?.status;
@@ -18,9 +19,9 @@ export const handleErrResult = (err: AxiosError) => {
     }
 
     if (role === "admin") {
-      window.location.replace("/admin/login");
+      window.location.replace(`/admin${adminPath("login")}`);
     } else {
-      window.location.replace("/user/login"); // user login route
+      window.location.replace(`/user${adminPath("login")}`); // user login route
     }
   }
 };

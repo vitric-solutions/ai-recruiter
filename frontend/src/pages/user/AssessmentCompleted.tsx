@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { CheckCircle, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
+import { userPath } from "../../routes/EncryptRoute";
 
 const AssessmentCompleted: React.FC = () => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ const AssessmentCompleted: React.FC = () => {
 
   const handleLogout = () => {
     if (id) {
-      navigate(`/user/${id}/session-end`);
+    navigate(userPath("sessionEnd", id));
     }
   };
 // ── Prevent Browser Back/Forward Navigation ──

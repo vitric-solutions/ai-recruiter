@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 import { socket } from "../utils/socket";
+import { adminPath } from "../routes/EncryptRoute";
 
 /* ================= TYPES ================= */
 
@@ -130,7 +131,7 @@ export const AuthProvider = ({
     setUser(null);
     setInterviewInfo(null);
 
-    window.location.replace("/admin/login");
+    window.location.replace(`/admin${adminPath("login")}`);
   };
 
   /* ================= PROVIDER VALUE ================= */

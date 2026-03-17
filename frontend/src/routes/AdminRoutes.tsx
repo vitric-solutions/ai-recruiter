@@ -1,3 +1,4 @@
+// src/routes/AdminRoutes.tsx
 import { Route, Routes } from "react-router-dom";
 import Dashboard from "../pages/admin/AdminDashboard";
 import Candidate from "../pages/admin/AdminCandidate";
@@ -8,24 +9,26 @@ import LoginPage from "../pages/admin/AdminLogin";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import PageNotFound from "../common/PageNotFound";
 import ToastProvider from "../common/ToastProvider";
+import { ENCRYPTED_ADMIN_ROUTES as R } from "./EncryptRoute";
+
 function AdminRoutes() {
   return (
     <>
       <ToastProvider />
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={<LoginPage />} />
+        <Route path={R.login} element={<LoginPage />} />
 
         {/* Protected Routes */}
-        <Route element={<ProtectedRoute redirectTo="/admin/login" />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/candidates" element={<Candidate />} />
-          <Route path="/tests" element={<TestsAssessments />} />
-          <Route path="/video" element={<AIVideoInterview />} />
-          <Route path="/reports" element={<Reports />} />
+        <Route element={<ProtectedRoute redirectTo={`/admin${R.login}`} />}>
+          <Route path={R.dashboard}  element={<Dashboard />} />
+          <Route path={R.candidates} element={<Candidate />} />
+          <Route path={R.tests}      element={<TestsAssessments />} />
+          <Route path={R.video}      element={<AIVideoInterview />} />
+          <Route path={R.reports}    element={<Reports />} />
         </Route>
 
-        {/* ✅ 404 Route (Always Last) */}
+        {/* 404 Route (Always Last) */}
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </>

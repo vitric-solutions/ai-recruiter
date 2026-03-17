@@ -4715,6 +4715,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/context";
 import { userService } from "../../services/service/userService";
 import * as faceapi from "@vladmandic/face-api";
+import { userPath } from "../../routes/EncryptRoute";
 
 // ─── FACE-API MODEL LOADING ────────────────────────────────────────────────
 const FACE_MODEL_URL =
@@ -6164,7 +6165,7 @@ const VideoInterview: React.FC = () => {
   // ── Interview info ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!interviewInfo) {
-      navigate(`/user/${interview_id}/interview-instruction`);
+     navigate(userPath("instructions", interview_id));
       return;
     }
     const dur =
@@ -6573,7 +6574,7 @@ ${RULES}`;
     try {
       const conv = conversationRef.current;
       if (!conv.length) {
-        navigate(`/user/${interview_id}/assessment-complete`);
+        navigate(userPath("complete", interview_id));
         return;
       }
       const transcript = conv
@@ -6626,7 +6627,7 @@ ${RULES}`;
       console.error("Feedback:", e);
     } finally {
       setIsGenFeedback(false);
-      navigate(`/user/${interview_id}/assessment-complete`);
+      navigate(userPath("complete", interview_id));
     }
   }, [interview_id, navigate, userData]);
 
