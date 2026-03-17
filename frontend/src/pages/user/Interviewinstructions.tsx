@@ -382,14 +382,12 @@ import {
   Monitor,
   BookOpen,
   AlertTriangle,
-  Clock,
   FileText,
   Video,
   Maximize,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { adminService } from "../../services/service/adminService";
 import { userService } from "../../services/service/userService";
 import { useAuth } from "../../context/context";
 import { userPath } from "../../routes/EncryptRoute"
@@ -497,7 +495,6 @@ const InterviewInstructions: React.FC = () => {
   const { id } = useParams();
   const [interview, setInterview] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showFSPrompt, setShowFSPrompt] = useState(false);
   const { setInterviewInfo, setUserData } = useAuth();
 
   const isMCQ = interview?.examType === "MCQ";

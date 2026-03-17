@@ -36,6 +36,7 @@ const ADMIN_ROUTES = {
   tests:      "/tests",
   video:      "/video",
   reports:    "/reports",
+  settings:    "/settings"
 } as const;
 
 const USER_ROUTES = {

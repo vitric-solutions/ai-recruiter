@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   ChevronLeft, ChevronRight, Flag, Clock, X, CheckCircle,
-  BarChart2, Loader2, Trophy, VideoOff, AlertTriangle, ShieldAlert,
+  BarChart2, Loader2, VideoOff, AlertTriangle, ShieldAlert,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -108,6 +108,7 @@ const MCQAssessment: React.FC = () => {
   const [finalSubmitting, setFinalSubmitting] = useState(false);
   const [phase, setPhase] = useState<"quiz" | "result">("quiz");
   const [totalScore, setTotalScore] = useState(0);
+  console.log(totalScore)
 
   // ── Proctoring state ──
   const [violationCount, setViolationCount] = useState(0);

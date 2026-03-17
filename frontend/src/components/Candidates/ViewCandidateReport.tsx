@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { X, Download } from "lucide-react";
+import { X } from "lucide-react";
 
 interface ViewCandidateReportModalProps {
   isOpen: boolean;
@@ -24,14 +24,14 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
   const [page, setPage] = useState(1);
 
   /* ================= DOWNLOAD ================= */
-  const handleDownload = (pdfPath: string) => {
-    const link = document.createElement("a");
-    link.href = `${BASE_URL}/${pdfPath}`;
-    link.download = pdfPath.split("/").pop() || "scorecard.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // const handleDownload = (pdfPath: string) => {
+  //   const link = document.createElement("a");
+  //   link.href = `${BASE_URL}/${pdfPath}`;
+  //   link.download = pdfPath.split("/").pop() || "scorecard.pdf";
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
 
   /* ================= FILTER LOGIC ================= */
   const filteredData = useMemo(() => {

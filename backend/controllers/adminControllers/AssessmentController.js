@@ -886,6 +886,7 @@ import Score from "../../models/Score.js";
 import AI_Interview from "../../models/AI_Interview.js";
 import { sendMCQInterviewLink } from "../../services/emailService.js";
 import mongoose from "mongoose";
+import { encryptPath } from "../../utils/routeEncrypt.js";
 
 // export const GetAllMCQInterviews = async (req, res) => {
 //   try {
@@ -947,6 +948,8 @@ import mongoose from "mongoose";
 export const GetAllMCQInterviews = async (req, res) => {
   try {
     const adminId = req.user.id;
+    console.log("adminId", adminId);
+    console.log(req.query);
     const { id } = req.query;
 
     /* ================= GET SINGLE ================= */
@@ -1021,9 +1024,9 @@ export const GetAllMCQInterviews = async (req, res) => {
       );
 
       const updatedCandidates = interview.candidates.map((candidate) => {
+        console.log("candi", candidate);
         const candidateScore = interviewScores.find(
-          (s) =>
-            s.candidateId.toString() === candidate.candidateId._id.toString(),
+          (s) => s.candidateId.toString() === candidate._id.toString(),
         );
 
         return {
@@ -1247,7 +1250,14 @@ export const AssessmentInvitation = async (req, res) => {
       // Generate credentials
       const username = `user_${Math.random().toString(36).substring(2, 10)}`;
       const password = Math.random().toString(36).slice(-8);
-      const interviewLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${interview._id}`;
+      const generateInterviewLink = (interviewId) => {
+        const basePath = encryptPath("/user/login"); // ✅ only static part
+
+        return `${
+          process.env.FRONTEND_URL || "http://localhost:5173"
+        }${basePath}/${interviewId}`; // ✅ raw ID
+      };
+      const interviewLink = generateInterviewLink(interview._id);
 
       const entry = {
         candidateId: candidate._id,
@@ -1336,7 +1346,7 @@ export const AssessmentInvitationByID = async (req, res) => {
     const { assessmentId } = req.params;
     const { candidateIds, start_date, end_date } = req.body;
 
-    // ✅ Validation
+    // ✅ Basic validation
     if (!candidateIds || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
@@ -1344,6 +1354,7 @@ export const AssessmentInvitationByID = async (req, res) => {
       });
     }
 
+    // ✅ Parse candidateIds
     let candidateArray;
     try {
       candidateArray =
@@ -1361,6 +1372,7 @@ export const AssessmentInvitationByID = async (req, res) => {
       });
     }
 
+    // ✅ Date validation
     const startDate = new Date(start_date);
     const endDate = new Date(end_date);
 
@@ -1378,6 +1390,18 @@ export const AssessmentInvitationByID = async (req, res) => {
       });
     }
 
+    // ✅ 7-day restriction
+    const now = new Date();
+    const diffDays = (startDate - now) / (1000 * 60 * 60 * 24);
+
+    if (diffDays > 7) {
+      return res.status(400).json({
+        success: false,
+        message: "Interview can only be scheduled within 7 days",
+      });
+    }
+
+    // ✅ Fetch interview
     const interview = await MCQ_Interview.findById(assessmentId);
 
     if (!interview) {
@@ -1393,115 +1417,38 @@ export const AssessmentInvitationByID = async (req, res) => {
     const skippedEmails = [];
     const emailResults = [];
 
-    const now = new Date();
-
+    // ✅ Process candidates
     for (const candId of candidateArray) {
       const candidate = await Candidate.findById(candId);
       if (!candidate) continue;
 
-      const existingIndex = interview.candidates.findIndex(
-        (c) => c.candidateId.toString() === candId.toString()
+      const alreadyInvited = interview.candidates.some(
+        (c) => c.candidateId.toString() === candId.toString(),
       );
 
-      let isBlocked = false;
-
-      if (existingIndex !== -1) {
-        const existingEntry = interview.candidates[existingIndex];
-
-        const invitedDate = new Date(
-          existingEntry.createdAt || existingEntry.start_Date
-        );
-
-        const diffDays = (now - invitedDate) / (1000 * 60 * 60 * 24);
-
-        // ❌ within 7 days → skip
-        if (diffDays < 7) {
-          isBlocked = true;
-        } else {
-          // ✅ AFTER 7 DAYS → UPDATE EXISTING ENTRY
-          const username = `user_${Math.random()
-            .toString(36)
-            .substring(2, 10)}`;
-          const password = Math.random().toString(36).slice(-8);
-
-          const interviewLink = `${
-            process.env.FRONTEND_URL || "http://localhost:5173"
-          }/user/login/${interview._id}`;
-
-          interview.candidates[existingIndex] = {
-            ...existingEntry,
-            interviewLink,
-            username,
-            password,
-            start_Date: startDate,
-            end_Date: endDate,
-            status: "scheduled",
-            assignedQuestions: [],
-          };
-
-          scheduledCandidates.push({
-            candidateId: candidate._id,
-            email: candidate.email,
-            name: candidate.name,
-          });
-
-          invitedEmails.push(candidate.email);
-
-          // send email
-          try {
-            await sendMCQInterviewLink(
-              candidate.email,
-              candidate.name,
-              interviewLink,
-              username,
-              password,
-              interview.test_title,
-              interview.difficulty,
-              interview.duration,
-              interview.no_of_questions,
-              interview.passing_score,
-              interview.primary_skill,
-              interview.secondary_skill,
-              startDate,
-              endDate
-            );
-
-            emailResults.push({
-              candidate: candidate.email,
-              status: "sent",
-            });
-          } catch {
-            emailResults.push({
-              candidate: candidate.email,
-              status: "failed",
-            });
-          }
-
-          continue;
-        }
-      }
-
-      // 🔴 Skip if within 7 days
-      if (isBlocked) {
+      // 🔴 Skip if already invited
+      if (alreadyInvited) {
         skippedCandidates.push({
           candidateId: candidate._id,
           email: candidate.email,
-          reason: "Already invited within 7 days",
+          reason: "Already invited",
         });
-
         skippedEmails.push(candidate.email);
         continue;
       }
 
-      // ✅ NEW ENTRY (first time)
-      const username = `user_${Math.random()
-        .toString(36)
-        .substring(2, 10)}`;
+      // ✅ Generate credentials
+      const username = `user_${Math.random().toString(36).substring(2, 10)}`;
       const password = Math.random().toString(36).slice(-8);
 
-      const interviewLink = `${
-        process.env.FRONTEND_URL || "http://localhost:5173"
-      }/user/login/${interview._id}`;
+      const generateInterviewLink = (interviewId) => {
+        const basePath = encryptPath("/user/login"); // ✅ only static part
+
+        return `${
+          process.env.FRONTEND_URL || "http://localhost:5173"
+        }${basePath}/${interviewId}`; // ✅ raw ID
+      };
+      const interviewLink = generateInterviewLink(interview._id);
 
       const entry = {
         candidateId: candidate._id,
@@ -1514,16 +1461,18 @@ export const AssessmentInvitationByID = async (req, res) => {
         assignedQuestions: [],
       };
 
+      // ✅ Save in interview
       interview.candidates.push(entry);
 
       scheduledCandidates.push({
-        candidateId: candidate._id,
-        email: candidate.email,
+        ...entry,
         name: candidate.name,
+        email: candidate.email,
       });
 
       invitedEmails.push(candidate.email);
 
+      // ✅ Send email
       try {
         await sendMCQInterviewLink(
           candidate.email,
@@ -1539,14 +1488,14 @@ export const AssessmentInvitationByID = async (req, res) => {
           interview.primary_skill,
           interview.secondary_skill,
           startDate,
-          endDate
+          endDate,
         );
 
         emailResults.push({
           candidate: candidate.email,
           status: "sent",
         });
-      } catch {
+      } catch (err) {
         emailResults.push({
           candidate: candidate.email,
           status: "failed",
@@ -1554,38 +1503,55 @@ export const AssessmentInvitationByID = async (req, res) => {
       }
     }
 
-    await interview.save();
+    // ✅ Save only if something added
+    if (scheduledCandidates.length > 0) {
+      await interview.save();
+    }
 
-    // 🔴 All skipped
+    // 🔴 CASE 1: All skipped
     if (scheduledCandidates.length === 0 && skippedEmails.length > 0) {
       return res.status(200).json({
         success: true,
         isPartial: true,
-        message: "All candidates already invited within 7 days",
+        message: "All selected candidates are already invited",
         invitedEmails: [],
         skippedEmails,
+        data: {
+          scheduledCandidates,
+          skippedCandidates,
+          emailResults,
+        },
       });
     }
 
-    // 🟡 Partial
+    // 🟡 CASE 2: Partial success
     if (skippedEmails.length > 0) {
       return res.status(200).json({
         success: true,
         isPartial: true,
-        message: "Some candidates skipped (within 7 days)",
+        message: "Some candidates already invited",
         invitedEmails,
         skippedEmails,
+        data: {
+          scheduledCandidates,
+          skippedCandidates,
+          emailResults,
+        },
       });
     }
 
-    // 🟢 Full success
+    // 🟢 CASE 3: Full success
     return res.status(200).json({
       success: true,
       isPartial: false,
       message: "All candidates invited successfully",
       invitedEmails,
+      skippedEmails: [],
+      data: {
+        scheduledCandidates,
+        emailResults,
+      },
     });
-
   } catch (error) {
     console.error("Invite Error:", error);
 
@@ -1595,7 +1561,6 @@ export const AssessmentInvitationByID = async (req, res) => {
     });
   }
 };
-
 export const GetCandidatesInInterview = async (req, res) => {
   const { id } = req.params;
 

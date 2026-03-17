@@ -706,7 +706,6 @@ import {
   Shield,
   CreditCard,
   BookOpen,
-  Loader2,
   Eye,
   Sun,
   Crosshair,
@@ -714,7 +713,6 @@ import {
   Smile,
   XCircle,
   ScanLine,
-  FlipHorizontal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { userService } from "../../services/service/userService";
@@ -778,31 +776,31 @@ const validateAadhaarWithOCR = async (
 };
 
 // ─── Aadhaar OCR validation (dataUrl — camera capture) ───────────────────────
-const validateAadhaarDataUrl = async (
-  dataUrl: string
-): Promise<{ isValid: boolean; reason: string }> => {
-  try {
-    const { data: { text } } = await Tesseract.recognize(dataUrl, "eng", { logger: () => {} });
-    const upper = text.toUpperCase();
-    const hasAadhaarKeyword = /AADHAAR|AADHAR|UIDAI/.test(upper) || /\bUID\b/.test(upper);
-    const has12Digit =
-      /\d{4}[\s\-]?\d{4}[\s\-]?\d{4}/.test(upper) ||
-      /[X\d]{4}[\s\-]?[X\d]{4}[\s\-]?[X\d]{4}/i.test(upper);
-    const hasGovt = /GOVERNMENT\s+OF\s+INDIA|GOVT\.?\s+OF\s+INDIA/.test(upper);
-    const passed = [hasAadhaarKeyword, has12Digit, hasGovt].filter(Boolean).length;
-    if (passed >= 2) return { isValid: true, reason: "Aadhaar card detected via OCR" };
-    const missing: string[] = [];
-    if (!hasAadhaarKeyword) missing.push("Aadhaar/UIDAI text");
-    if (!has12Digit) missing.push("12-digit number");
-    if (!hasGovt) missing.push('"Govt of India" text');
-    return {
-      isValid: false,
-      reason: `Could not verify as Aadhaar card. Missing: ${missing.join(", ")}. Ensure the entire card is visible, well-lit, and held steady.`,
-    };
-  } catch {
-    return { isValid: true, reason: "OCR check skipped due to an error" };
-  }
-};
+// const validateAadhaarDataUrl = async (
+//   dataUrl: string
+// ): Promise<{ isValid: boolean; reason: string }> => {
+//   try {
+//     const { data: { text } } = await Tesseract.recognize(dataUrl, "eng", { logger: () => {} });
+//     const upper = text.toUpperCase();
+//     const hasAadhaarKeyword = /AADHAAR|AADHAR|UIDAI/.test(upper) || /\bUID\b/.test(upper);
+//     const has12Digit =
+//       /\d{4}[\s\-]?\d{4}[\s\-]?\d{4}/.test(upper) ||
+//       /[X\d]{4}[\s\-]?[X\d]{4}[\s\-]?[X\d]{4}/i.test(upper);
+//     const hasGovt = /GOVERNMENT\s+OF\s+INDIA|GOVT\.?\s+OF\s+INDIA/.test(upper);
+//     const passed = [hasAadhaarKeyword, has12Digit, hasGovt].filter(Boolean).length;
+//     if (passed >= 2) return { isValid: true, reason: "Aadhaar card detected via OCR" };
+//     const missing: string[] = [];
+//     if (!hasAadhaarKeyword) missing.push("Aadhaar/UIDAI text");
+//     if (!has12Digit) missing.push("12-digit number");
+//     if (!hasGovt) missing.push('"Govt of India" text');
+//     return {
+//       isValid: false,
+//       reason: `Could not verify as Aadhaar card. Missing: ${missing.join(", ")}. Ensure the entire card is visible, well-lit, and held steady.`,
+//     };
+//   } catch {
+//     return { isValid: true, reason: "OCR check skipped due to an error" };
+//   }
+// };
 
 // ─── Passport OCR validation ──────────────────────────────────────────────────
 const validatePassportWithOCR = async (
@@ -980,14 +978,14 @@ const validateCapturedImage = async (
 };
 
 // ─── Live check pills ─────────────────────────────────────────────────────────
-const CHECK_PILLS: { key: string; label: string; icon: React.ReactNode; pass: (c: LiveChecks) => boolean | null }[] = [
-  { key: "face",     label: "Face",        icon: <User size={10} />,       pass: (c) => c.faceFound ? true : false },
-  { key: "eyes",     label: "Eyes Open",   icon: <Eye size={10} />,        pass: (c) => c.faceFound ? c.eyesOpen : null },
-  { key: "light",    label: "Lighting",    icon: <Sun size={10} />,        pass: (c) => c.lightingOk },
-  { key: "center",   label: "Centered",    icon: <Crosshair size={10} />,  pass: (c) => c.faceFound ? c.centered : null },
-  { key: "distance", label: "Distance",    icon: <ZoomIn size={10} />,     pass: (c) => c.faceFound ? c.faceSize === "ok" : null },
-  { key: "frontal",  label: "Looking Fwd", icon: <Smile size={10} />,      pass: (c) => c.faceFound ? c.frontal : null },
-];
+// const CHECK_PILLS: { key: string; label: string; icon: React.ReactNode; pass: (c: LiveChecks) => boolean | null }[] = [
+//   { key: "face",     label: "Face",        icon: <User size={10} />,       pass: (c) => c.faceFound ? true : false },
+//   { key: "eyes",     label: "Eyes Open",   icon: <Eye size={10} />,        pass: (c) => c.faceFound ? c.eyesOpen : null },
+//   { key: "light",    label: "Lighting",    icon: <Sun size={10} />,        pass: (c) => c.lightingOk },
+//   { key: "center",   label: "Centered",    icon: <Crosshair size={10} />,  pass: (c) => c.faceFound ? c.centered : null },
+//   { key: "distance", label: "Distance",    icon: <ZoomIn size={10} />,     pass: (c) => c.faceFound ? c.faceSize === "ok" : null },
+//   { key: "frontal",  label: "Looking Fwd", icon: <Smile size={10} />,      pass: (c) => c.faceFound ? c.frontal : null },
+// ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = "document" | "selfie";
@@ -1022,13 +1020,13 @@ const IdentityVerification: React.FC = () => {
 
   // ── selfie camera state ──────────────────────────────────────────────────────
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>("idle");
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [scanLinePos, setScanLinePos] = useState(0);
+  const [ setCapturedImage] = useState<string | null>(null);
+  const [ setScanLinePos] = useState(0);
   const [liveChecks, setLiveChecks] = useState<LiveChecks>(DEFAULT_CHECKS);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [faceValidationError, setFaceValidationError] = useState<string | null>(null);
+  const [setFaceValidationError] = useState<string | null>(null);
   const [modelsReady, setModelsReady] = useState(false);
-
+console.log(modelsReady)
   // ── card-camera state (new) ──────────────────────────────────────────────────
   const [cardCamStatus, setCardCamStatus] = useState<CardCamStatus>("idle");
   const [cardCamError, setCardCamError] = useState<string | null>(null);
@@ -1373,34 +1371,34 @@ const IdentityVerification: React.FC = () => {
     }, 350);
   }, [scheduleCapture]);
 
-  const startCamera = useCallback(async () => {
-    setFaceValidationError(null);
-    setLiveChecks(DEFAULT_CHECKS);
-    isCaptureScheduled.current = false;
-    readyToCaptureRef.current = false;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
-      setCameraStatus("active");
-      startLiveAnalysis();
-    } catch {
-      toast.error("Failed to access camera. Please allow camera permission and try again.");
-      setCameraStatus("idle");
-    }
-  }, [startLiveAnalysis]);
+  // const startCamera = useCallback(async () => {
+  //   setFaceValidationError(null);
+  //   setLiveChecks(DEFAULT_CHECKS);
+  //   isCaptureScheduled.current = false;
+  //   readyToCaptureRef.current = false;
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia({
+  //       video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+  //     });
+  //     streamRef.current = stream;
+  //     if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
+  //     setCameraStatus("active");
+  //     startLiveAnalysis();
+  //   } catch {
+  //     toast.error("Failed to access camera. Please allow camera permission and try again.");
+  //     setCameraStatus("idle");
+  //   }
+  // }, [startLiveAnalysis]);
 
-  const handleRetake = () => {
-    stopStream(); stopLiveAnalysis(); stopCountdown(); stopScan();
-    setCapturedImage(null); setCameraStatus("idle"); setScanLinePos(0);
-    setLiveChecks(DEFAULT_CHECKS); setFaceValidationError(null);
-    isCaptureScheduled.current = false; readyToCaptureRef.current = false;
-  };
+  // const handleRetake = () => {
+  //   stopStream(); stopLiveAnalysis(); stopCountdown(); stopScan();
+  //   setCapturedImage(null); setCameraStatus("idle"); setScanLinePos(0);
+  //   setLiveChecks(DEFAULT_CHECKS); setFaceValidationError(null);
+  //   isCaptureScheduled.current = false; readyToCaptureRef.current = false;
+  // };
 
   const handleBack = () => navigate(-1);
- const handleComplete = () => navigate(userPath("instructions", interviewId), { replace: true });
+//  const handleComplete = () => navigate(userPath("instructions", interviewId), { replace: true });
 
   useEffect(() => {
     return () => { stopStream(); stopLiveAnalysis(); stopCountdown(); stopScan(); stopCardCamera(); };
@@ -1410,7 +1408,7 @@ const IdentityVerification: React.FC = () => {
   const passedCount = liveChecks.faceFound
     ? [liveChecks.eyesOpen, liveChecks.centered, liveChecks.faceSize === "ok", liveChecks.lightingOk, liveChecks.frontal].filter(Boolean).length
     : 0;
-  const ovalStroke = liveChecks.allPassed ? "#22c55e" : passedCount >= 3 ? "#f59e0b" : liveChecks.faceFound ? "#f59e0b" : "#ef4444";
+  // const ovalStroke = liveChecks.allPassed ? "#22c55e" : passedCount >= 3 ? "#f59e0b" : liveChecks.faceFound ? "#f59e0b" : "#ef4444";
 
   const getPrimaryMessage = (): { text: string; color: string } => {
     if (!liveChecks.faceFound) return { text: "Position your face inside the oval guide", color: "text-white" };
@@ -1425,7 +1423,7 @@ const IdentityVerification: React.FC = () => {
     if (liveChecks.allPassed) return { text: "Great! Hold still…", color: "text-green-400" };
     return { text: "Adjusting…", color: "text-white" };
   };
-  const guidance = getPrimaryMessage();
+  // const guidance = getPrimaryMessage();
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (

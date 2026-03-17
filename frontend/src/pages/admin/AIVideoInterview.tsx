@@ -34,9 +34,9 @@ export default function InterviewSetup() {
   const [numberOfQuestions, setNumberOfQuestions] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [loading, setLoading] = useState(false);
-  const [subject, setSubject] = useState("");
+  const [ setSubject] = useState("");
   const [messageBody, setMessageBody] = useState("");
-  const [interviewLink, setInterviewLink] = useState("");
+  const [setInterviewLink] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [isGenerated, setIsGenerated] = useState(false);
@@ -354,35 +354,74 @@ export default function InterviewSetup() {
 
   // ================= SEND INVITATIONS =================
 
-  const handleSendInvitations = async () => {
-    try {
-      setLoading(true);
-      if (!createdJobId) return toast.error("Create interview first");
-      if (!selectedCandidates.length) return toast.error("Select candidates");
-      if (!startDate || !endDate) return toast.error("Select dates");
+const handleSendInvitations = async () => {
+  try {
+    setLoading(true);
 
-      const data = {
-        jobId: createdJobId,
-        candidateIds: selectedCandidates.map((c) => c._id),
-        messageBody,
-        startDate,
-        endDate,
-        testTitle: position,
-      };
+    if (!createdJobId) return toast.error("Create interview first");
+    if (!selectedCandidates.length)
+      return toast.error("Select candidates");
+    if (!startDate || !endDate)
+      return toast.error("Select dates");
 
-      await adminService.sendInvitations(data);
+    const payload = {
+      jobId: createdJobId,
+      candidateIds: selectedCandidates.map((c) => c._id),
+      messageBody,
+      startDate,
+      endDate,
+      testTitle: position,
+    };
 
-      toast.success("Invitations Sent Successfully");
-      setSelectedCandidates([]);
-      setActiveTab("template");
-    } catch (error: any) {
+    const res = await adminService.sendInvitations(payload);
+  console.log(res)
+
+  
+
+    const invited = res.invitedEmails || [];
+    const skipped = res.skippedEmails || [];
+
+    // 🔴 CASE 1: ALL SKIPPED (MOST IMPORTANT FIX)
+    if (res.isPartial && invited.length === 0) {
       toast.error(
-        error.response?.data?.message || "Failed to send invitations",
+        `All candidates already invited: ${skipped.join(", ")}`
       );
-    } finally {
-      setLoading(false);
+      return; // ❌ stop further execution
     }
-  };
+
+    // 🟡 CASE 2: PARTIAL SUCCESS
+    if (res.isPartial) {
+      if (invited.length > 0) {
+        toast.success(`Invited: ${invited.join(", ")}`);
+      }
+
+      if (skipped.length > 0) {
+        setTimeout(() => {
+          toast.error(`Skipped (already invited): ${skipped.join(", ")}`);
+        }, 300);
+      }
+    }
+
+    // 🟢 CASE 3: FULL SUCCESS
+    else {
+      toast.success(
+        `Invitations sent to ${invited.length} candidate(s)`
+      );
+    }
+
+    // ✅ reset UI
+    setSelectedCandidates([]);
+    setActiveTab("template");
+
+  } catch (error: any) {
+    console.log(error)
+    toast.error(
+      error?.res?.message || "Failed to send invitations"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   const candidateDropdownRef = useRef(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -3,7 +3,6 @@ import AdminLayout from "../../common/AdminLayout";
 import { useAdminSocket } from "../../hooks/useAdminSocket";
 import {
   Search,
-  SlidersHorizontal,
   Eye,
   Calendar,
   Clock,
@@ -259,11 +258,11 @@ const ReportsInsights = () => {
       const failCount = total - passCount;
       const failRate = total > 0 ? Math.round((failCount / total) * 100) : 0;
 
-      const avgDuration =
-        total > 0
-          ? scores.map((s) => s.interviewId?.duration || "N/A").find(Boolean) ||
-            "N/A"
-          : "N/A";
+      // const avgDuration =
+      //   total > 0
+      //     ? scores.map((s) => s.interviewId?.duration || "N/A").find(Boolean) ||
+      //       "N/A"
+      //     : "N/A";
 
       return [
         {

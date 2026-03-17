@@ -9,7 +9,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import * as faceapi from "@vladmandic/face-api";
 import { userPath } from "../../routes/EncryptRoute";
 
@@ -142,7 +142,7 @@ const SelfieVerification: React.FC = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const navigate = useNavigate();
-const interviewId = sessionStorage.getItem("interviewId");
+const interviewId :any = sessionStorage.getItem("interviewId");
   const handleComplete = () =>
     navigate(userPath("instructions", interviewId), { replace: true });
 
