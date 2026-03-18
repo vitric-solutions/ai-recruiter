@@ -950,57 +950,57 @@ export const GetAllMCQInterviews = async (req, res) => {
     const adminId = req.user.id;
     console.log("adminId", adminId);
     console.log(req.query);
-    const { id } = req.query;
+    // const { id } = req.query;
 
-    /* ================= GET SINGLE ================= */
+    // /* ================= GET SINGLE ================= */
 
-    if (id) {
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid interview ID",
-        });
-      }
+    // if (id) {
+    //   if (!mongoose.Types.ObjectId.isValid(id)) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: "Invalid interview ID",
+    //     });
+    //   }
 
-      const interview = await MCQ_Interview.findOne({
-        _id: id,
-        createdBy: adminId,
-      })
-        .populate("createdBy", "email")
-        .populate("candidates.candidateId");
+    //   const interview = await MCQ_Interview.findOne({
+    //     _id: id,
+    //     createdBy: adminId,
+    //   })
+    //     .populate("createdBy", "email")
+    //     .populate("candidates.candidateId");
 
-      if (!interview) {
-        return res.status(404).json({
-          success: false,
-          message: "Interview not found",
-        });
-      }
+    //   if (!interview) {
+    //     return res.status(404).json({
+    //       success: false,
+    //       message: "Interview not found",
+    //     });
+    //   }
 
-      // 🔥 Fetch all scores for this interview
-      const scores = await Score.find({
-        interviewId: id,
-      });
+    //   // 🔥 Fetch all scores for this interview
+    //   const scores = await Score.find({
+    //     interviewId: id,
+    //   });
 
-      const updatedCandidates = interview.candidates.map((candidate) => {
-        const candidateScore = scores.find(
-          (s) =>
-            s.candidateId.toString() === candidate.candidateId._id.toString(),
-        );
+    //   const updatedCandidates = interview.candidates.map((candidate) => {
+    //     const candidateScore = scores.find(
+    //       (s) =>
+    //         s.candidateId.toString() === candidate.candidateId._id.toString(),
+    //     );
 
-        return {
-          ...candidate.toObject(),
-          scoreDetails: candidateScore || null, // 👈 FULL SCORE OBJECT
-        };
-      });
+    //     return {
+    //       ...candidate.toObject(),
+    //       scoreDetails: candidateScore || null, // 👈 FULL SCORE OBJECT
+    //     };
+    //   });
 
-      return res.status(200).json({
-        success: true,
-        data: {
-          ...interview.toObject(),
-          candidates: updatedCandidates,
-        },
-      });
-    }
+    //   return res.status(200).json({
+    //     success: true,
+    //     data: {
+    //       ...interview.toObject(),
+    //       candidates: updatedCandidates,
+    //     },
+    //   });
+    // }
 
     /* ================= GET ALL ================= */
 
@@ -1010,7 +1010,7 @@ export const GetAllMCQInterviews = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate("createdBy", "email")
       .populate("candidates.candidateId");
-
+  console.log("interviews",interviews)
     const interviewIds = interviews.map((i) => i._id);
 
     // 🔥 Fetch all related scores in one query

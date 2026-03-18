@@ -13,7 +13,8 @@ import {
 } from "../../services/emailService.js";
 
 export const RegisterUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { userName, email, password } = req.body; // ✅ add userName
+  console.log(req.body);
 
   try {
     let admin = await Admin.findOne({ email });
@@ -21,19 +22,25 @@ export const RegisterUser = async (req, res) => {
       return res.status(400).json({ message: "Admin already exists" });
     }
 
-    admin = new Admin({ email, password, role: "admin" });
+    admin = new Admin({
+      userName, // ✅ REQUIRED FIELD
+      email,
+      password,
+      role: "admin"
+    });
+
     await admin.save();
 
     const accessToken = jwt.sign(
       { id: admin._id, role: "admin" },
       process.env.JWT_SECRET,
-      { expiresIn: "12h" },
+      { expiresIn: "12h" }
     );
 
     const refreshToken = jwt.sign(
       { id: admin._id, role: "admin" },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "7d" }
     );
 
     admin.refreshToken = refreshToken;
@@ -52,6 +59,7 @@ export const RegisterUser = async (req, res) => {
       .json({
         user: {
           _id: admin._id,
+          userName: admin.userName, // ✅ include in response
           email: admin.email,
           role: admin.role,
         },
