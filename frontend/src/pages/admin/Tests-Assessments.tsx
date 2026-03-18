@@ -174,7 +174,7 @@ type FormErrors = {
   duration?: string;
   jobDescription?: string;
   jobDescriptionText?: string;
-   secondarySkill?: string;
+  secondarySkill?: string;
 };
 type SubmitStatus = {
   type: "success" | "error";
@@ -240,16 +240,16 @@ const TestsAssessments = () => {
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [jdLoading, setJdLoading] = useState(false);
   const [jdAnalysis, setJdAnalysis] = useState<JDAnalysis | null>(null);
-  const [jdError, setJdError] = useState(null);
+  const [, setJdError] = useState(null);
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [candidatesLoading, setCandidatesLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(null);
-
+  const [currentStep, setCurrentStep] = useState(1);
   const [reDirect, setReDirect] = useState(false);
 
   const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
-  const skills = jdAnalysis?.requiredSkills ?? [];
+  // const skills = jdAnalysis?.requiredSkills ?? [];
   useEffect(() => {
     const handler = (e: any) => {
       if (
@@ -284,40 +284,67 @@ const TestsAssessments = () => {
       fetchAssessments();
     },
   });
+// AI matched candidates
+const aiCandidates = scoredCandidates || [];
 
-  const runGroqScoring = async (candidates: any[], analysis: any) => {
-    setGroqLoading(true);
+// Manual candidates (ONLY remove AI ones)
+// ✅ keep selected candidates for highlight
+const manualCandidates = candidatesList.filter(
+  (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id)
+);
+const filteredCandidates = aiCandidates.filter((c: any) =>
+  `${c.name} ${c.role || ""} ${c.email}`
+    .toLowerCase()
+    .includes(candidateSearch.toLowerCase())
+);
+const runGroqScoring = async (candidates: any[], analysis: any) => {
+  setGroqLoading(true);
 
-    try {
-      const requiredSkills = analysis?.requiredSkills || [];
-
-      const filtered = candidates.filter((c) => {
-        const skills = (
-          c.skills ||
-          c.key_Skills ||
-          c.primarySkill ||
-          ""
-        ).toLowerCase();
-
-        return requiredSkills.some((skill: string) =>
-          skills.includes(skill.toLowerCase()),
-        );
-      });
-
-      const scored = await scoreCandidatesWithGroq(filtered, analysis);
-
-      const sorted = [...scored].sort(
-        (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0),
+  try {
+    const extractKeywords = (skills: string[]) =>
+      skills.flatMap((skill) =>
+        skill
+          .toLowerCase()
+          .replace(/[^\w\s]/g, "")
+          .split(" ")
+          .filter((word) => word.length > 3)
       );
 
-      setScoredCandidates(sorted);
-    } catch (err) {
-      console.error("Groq scoring failed:", err);
-      setScoredCandidates(candidates);
-    } finally {
-      setGroqLoading(false);
-    }
-  };
+    const requiredSkills = analysis?.requiredSkills || [];
+    const keywords = extractKeywords(requiredSkills);
+
+    const filtered = candidates.filter((c) => {
+      const candidateSkills = (
+        c.skills ||
+        c.key_Skills ||
+        c.primarySkill ||
+        ""
+      ).toLowerCase();
+
+      return keywords.some((word) =>
+        candidateSkills.includes(word)
+      );
+    });
+
+    // ✅ if no match → fallback to ALL candidates
+    const baseCandidates = filtered.length > 0 ? filtered : candidates;
+
+    const scored = await scoreCandidatesWithGroq(baseCandidates, analysis);
+
+    const sorted = [...scored].sort(
+      (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0)
+    );
+
+    setScoredCandidates(sorted);
+  } catch (err) {
+    console.error("Groq scoring failed:", err);
+
+    // ✅ fallback to ALL candidates (not breaking UI)
+    setScoredCandidates(candidates);
+  } finally {
+    setGroqLoading(false);
+  }
+};
 
   const fetchCandidates = async () => {
     try {
@@ -447,11 +474,11 @@ const TestsAssessments = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     if (field in errors) {
-  setErrors((prev) => ({
-    ...prev,
-    [field]: "",
-  }));
-}
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
   };
 
   const mapExperienceToLevel = (level?: string, years?: string) => {
@@ -551,16 +578,40 @@ const TestsAssessments = () => {
       setJdLoading(false);
     }
   };
+const getMinDateTime = () => {
+  const now:any = new Date();
+  const tzOffset = now.getTimezoneOffset() * 60000;
+  return new Date(now - tzOffset).toISOString().slice(0, 16);
+};
+useEffect(() => {
+  if (
+    formData.startDate &&
+    formData.endDate &&
+    new Date(formData.endDate) < new Date(formData.startDate)
+  ) {
+    handleInputChange("endDate", "");
+  }
+}, [formData.startDate]);
+const removeFile = () => {
+  setFormData((prev) => ({
+    ...prev,
+    jobDescription: null,
+    jobDescriptionText: "",
+    testTitle: "",
+    primarySkill: "",
+    secondarySkill: "",
+  }));
 
-  const removeFile = () => {
-    handleInputChange("jobDescription", null);
-    handleInputChange("jobDescriptionText", "");
-    setJdAnalysis(null);
-    setJdError(null);
-    setScoredCandidates(candidatesList); // revert to plain list
-    const el = document.getElementById("jd-upload") as HTMLInputElement;
-    if (el) el.value = "";
-  };
+  setJdAnalysis(null);
+  setJdError(null);
+
+  // reset AI scoring
+  setScoredCandidates(candidatesList);
+
+  // clear file input
+  const el = document.getElementById("jd-upload") as HTMLInputElement;
+  if (el) el.value = "";
+};
 
   const toggleCandidateSelection = (candidate: any) => {
     const isSelected = formData.candidates.some(
@@ -581,18 +632,49 @@ const TestsAssessments = () => {
     );
   };
 
-  // Use scoredCandidates for the dropdown (filtered by search)
-  const filteredCandidates = scoredCandidates?.filter((c: any) =>
-    `${c.name} ${c.role || ""} ${c.email}`
-      .toLowerCase()
-      .includes(candidateSearch.toLowerCase()),
-  );
 
   const showToast = (type: any, message: any, duration = 4000) => {
     setSubmitStatus({ type, message });
     setTimeout(() => setSubmitStatus(null), duration);
   };
 
+  const validateStep = (step: number) => {
+    const newErrors: any = {};
+
+    if (step === 1) {
+      if (!formData.testTitle?.trim())
+        newErrors.testTitle = "Test title is required";
+
+      if (!formData.primarySkill?.trim())
+        newErrors.primarySkill = "Primary skill is required";
+    }
+
+    if (step === 2) {
+      if (!formData.noOfQuestions)
+        newErrors.noOfQuestions = "Number of questions required";
+      if (!formData.examLevel) newErrors.examLevel = "Exam level is required";
+
+      if (!formData.passingScore)
+        newErrors.passingScore = "Passing score required";
+
+      if (!formData.duration) newErrors.duration = "Duration required";
+
+      if (!formData.startDate) newErrors.startDate = "Start date required";
+
+      if (!formData.endDate) newErrors.endDate = "End date required";
+
+      if (
+        formData.startDate &&
+        formData.endDate &&
+        new Date(formData.endDate) < new Date(formData.startDate)
+      ) {
+        newErrors.endDate = "End date must be after start date";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   const validateForm = (requireCandidates = false) => {
     const newErrors: any = {};
     if (!formData.testTitle?.trim())
@@ -933,32 +1015,321 @@ const TestsAssessments = () => {
 
       {activeTab === "create" && (
         <div className="rounded-lg p-5 bg-white">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 rounded-lg bg-indigo-600 flex items-center justify-center text-white shrink-0">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
-                {mode === "edit"
-                  ? "Edit Assessment"
-                  : mode === "prefill"
-                    ? "Send Invites"
-                    : "Create New Assessment"}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {mode === "edit"
-                  ? "Update the assessment details below"
-                  : mode === "prefill"
-                    ? "Select candidates and set dates to send invites"
-                    : "Set up a new MCQ-based assessment for your candidates"}
-              </p>
+          {/* STEP INDICATOR */}
+          <div className="relative mb-10">
+            {/* 🔵 PROGRESS LINE (BACKGROUND) */}
+            <div className="absolute top-5 left-0 w-full h-[3px] bg-gray-200 rounded-full" />
+
+            {/* 🟣 ACTIVE PROGRESS LINE */}
+            <div
+              className="absolute top-5 left-0 h-[3px] bg-indigo-600 rounded-full transition-all duration-500"
+              style={{
+                width:
+                  currentStep === 1 ? "0%" : currentStep === 2 ? "50%" : "100%",
+              }}
+            />
+
+            {/* 🧩 STEPS */}
+            <div className="relative flex justify-between">
+              {[
+                { id: 1, label: "Job Details" },
+                { id: 2, label: "Test Setup" },
+                { id: 3, label: "Select Candidates" },
+              ].map((step) => (
+                <div key={step.id} className="flex flex-col items-center">
+                  {/* 🔘 CIRCLE */}
+                  <div
+                    className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-semibold z-10 transition-all duration-300 ${
+                      currentStep === step.id
+                        ? "bg-indigo-600 text-white scale-110 shadow-lg"
+                        : currentStep > step.id
+                          ? "bg-green-500 text-white"
+                          : "bg-white border-2 border-gray-300 text-gray-500"
+                    }`}
+                  >
+                    {currentStep > step.id ? "✓" : step.id}
+                  </div>
+
+                  {/* 🏷 LABEL */}
+                  <span
+                    className={`mt-3 text-sm font-medium ${
+                      currentStep === step.id
+                        ? "text-indigo-600"
+                        : currentStep > step.id
+                          ? "text-green-600"
+                          : "text-gray-400"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-6">
-            {/* ── Row 1: Candidates + Dates ── */}
-            <div className="grid grid-cols-3 gap-6">
-              {/* Candidates dropdown */}
+          {/* ================= STEP 1 ================= */}
+          {currentStep === 1 && (
+            <div className="space-y-6">
+              {/* SECTION TITLE */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Job Description Setup
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Upload JD or manually enter details
+                </p>
+              </div>
+
+              {/* JD Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Job Description
+                </label>
+
+                {!formData.jobDescription ? (
+                  <>
+                    <label
+                      htmlFor="jd-upload"
+                      className="flex flex-col items-center justify-center w-full px-6 py-8 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition"
+                    >
+                      <Upload className="h-7 w-7 text-gray-400 mb-2" />
+                      <span className="text-sm font-medium text-gray-700">
+                        Upload JD
+                      </span>
+                      <span className="text-xs text-gray-400 mt-1">
+                        PDF, DOC, DOCX (Max 5MB)
+                      </span>
+                    </label>
+
+                    <input
+                      id="jd-upload"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition">
+                    {/* LEFT */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <FileText className="h-5 w-5 text-indigo-600" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">
+                          {formData.jobDescription instanceof File
+                            ? formData.jobDescription.name
+                            : formData.jobDescription}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Uploaded successfully
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* RIGHT */}
+                    <button
+                      onClick={removeFile}
+                      className="p-2 rounded-md hover:bg-red-50 transition"
+                    >
+                      <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* INPUT GRID */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* Test Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Test Title
+                  </label>
+                  <input
+                    value={formData.testTitle}
+                    onChange={(e) =>
+                      handleInputChange("testTitle", e.target.value)
+                    }
+                    placeholder="e.g. Frontend Developer Test"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                  />
+                </div>
+
+                {/* Primary Skill */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Primary Skill
+                  </label>
+                  <input
+                    value={formData.primarySkill}
+                    onChange={(e) =>
+                      handleInputChange("primarySkill", e.target.value)
+                    }
+                    placeholder="e.g. React.js"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                  />
+                </div>
+
+                {/* Secondary Skill */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Secondary Skill (Optional)
+                  </label>
+                  <input
+                    value={formData.secondarySkill}
+                    onChange={(e) =>
+                      handleInputChange("secondarySkill", e.target.value)
+                    }
+                    placeholder="e.g. TypeScript"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* JD TEXT */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Job Description
+                </label>
+                <textarea
+                  rows={4}
+                  value={formData.jobDescriptionText}
+                  onChange={(e) =>
+                    handleInputChange("jobDescriptionText", e.target.value)
+                  }
+                  placeholder="Paste or edit job description..."
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ================= STEP 2 ================= */}
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              {/* SECTION TITLE */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Assessment Configuration
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Configure test settings (auto-filled from JD if available)
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                {/* Exam Level */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Exam Level
+                  </label>
+                  <select
+                    value={formData.examLevel}
+                    onChange={(e) =>
+                      handleInputChange("examLevel", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                  >
+                    <option value="">Select level</option>
+                    <option>Easy</option>
+                    <option>Intermediate</option>
+                    <option>Advanced</option>
+                  </select>
+                </div>
+
+                {/* Questions */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    No. of Questions
+                  </label>
+                  <select
+                    value={formData.noOfQuestions}
+                    onChange={(e) =>
+                      handleInputChange("noOfQuestions", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">Select</option>
+                    {[10, 20, 30, 40].map((n) => (
+                      <option key={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Passing Score */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Passing Score (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.passingScore}
+                    onChange={(e) =>
+                      handleInputChange("passingScore", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                {/* Duration */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Duration
+                  </label>
+                  <select
+                    value={formData.duration}
+                    onChange={(e) =>
+                      handleInputChange("duration", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">Select</option>
+                    <option>30 min</option>
+                    <option>60 min</option>
+                    <option>90 min</option>
+                  </select>
+                </div>
+
+                {/* Start Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Date
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.startDate}
+                    min={getMinDateTime()}
+                    onChange={(e) =>
+                      handleInputChange("startDate", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                {/* End Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.endDate}
+                    min={getMinDateTime()}
+                    onChange={(e) =>
+                      handleInputChange("endDate", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================= STEP 3 ================= */}
+          {currentStep === 3 && (
+            <div className="grid grid-cols-1">
               <div className="relative" ref={candidateDropdownRef}>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Add Candidates
@@ -970,7 +1341,6 @@ const TestsAssessments = () => {
                       {formData.candidates.length} Selected
                     </span>
                   )}
-                  {/* AI badge — shown only when Groq has scored */}
                   {hasGroqScores && (
                     <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700 border border-violet-200">
                       <Sparkles className="h-3 w-3" />
@@ -1027,7 +1397,6 @@ const TestsAssessments = () => {
 
                 {showCandidateDropdown && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-72 overflow-hidden">
-                    {/* Search */}
                     <div className="p-2 border-b border-gray-200">
                       <input
                         type="text"
@@ -1039,7 +1408,6 @@ const TestsAssessments = () => {
                       />
                     </div>
 
-                    {/* AI ranking notice */}
                     {hasGroqScores && (
                       <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 border-b border-violet-100">
                         <Sparkles className="h-3 w-3 text-violet-600 shrink-0" />
@@ -1099,7 +1467,7 @@ const TestsAssessments = () => {
                                         — {candidate.role}
                                       </span>
                                     )}
-                                    {/* Match label badge */}
+
                                     {label && (
                                       <span
                                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${style.badge}`}
@@ -1114,7 +1482,7 @@ const TestsAssessments = () => {
                                   <div className="text-xs text-gray-500 mt-0.5">
                                     {candidate.email}
                                   </div>
-                                  {/* Match reason */}
+
                                   {candidate.matchReason && (
                                     <div className="text-xs text-gray-400 mt-0.5 italic truncate">
                                       {candidate.matchReason}
@@ -1123,7 +1491,6 @@ const TestsAssessments = () => {
                                 </div>
 
                                 <div className="flex items-center gap-2 shrink-0">
-                                  {/* Score pill */}
                                   {score !== undefined && (
                                     <span
                                       className={`text-xs font-bold px-2 py-0.5 rounded-full ${
@@ -1150,405 +1517,48 @@ const TestsAssessments = () => {
                   </div>
                 )}
               </div>
-
-              {/* Start Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Date
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.startDate}
-                  min={new Date().toISOString().slice(0, 16)}
-                  onChange={(e) =>
-                    handleInputChange("startDate", e.target.value)
-                  }
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
-                    errors.startDate
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100 focus:ring-red-200"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  }`}
-                />
-                {errors.startDate && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.startDate}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* End Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  End Date
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.endDate}
-                  min={
-                    formData.endDate
-                      ? formData.endDate
-                      : new Date().toISOString().slice(0, 16)
-                  }
-                  onChange={(e) => handleInputChange("endDate", e.target.value)}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
-                    errors.endDate
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100 focus:ring-red-200"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  }`}
-                />
-                {errors.endDate && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.endDate}
-                    </span>
-                  </div>
-                )}
-              </div>
+              <div className="flex justify-end mt-2">
+  <button
+    onClick={() => setShowCandidateModal(true)}
+    className="text-xs px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+  >
+    + Add More Candidates
+  </button>
+</div>
             </div>
+          )}
 
-            {/* ── Row 2 ── */}
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Test Title
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Frontend Developer Assessment"
-                  value={formData.testTitle}
-                  onChange={(e) =>
-                    handleInputChange("testTitle", e.target.value)
+          {/* ================= NAVIGATION ================= */}
+          <div className="flex justify-between mt-6 mb-3">
+            {currentStep > 1 ? (
+              <button
+                onClick={() => setCurrentStep((prev) => prev - 1)}
+                className="px-5 py-2 border rounded-lg"
+              >
+                Back
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {currentStep < 3 && (
+              <button
+                onClick={() => {
+                  if (!validateStep(currentStep)) {
+                    showToast("error", "Fill required fields");
+                    return;
                   }
-                  disabled={mode === "prefill"}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
-                    errors.testTitle
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  } ${mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""}`}
-                />
-                {errors.testTitle && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.testTitle}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  No. of questions
-                </label>
-                <select
-                  value={formData.noOfQuestions}
-                  onChange={(e) =>
-                    handleInputChange("noOfQuestions", e.target.value)
-                  }
-                  disabled={mode === "prefill"}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none appearance-none bg-white transition-all ${
-                    errors.noOfQuestions
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  } ${mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""}`}
-                >
-                  <option value="">Select number of questions</option>
-                  {[10, 20, 30, 40, 50].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-                {errors.noOfQuestions && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.noOfQuestions}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+                  setCurrentStep((prev) => prev + 1);
+                }}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg"
+              >
+                Next
+              </button>
+            )}
+          </div>
 
-            {/* ── Row 3 ── */}
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Primary Skill
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., React.js"
-                  value={formData.primarySkill}
-                  onChange={(e) =>
-                    handleInputChange("primarySkill", e.target.value)
-                  }
-                  disabled={mode === "prefill"}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
-                    errors.primarySkill
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  } ${mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""}`}
-                />
-                {errors.primarySkill && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.primarySkill}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Passing Score%
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g., 70"
-                  min="0"
-                  max="100"
-                  value={formData.passingScore}
-                  onChange={(e) =>
-                    handleInputChange("passingScore", e.target.value)
-                  }
-                  disabled={mode === "prefill"}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
-                    errors.passingScore
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  } ${mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""}`}
-                />
-                {errors.passingScore && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.passingScore}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── Row 4 ── */}
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Secondary Skill (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., TypeScript"
-                  value={formData.secondarySkill}
-                  onChange={(e) =>
-                    handleInputChange("secondarySkill", e.target.value)
-                  }
-                  disabled={mode === "prefill"}
-                  className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none ${
-                    mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""
-                  }`}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select exam level
-                </label>
-                <select
-                  value={formData.examLevel}
-                  onChange={(e) =>
-                    handleInputChange("examLevel", e.target.value)
-                  }
-                  disabled={mode === "prefill"}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none appearance-none bg-white transition-all ${
-                    errors.examLevel
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  } ${mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""}`}
-                >
-                  <option value="">Select difficulty level</option>
-                  <option value="Easy">Easy</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-                {errors.examLevel && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.examLevel}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── Row 5: Duration + JD Upload ── */}
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Duration
-                </label>
-                <select
-                  value={formData.duration}
-                  onChange={(e) =>
-                    handleInputChange("duration", e.target.value)
-                  }
-                  disabled={mode === "prefill"}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none appearance-none bg-white transition-all ${
-                    errors.duration
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  } ${mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""}`}
-                >
-                  <option value="">Select duration</option>
-                  <option value="30 min">30 min</option>
-                  <option value="60 min">60 min</option>
-                  <option value="90 min">90 min</option>
-                  <option value="120 min">120 min</option>
-                </select>
-                {errors.duration && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.duration}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload Job Description (Optional)
-                </label>
-                {!formData.jobDescription ? (
-                  <label
-                    htmlFor="jd-upload"
-                    className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
-                      errors.jobDescription
-                        ? "border-red-300 bg-red-50 hover:bg-red-100"
-                        : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Upload className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      Upload PDF or DOC
-                    </span>
-                    <input
-                      id="jd-upload"
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-indigo-600" />
-                        <span className="text-sm text-gray-700 truncate max-w-[200px]">
-                          {formData.jobDescription instanceof File
-                            ? formData.jobDescription.name
-                            : formData.jobDescription}
-                        </span>
-                      </div>
-                      <button
-                        onClick={removeFile}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    {jdLoading && (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg">
-                        <div className="h-3 w-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs text-indigo-700">
-                          Analyzing JD and auto-filling fields...
-                        </span>
-                      </div>
-                    )}
-                    {jdError && !jdLoading && (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-100 rounded-lg">
-                        <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />
-                        <span className="text-xs text-red-600">{jdError}</span>
-                      </div>
-                    )}
-                    {jdAnalysis && !jdLoading && (
-                      <div className="px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <CheckCircle2 className="h-3 w-3 text-green-600" />
-                          <span className="text-xs font-medium text-green-700">
-                            Fields auto-filled from JD
-                          </span>
-                          {hasGroqScores && (
-                            <span className="flex items-center gap-1 ml-auto text-xs text-violet-600 font-medium">
-                              <Sparkles className="h-3 w-3" />
-                              Candidates AI-ranked
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {skills.slice(0, 4).map((skill: string) => (
-                            <span
-                              key={skill}
-                              className="px-2 py-0.5 bg-white border border-green-200 text-green-700 text-xs rounded-full"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-
-                          {skills.length > 4 && (
-                            <span>+{skills.length - 4} more</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {errors.jobDescription && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.jobDescription}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* JD Text */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Description
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Add a custom job description or use the uploaded JD to auto-fill this field"
-                  value={formData.jobDescriptionText}
-                  onChange={(e) =>
-                    handleInputChange("jobDescriptionText", e.target.value)
-                  }
-                  disabled={mode === "prefill"}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
-                    errors.jobDescriptionText
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : "border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  } ${mode === "prefill" ? "bg-gray-50 cursor-not-allowed" : ""}`}
-                />
-                {errors.jobDescriptionText && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.jobDescriptionText}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── Action Buttons ── */}
+          {/* ================= FINAL BUTTONS ================= */}
+          {currentStep === 3 && (
             <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
               {mode === "create" && (
                 <>
@@ -1633,10 +1643,9 @@ const TestsAssessments = () => {
                 </button>
               )}
             </div>
-          </div>
+          )}
         </div>
       )}
-
       {/* ── Templates Tab ── */}
       {activeTab === "templates" && (
         <div>
@@ -1812,6 +1821,128 @@ const TestsAssessments = () => {
           )}
         </div>
       )}
+
+   {showCandidateModal && !selectedAssessment && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden">
+
+      {/* HEADER */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Add Candidates
+          </h3>
+          <p className="text-xs text-gray-500">
+            Select additional candidates for this assessment
+          </p>
+        </div>
+
+        <button onClick={() => setShowCandidateModal(false)}>
+          <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+        </button>
+      </div>
+
+      {/* SEARCH */}
+      <div className="p-3 border-b border-gray-200">
+        <input
+          type="text"
+          placeholder="Search by name or role..."
+          value={candidateSearch}
+          onChange={(e) => setCandidateSearch(e.target.value)}
+          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
+      {/* INFO BAR */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+        <span>{manualCandidates.length} candidates available</span>
+        {formData.candidates.length > 0 && (
+          <span className="text-indigo-600 font-medium">
+            {formData.candidates.length} selected
+          </span>
+        )}
+      </div>
+
+      {/* LIST */}
+      <div className="max-h-72 overflow-y-auto">
+        {manualCandidates
+          .filter((c: any) =>
+            `${c.name} ${c.role || ""} ${c.email}`
+              .toLowerCase()
+              .includes(candidateSearch.toLowerCase())
+          )
+          .map((candidate: any) => {
+            const isSelected = formData.candidates.some(
+              (c: any) => c._id === candidate._id
+            );
+
+            return (
+              <div
+                key={candidate._id}
+                onClick={() => toggleCandidateSelection(candidate)}
+                className={`px-4 py-3 cursor-pointer transition ${
+                  isSelected
+                    ? "bg-indigo-50 hover:bg-indigo-100"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+
+                  {/* LEFT */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-gray-900">
+                        {candidate.name}
+                      </span>
+
+                      {candidate.role && (
+                        <span className="text-xs text-gray-400">
+                          — {candidate.role}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {candidate.email}
+                    </div>
+                  </div>
+
+                  {/* RIGHT */}
+                  <div className="flex items-center gap-2">
+
+                    {/* CHECK ICON */}
+                    {isSelected && (
+                      <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+        {manualCandidates.length === 0 && (
+          <div className="px-4 py-6 text-center text-sm text-gray-400">
+            No candidates available
+          </div>
+        )}
+      </div>
+
+      {/* FOOTER */}
+      <div className="flex justify-between items-center px-5 py-4 border-t border-gray-200 bg-gray-50">
+        <span className="text-xs text-gray-500">
+          Click on candidates to select/deselect
+        </span>
+
+        <button
+          onClick={() => setShowCandidateModal(false)}
+          className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Candidate Details Modal */}
       {showCandidateModal && selectedAssessment && (

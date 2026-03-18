@@ -36,14 +36,14 @@ export default function InterviewSetup() {
   const [loading, setLoading] = useState(false);
   const [subject, setSubject] = useState("");
   const [messageBody, setMessageBody] = useState("");
-  const [interviewLink,setInterviewLink] = useState("");
+  const [interviewLink, setInterviewLink] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [isGenerated, setIsGenerated] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
-  console.log(interviewLink)
-  console.log(subject)
+  console.log(interviewLink);
+  console.log(subject);
   // Candidate States
   const [candidates, setCandidates] = useState<any[]>([]);
   const [filteredCandidates, setFilteredCandidates] = useState<any[]>([]);
@@ -65,7 +65,8 @@ export default function InterviewSetup() {
   const [scoredCandidates, setScoredCandidates] = useState<any[]>([]);
   const [groqLoading, setGroqLoading] = useState(false);
   const [reDirect, setReDirect] = useState(false);
-
+  const [showCandidateModal, setShowCandidateModal] = useState(false);
+  const [candidateSearch, setCandidateSearch] = useState("");
   const handleFileDrop = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
@@ -154,19 +155,58 @@ export default function InterviewSetup() {
   ) => {
     if (!jdAnalysis || candidates.length === 0) return candidates;
 
-    const requiredSkills = jdAnalysis.requiredSkills || [];
+    // 🔥 Step 1: Extract keywords (same as your other file logic)
+    const extractKeywords = (skills: string[]) => {
+      return skills.flatMap(
+        (skill) =>
+          skill
+            .toLowerCase()
+            .replace(/[^\w\s]/g, "")
+            .split(" ")
+            .filter((word) => word.length > 3), // ignore small words
+      );
+    };
 
+    const requiredSkills = jdAnalysis.requiredSkills || [];
+    const keywords = extractKeywords(requiredSkills);
+
+    // 🔥 Step 2: Filter candidates based on keyword match
     const filtered = candidates.filter((c: any) => {
-      const candidateSkills = (c.skills || c.key_Skills || c.primarySkill || "")
+      const candidateSkills = (
+        c.skills ||
+        c.key_Skills ||
+        c.primarySkill ||
+        c.secondarySkill ||
+        ""
+      )
         .toString()
         .toLowerCase();
 
-      return requiredSkills.some((skill: string) =>
-        candidateSkills.includes(skill.toLowerCase()),
-      );
+      return keywords.some((word) => candidateSkills.includes(word));
     });
 
-    return filtered;
+    // 🔥 Step 3: Fallback (IMPORTANT)
+    // If nothing matched → return all candidates
+    return filtered.length > 0 ? filtered : candidates;
+  };
+
+  // AI candidates (dropdown)
+  const aiCandidates = scoredCandidates || [];
+
+  // Manual candidates (modal)
+  const manualCandidates = candidates.filter(
+    (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
+  );
+  const toggleCandidateSelection = (candidate: any) => {
+    const exists = selectedCandidates.some((c) => c._id === candidate._id);
+
+    if (exists) {
+      setSelectedCandidates((prev) =>
+        prev.filter((c) => c._id !== candidate._id),
+      );
+    } else {
+      setSelectedCandidates((prev) => [...prev, candidate]);
+    }
   };
   useEffect(() => {
     const runAI = async () => {
@@ -221,6 +261,7 @@ export default function InterviewSetup() {
       setCreatedJobId(response.jobId);
 
       setIsGenerated(true);
+      await fetchCandidates();
       setInterviewLink(
         `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}${userPath("loginWithId", response.jobId)},`,
       );
@@ -314,6 +355,7 @@ export default function InterviewSetup() {
 
       // Open email section
       setIsGenerated(true);
+      await fetchCandidates();
 
       // Default email
       setSubject("Invitations to Complete Your AI Video Interview");
@@ -346,84 +388,77 @@ export default function InterviewSetup() {
   // ================= SEARCH FILTER =================
 
   useEffect(() => {
+    if (!searchTerm) {
+      setFilteredCandidates(scoredCandidates);
+      return;
+    }
+
     const filtered = scoredCandidates.filter((c: any) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     setFilteredCandidates(filtered);
   }, [searchTerm, scoredCandidates]);
-
   // ================= SEND INVITATIONS =================
 
-const handleSendInvitations = async () => {
-  try {
-    setLoading(true);
+  const handleSendInvitations = async () => {
+    try {
+      setLoading(true);
 
-    if (!createdJobId) return toast.error("Create interview first");
-    if (!selectedCandidates.length)
-      return toast.error("Select candidates");
-    if (!startDate || !endDate)
-      return toast.error("Select dates");
+      if (!createdJobId) return toast.error("Create interview first");
+      if (!selectedCandidates.length) return toast.error("Select candidates");
+      if (!startDate || !endDate) return toast.error("Select dates");
 
-    const payload = {
-      jobId: createdJobId,
-      candidateIds: selectedCandidates.map((c) => c._id),
-      messageBody,
-      startDate,
-      endDate,
-      testTitle: position,
-    };
+      const payload = {
+        jobId: createdJobId,
+        candidateIds: selectedCandidates.map((c) => c._id),
+        messageBody,
+        startDate,
+        endDate,
+        testTitle: position,
+      };
 
-    const res = await adminService.sendInvitations(payload);
-  console.log(res)
+      const res = await adminService.sendInvitations(payload);
+      console.log(res);
 
-  
+      const invited = res.invitedEmails || [];
+      const skipped = res.skippedEmails || [];
 
-    const invited = res.invitedEmails || [];
-    const skipped = res.skippedEmails || [];
-
-    // 🔴 CASE 1: ALL SKIPPED (MOST IMPORTANT FIX)
-    if (res.isPartial && invited.length === 0) {
-      toast.error(
-        `All candidates already invited: ${skipped.join(", ")}`
-      );
-      return; // ❌ stop further execution
-    }
-
-    // 🟡 CASE 2: PARTIAL SUCCESS
-    if (res.isPartial) {
-      if (invited.length > 0) {
-        toast.success(`Invited: ${invited.join(", ")}`);
+      // 🔴 CASE 1: ALL SKIPPED (MOST IMPORTANT FIX)
+      if (res.isPartial && invited.length === 0) {
+        toast.error(`All candidates already invited: ${skipped.join(", ")}`);
+        return; // ❌ stop further execution
       }
 
-      if (skipped.length > 0) {
-        setTimeout(() => {
-          toast.error(`Skipped (already invited): ${skipped.join(", ")}`);
-        }, 300);
+      // 🟡 CASE 2: PARTIAL SUCCESS
+      if (res.isPartial) {
+        if (invited.length > 0) {
+          toast.success(`Invited: ${invited.join(", ")}`);
+        }
+
+        if (skipped.length > 0) {
+          setTimeout(() => {
+            toast.error(`Skipped (already invited): ${skipped.join(", ")}`);
+          }, 300);
+        }
       }
+
+      // 🟢 CASE 3: FULL SUCCESS
+      else {
+        toast.success(`Invitations sent to ${invited.length} candidate(s)`);
+      }
+
+      // ✅ reset UI
+      setSelectedCandidates([]);
+      setActiveTab("template");
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error?.res?.message || "Failed to send invitations");
+    } finally {
+      setLoading(false);
     }
-
-    // 🟢 CASE 3: FULL SUCCESS
-    else {
-      toast.success(
-        `Invitations sent to ${invited.length} candidate(s)`
-      );
-    }
-
-    // ✅ reset UI
-    setSelectedCandidates([]);
-    setActiveTab("template");
-
-  } catch (error: any) {
-    console.log(error)
-    toast.error(
-      error?.res?.message || "Failed to send invitations"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
- const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
+  };
+  const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -1002,7 +1037,9 @@ const handleSendInvitations = async () => {
                         className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-all"
                         onClick={() => {
                           setShowDropdown(!showDropdown);
-                          if (!candidates.length) fetchCandidates();
+                          if (candidates.length === 0) {
+                            fetchCandidates();
+                          }
                         }}
                       >
                         {selectedCandidates.length === 0 ? (
@@ -1119,7 +1156,14 @@ const handleSendInvitations = async () => {
                           </div>
                         </>
                       )}
-
+                      <div className="flex justify-end mt-3">
+                        <button
+                          onClick={() => setShowCandidateModal(true)}
+                          className="flex items-center gap-1.5 text-xs px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+                        >
+                          + Add More Candidates
+                        </button>
+                      </div>
                       <div className="w-full mt-4">
                         <label className="block text-xs sm:text-sm text-gray-500 mb-1">
                           Message Body
@@ -1244,6 +1288,121 @@ const handleSendInvitations = async () => {
             </>
           )}
         </div>
+        {showCandidateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden">
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Add Candidates
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Select additional candidates for this assessment
+                  </p>
+                </div>
+
+                <button onClick={() => setShowCandidateModal(false)}>
+                  <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+                </button>
+              </div>
+
+              {/* SEARCH */}
+              <div className="p-3 border-b border-gray-200">
+                <input
+                  type="text"
+                  placeholder="Search by name or role..."
+                  value={candidateSearch}
+                  onChange={(e) => setCandidateSearch(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* INFO BAR */}
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500">
+                <span>{manualCandidates.length} candidates available</span>
+                {selectedCandidates.length > 0 && (
+                  <span className="text-indigo-600 font-medium">
+                    {selectedCandidates.length} selected
+                  </span>
+                )}
+              </div>
+
+              {/* LIST */}
+              <div className="max-h-72 overflow-y-auto">
+                {manualCandidates
+                  .filter((c: any) =>
+                    `${c.name} ${c.role || ""} ${c.email}`
+                      .toLowerCase()
+                      .includes(candidateSearch.toLowerCase()),
+                  )
+                  .map((candidate: any) => {
+                    const isSelected = selectedCandidates.some(
+                      (c: any) => c._id === candidate._id,
+                    );
+
+                    return (
+                      <div
+                        key={candidate._id}
+                        onClick={() => toggleCandidateSelection(candidate)}
+                        className={`px-4 py-3 cursor-pointer transition ${
+                          isSelected
+                            ? "bg-indigo-50 hover:bg-indigo-100 border-l-4 border-indigo-500"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          {/* LEFT */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-gray-900">
+                                {candidate.name}
+                              </span>
+
+                              {candidate.role && (
+                                <span className="text-xs text-gray-400">
+                                  — {candidate.role}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {candidate.email}
+                            </div>
+                          </div>
+
+                          {/* RIGHT */}
+                          {isSelected && (
+                            <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {manualCandidates.length === 0 && (
+                  <div className="px-4 py-6 text-center text-sm text-gray-400">
+                    No candidates available
+                  </div>
+                )}
+              </div>
+
+              {/* FOOTER */}
+              <div className="flex justify-between items-center px-5 py-4 border-t border-gray-200 bg-gray-50">
+                <span className="text-xs text-gray-500">
+                  Click to select / deselect candidates
+                </span>
+
+                <button
+                  onClick={() => setShowCandidateModal(false)}
+                  className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </AdminLayout>
     </>
   );
