@@ -481,16 +481,56 @@ ${rawText}
   return JSON.parse(finalJson);
 }
 
-export const analyzeResumeWithAI = async (resumeText) => {
-  const prompt = `
-Extract structured candidate details from the resume.
-Also identify year_of_experience and show like 0-1,1-2,2-3,...
+export const analyzeResumeWithAI = async (resumeText, targetRole = "") => {
+  const roleInstruction = targetRole
+    ? `The recruiter is specifically hiring for: "${targetRole}". Use this as the role. When filtering skills, only keep skills relevant to "${targetRole}".`
+    : `You will determine the role yourself from the resume (see instruction 2 below). Then use THAT determined role to filter skills in instruction 4.`;
 
-Return ONLY valid JSON.
-Do NOT wrap in markdown.
-Do NOT include explanation.
+  const prompt = `You are a senior technical recruiter with 15 years of experience writing candidate assessments.
 
-Format strictly:
+Analyze the resume below and return structured data. Follow each instruction carefully.
+
+ROLE CONTEXT:
+${roleInstruction}
+
+STEP-BY-STEP INSTRUCTIONS:
+
+1. NAME / EMAIL / MOBILE
+   Extract exactly as written in the resume. Return empty string if not found. Never invent.
+
+2. ROLE
+   ${targetRole
+     ? `Use exactly: "${targetRole}"`
+     : `Do NOT copy the job title from the resume header. Based on their most recent position and overall career trajectory, write the most accurate current job title. Be specific — "Senior React Developer" not just "Developer".`
+   }
+
+3. YEAR_OF_EXPERIENCE
+   Calculate total years from work history dates. Return as a range: "0-1", "1-2", "2-3", "3-5", "5-7", "7-10", "10+". Estimate conservatively if dates are unclear.
+
+4. KEY_SKILLS — MOST CRITICAL FIELD
+   Follow this exact process:
+   Step A — Identify the candidate's primary role (use the role you determined in instruction 2 above).
+   Step B — List every technical skill, tool, framework, and technology mentioned anywhere in the resume.
+   Step C — From that list, keep ONLY skills that a person in that role would genuinely need or use day-to-day.
+   Step D — Remove anything generic: "Microsoft Office", "Communication", "Teamwork", "Email", "Internet".
+   Step E — Remove skills that are clearly from a different domain (e.g. if role is "Backend Developer", remove "Photoshop" or "Video Editing").
+   Step F — From what remains, pick the top 6-8 most important ones. Order by relevance — strongest first.
+   Return as comma-separated string.
+
+5. DESCRIPTION — SECOND MOST CRITICAL FIELD
+   Write a 2-3 sentence professional summary. Hard rules:
+   - NEVER copy or paraphrase sentences from the resume. Write completely fresh.
+   - Sentence 1: Who they are + total experience + primary domain.
+   - Sentence 2: A specific achievement or project from the resume (use real details, not vague statements).
+   - Sentence 3: Their clearest professional strength or what makes them valuable.
+   - Write in third person. Recruiter tone. Confident and specific.
+
+Resume:
+---
+${resumeText}
+---
+
+Return ONLY a valid JSON object. No markdown. No code fences. No explanation before or after.
 
 {
   "name": "",
@@ -500,26 +540,27 @@ Format strictly:
   "year_of_experience": "",
   "key_Skills": "",
   "description": ""
-}
-
-Resume:
-${resumeText}
-`;
+}`;
 
   const response = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
     messages: [{ role: "user", content: prompt }],
-    temperature: 0,
+    temperature: 0.1,
   });
 
   let content = response.choices[0].message.content;
 
   try {
-    // 🔥 Remove markdown if present
     content = content
       .replace(/```json/g, "")
       .replace(/```/g, "")
       .trim();
+
+    const start = content.indexOf("{");
+    const end   = content.lastIndexOf("}");
+    if (start !== -1 && end !== -1) {
+      content = content.slice(start, end + 1);
+    }
 
     return JSON.parse(content);
   } catch (error) {

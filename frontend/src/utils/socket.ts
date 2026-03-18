@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
-
-export const socket = io("http://localhost:3000", {
+import  { Socket_Url } from "./constants";
+export const socket = io(Socket_Url, {
   withCredentials: true,
   autoConnect: false,
   transports: ["websocket"]
