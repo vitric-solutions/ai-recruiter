@@ -47,7 +47,7 @@
 // //       .sort({ createdAt: -1 })
 // //       .populate("createdBy", "email")
 // //       .populate("candidates.candidateId");
-// //     // console.log("interviews", interviews);
+// //     // //console.log("interviews", interviews);
 // //     return res.status(200).json({
 // //       success: true,
 // //       count: interviews.length,
@@ -210,7 +210,7 @@
 
 //     // Get job description file path if uploaded
 //     const jobDescription = req.file ? req.file.path.replace(/\\/g, "/") : "";
-//     // console.log("Job description path:", jobDescription);
+//     // //console.log("Job description path:", jobDescription);
 
 //     // // Generate questions using AI
 //     // const questions = await generateQuestions(
@@ -220,7 +220,7 @@
 //     //   "MCQ",
 //     //   parseInt(no_of_questions),
 //     // );
-//     // console.log("Generated questions for template:", questions);
+//     // //console.log("Generated questions for template:", questions);
 
 //     // Create interview template
 //     const interview = await MCQ_Interview.create({
@@ -764,7 +764,7 @@
 
 //     res.json({ candidates });
 //   } catch (error) {
-//     console.log(error);
+//     //console.log(error);
 //     res.status(500).json({error});
 //   }
 // };
@@ -774,7 +774,7 @@
 //     const { id } = req.params;
 
 //     const interview = await MCQ_Interview.findById(id);
-//     console.log("Found interview for update:", interview);
+//     //console.log("Found interview for update:", interview);
 //     if (!interview) {
 //       return res.status(404).json({ message: "Interview not found" });
 //     }
@@ -856,7 +856,7 @@
 
 //     res.json({ interview: interview, user: candidate._doc });
 //   } catch (error) {
-//     console.log(error);
+//     //console.log(error);
 //     res.status(500).json({error});
 //   }
 // };
@@ -886,6 +886,7 @@ import Score from "../../models/Score.js";
 import AI_Interview from "../../models/AI_Interview.js";
 import { sendMCQInterviewLink } from "../../services/emailService.js";
 import mongoose from "mongoose";
+import { encryptPath } from "../../utils/routeEncrypt.js";
 
 // export const GetAllMCQInterviews = async (req, res) => {
 //   try {
@@ -928,7 +929,7 @@ import mongoose from "mongoose";
 //       .sort({ createdAt: -1 })
 //       .populate("createdBy", "email")
 //       .populate("candidates.candidateId");
-//     // console.log("interviews", interviews);
+//     // //console.log("interviews", interviews);
 //     return res.status(200).json({
 //       success: true,
 //       count: interviews.length,
@@ -947,57 +948,58 @@ import mongoose from "mongoose";
 export const GetAllMCQInterviews = async (req, res) => {
   try {
     const adminId = req.user.id;
-    const { id } = req.query;
 
-    /* ================= GET SINGLE ================= */
+    // const { id } = req.query;
 
-    if (id) {
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid interview ID",
-        });
-      }
+    // /* ================= GET SINGLE ================= */
 
-      const interview = await MCQ_Interview.findOne({
-        _id: id,
-        createdBy: adminId,
-      })
-        .populate("createdBy", "email")
-        .populate("candidates.candidateId");
+    // if (id) {
+    //   if (!mongoose.Types.ObjectId.isValid(id)) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: "Invalid interview ID",
+    //     });
+    //   }
 
-      if (!interview) {
-        return res.status(404).json({
-          success: false,
-          message: "Interview not found",
-        });
-      }
+    //   const interview = await MCQ_Interview.findOne({
+    //     _id: id,
+    //     createdBy: adminId,
+    //   })
+    //     .populate("createdBy", "email")
+    //     .populate("candidates.candidateId");
 
-      // 🔥 Fetch all scores for this interview
-      const scores = await Score.find({
-        interviewId: id,
-      });
+    //   if (!interview) {
+    //     return res.status(404).json({
+    //       success: false,
+    //       message: "Interview not found",
+    //     });
+    //   }
 
-      const updatedCandidates = interview.candidates.map((candidate) => {
-        const candidateScore = scores.find(
-          (s) =>
-            s.candidateId.toString() === candidate.candidateId._id.toString(),
-        );
+    //   // 🔥 Fetch all scores for this interview
+    //   const scores = await Score.find({
+    //     interviewId: id,
+    //   });
 
-        return {
-          ...candidate.toObject(),
-          scoreDetails: candidateScore || null, // 👈 FULL SCORE OBJECT
-        };
-      });
+    //   const updatedCandidates = interview.candidates.map((candidate) => {
+    //     const candidateScore = scores.find(
+    //       (s) =>
+    //         s.candidateId.toString() === candidate.candidateId._id.toString(),
+    //     );
 
-      return res.status(200).json({
-        success: true,
-        data: {
-          ...interview.toObject(),
-          candidates: updatedCandidates,
-        },
-      });
-    }
+    //     return {
+    //       ...candidate.toObject(),
+    //       scoreDetails: candidateScore || null, // 👈 FULL SCORE OBJECT
+    //     };
+    //   });
+
+    //   return res.status(200).json({
+    //     success: true,
+    //     data: {
+    //       ...interview.toObject(),
+    //       candidates: updatedCandidates,
+    //     },
+    //   });
+    // }
 
     /* ================= GET ALL ================= */
 
@@ -1021,9 +1023,9 @@ export const GetAllMCQInterviews = async (req, res) => {
       );
 
       const updatedCandidates = interview.candidates.map((candidate) => {
+     
         const candidateScore = interviewScores.find(
-          (s) =>
-            s.candidateId.toString() === candidate.candidateId._id.toString(),
+          (s) => s.candidateId.toString() === candidate._id.toString(),
         );
 
         return {
@@ -1083,8 +1085,7 @@ export const CreateMCQTemplate = async (req, res) => {
 
     // Get job description file path if uploaded
     const jobDescription = req.file ? req.file.path.replace(/\\/g, "/") : "";
-    // console.log("Job description path:", jobDescription);
-
+    
     // // Generate questions using AI
     // const questions = await generateQuestions(
     //   jobDescription,
@@ -1093,7 +1094,6 @@ export const CreateMCQTemplate = async (req, res) => {
     //   "MCQ",
     //   parseInt(no_of_questions),
     // );
-    // console.log("Generated questions for template:", questions);
 
     // Create interview template
     const interview = await MCQ_Interview.create({
@@ -1247,7 +1247,14 @@ export const AssessmentInvitation = async (req, res) => {
       // Generate credentials
       const username = `user_${Math.random().toString(36).substring(2, 10)}`;
       const password = Math.random().toString(36).slice(-8);
-      const interviewLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${interview._id}`;
+      const generateInterviewLink = (interviewId) => {
+        const basePath = encryptPath("/user/login"); // ✅ only static part
+
+        return `${
+          process.env.FRONTEND_URL || "http://localhost:5173"
+        }${basePath}/${interviewId}`; // ✅ raw ID
+      };
+      const interviewLink = generateInterviewLink(interview._id);
 
       const entry = {
         candidateId: candidate._id,
@@ -1336,6 +1343,7 @@ export const AssessmentInvitationByID = async (req, res) => {
     const { assessmentId } = req.params;
     const { candidateIds, start_date, end_date } = req.body;
 
+    // ✅ Basic validation
     if (!candidateIds || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
@@ -1343,6 +1351,7 @@ export const AssessmentInvitationByID = async (req, res) => {
       });
     }
 
+    // ✅ Parse candidateIds
     let candidateArray;
     try {
       candidateArray =
@@ -1351,31 +1360,45 @@ export const AssessmentInvitationByID = async (req, res) => {
           : candidateIds;
 
       if (!Array.isArray(candidateArray) || candidateArray.length === 0) {
-        throw new Error("Invalid array");
+        throw new Error();
       }
-    } catch (err) {
+    } catch {
       return res.status(400).json({
         success: false,
         message: "Please select at least one candidate",
       });
     }
 
+    // ✅ Date validation
     const startDate = new Date(start_date);
     const endDate = new Date(end_date);
-    if (!start_date || !end_date) {
+
+    if (isNaN(startDate) || isNaN(endDate)) {
       return res.status(400).json({
         success: false,
-        message: "Start date and end date are required",
+        message: "Invalid date format",
       });
     }
 
-    if (endDate.getTime() <= startDate.getTime()) {
+    if (endDate <= startDate) {
       return res.status(400).json({
         success: false,
         message: "End date must be after start date",
       });
     }
 
+    // ✅ 7-day restriction
+    const now = new Date();
+    const diffDays = (startDate - now) / (1000 * 60 * 60 * 24);
+
+    if (diffDays > 7) {
+      return res.status(400).json({
+        success: false,
+        message: "Interview can only be scheduled within 7 days",
+      });
+    }
+
+    // ✅ Fetch interview
     const interview = await MCQ_Interview.findById(assessmentId);
 
     if (!interview) {
@@ -1387,30 +1410,42 @@ export const AssessmentInvitationByID = async (req, res) => {
 
     const scheduledCandidates = [];
     const skippedCandidates = [];
+    const invitedEmails = [];
+    const skippedEmails = [];
     const emailResults = [];
 
+    // ✅ Process candidates
     for (const candId of candidateArray) {
       const candidate = await Candidate.findById(candId);
       if (!candidate) continue;
 
-      // 🔥 STRICT CHECK: already invited?
-      const alreadyInvited = interview.candidates.find(
+      const alreadyInvited = interview.candidates.some(
         (c) => c.candidateId.toString() === candId.toString(),
       );
 
+      // 🔴 Skip if already invited
       if (alreadyInvited) {
         skippedCandidates.push({
-          candidate: candidate.email,
+          candidateId: candidate._id,
+          email: candidate.email,
           reason: "Already invited",
         });
-        continue; // ❌ skip sending again
+        skippedEmails.push(candidate.email);
+        continue;
       }
 
+      // ✅ Generate credentials
       const username = `user_${Math.random().toString(36).substring(2, 10)}`;
       const password = Math.random().toString(36).slice(-8);
-      const interviewLink = `${
-        process.env.FRONTEND_URL || "http://localhost:5173"
-      }/user/login/${interview._id}`;
+
+      const generateInterviewLink = (interviewId) => {
+        const basePath = encryptPath("/user/login"); // ✅ only static part
+
+        return `${
+          process.env.FRONTEND_URL || "http://localhost:5173"
+        }${basePath}/${interviewId}`; // ✅ raw ID
+      };
+      const interviewLink = generateInterviewLink(interview._id);
 
       const entry = {
         candidateId: candidate._id,
@@ -1423,6 +1458,7 @@ export const AssessmentInvitationByID = async (req, res) => {
         assignedQuestions: [],
       };
 
+      // ✅ Save in interview
       interview.candidates.push(entry);
 
       scheduledCandidates.push({
@@ -1431,6 +1467,9 @@ export const AssessmentInvitationByID = async (req, res) => {
         email: candidate.email,
       });
 
+      invitedEmails.push(candidate.email);
+
+      // ✅ Send email
       try {
         await sendMCQInterviewLink(
           candidate.email,
@@ -1449,37 +1488,76 @@ export const AssessmentInvitationByID = async (req, res) => {
           endDate,
         );
 
-        emailResults.push({ candidate: candidate.email, status: "sent" });
-      } catch (emailError) {
+        emailResults.push({
+          candidate: candidate.email,
+          status: "sent",
+        });
+      } catch (err) {
         emailResults.push({
           candidate: candidate.email,
           status: "failed",
-          error: emailError.message,
         });
       }
     }
 
-    await interview.save();
+    // ✅ Save only if something added
+    if (scheduledCandidates.length > 0) {
+      await interview.save();
+    }
 
+    // 🔴 CASE 1: All skipped
+    if (scheduledCandidates.length === 0 && skippedEmails.length > 0) {
+      return res.status(200).json({
+        success: true,
+        isPartial: true,
+        message: "All selected candidates are already invited",
+        invitedEmails: [],
+        skippedEmails,
+        data: {
+          scheduledCandidates,
+          skippedCandidates,
+          emailResults,
+        },
+      });
+    }
+
+    // 🟡 CASE 2: Partial success
+    if (skippedEmails.length > 0) {
+      return res.status(200).json({
+        success: true,
+        isPartial: true,
+        message: "Some candidates already invited",
+        invitedEmails,
+        skippedEmails,
+        data: {
+          scheduledCandidates,
+          skippedCandidates,
+          emailResults,
+        },
+      });
+    }
+
+    // 🟢 CASE 3: Full success
     return res.status(200).json({
       success: true,
-      message: "Invitation process completed",
+      isPartial: false,
+      message: "All candidates invited successfully",
+      invitedEmails,
+      skippedEmails: [],
       data: {
         scheduledCandidates,
-        skippedCandidates,
         emailResults,
       },
     });
   } catch (error) {
-    console.error("Error sending invites:", error);
+    console.error("Invite Error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to send invites",
-      error: error.message,
     });
   }
 };
-
 export const GetCandidatesInInterview = async (req, res) => {
   const { id } = req.params;
 
@@ -1569,10 +1647,10 @@ export const GetCandidatesInInterview = async (req, res) => {
       return bTime - aTime;
     });
 
-    res.json({ candidates });``
+    res.json({ candidates });
+    ``;
   } catch (error) {
-    console.log(error);
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 };
 
@@ -1581,7 +1659,6 @@ export const updateMCQInterview = async (req, res) => {
     const { id } = req.params;
 
     const interview = await MCQ_Interview.findById(id);
-    console.log("Found interview for update:", interview);
     if (!interview) {
       return res.status(404).json({ message: "Interview not found" });
     }
@@ -1627,7 +1704,7 @@ export const updateMCQInterview = async (req, res) => {
     });
   } catch (error) {
     console.error("Update error:", error);
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 };
 export const getMCQInterviewById = async (req, res) => {
@@ -1663,8 +1740,7 @@ export const getMCQInterviewById = async (req, res) => {
 
     res.json({ interview: interview, user: candidate._doc });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 };
 
@@ -1684,6 +1760,6 @@ export const GetAllAssessmentSchedule = async (req, res) => {
     return res.json({ totalSchedules: total });
   } catch (err) {
     console.error("Error counting schedules:", err.message);
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 };

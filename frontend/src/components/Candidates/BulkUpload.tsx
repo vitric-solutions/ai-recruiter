@@ -27,7 +27,7 @@ const BulkUpload = () => {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: (results:any) => {
         setPreviewData(results.data.slice(0, 5)); // show first 5 rows
       },
     });
@@ -39,13 +39,13 @@ const BulkUpload = () => {
       toast.error("Please select a CSV file");
       return;
     }
-    console.log("selectedFile", selectedFile);
+    //console.log("selectedFile", selectedFile);
     try {
       setLoading(true);
 
       const formData = new FormData();
       formData.append("csvFile", selectedFile);
-      console.log(formData)
+      //console.log(formData)
 
       const res = await adminService.bulk_add_candidate(formData);
 

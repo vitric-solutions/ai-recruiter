@@ -19,6 +19,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  tls: {
+  rejectUnauthorized: false
+}
 });
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
@@ -177,9 +180,9 @@ function generatePDF(data) {
 
     const sp = speechPatterns || {};
     const metrics = [
-      { label: "Clarity Score",     value: sp.clarityScore    != null ? `${Math.round(sp.clarityScore * 20)}%` : "N/A", color: C.accent },
+      { label: "Clarity Score",     value: sp.clarityScore    != null ? `${Math.round(sp.clarityScore)}%` : "N/A", color: C.accent },
       { label: "Avg Response Time", value: sp.avgResponseTime || "N/A",                                                  color: C.teal   },
-      { label: "Confidence Level",  value: sp.confidenceLevel != null ? `${Math.round(sp.confidenceLevel * 20)}%` : "N/A", color: C.blue },
+      { label: "Confidence Level",  value: sp.confidenceLevel != null ? `${Math.round(sp.confidenceLevel)}%` : "N/A", color: C.blue },
       { label: "Complexity Score",  value: sp.complexityScore != null ? String(sp.complexityScore) : "N/A",              color: C.orange },
     ];
 
@@ -305,7 +308,7 @@ const calculateScores = (feedback) => {
 //       });
 //     }
 
-//     console.log("Generating feedback for:", interview_id);
+//     //console.log("Generating feedback for:", interview_id);
 //  const { technicalScore, relevanceScore } = calculateScores(feedback);
 
 //     // Inject into feedback object
@@ -348,7 +351,7 @@ const calculateScores = (feedback) => {
 //       uploadStream.end(pdfBuffer); // pipe buffer directly
 //     });
 
-//     console.log("Cloudinary upload success:", uploadResult.secure_url);
+//     //console.log("Cloudinary upload success:", uploadResult.secure_url);
 
 //     // ===============================
 //     // 3️⃣ Send Email with PDF Attachment
@@ -419,7 +422,7 @@ const calculateScores = (feedback) => {
 //       ],
 //     });
 
-//     console.log("Email sent successfully");
+//     //console.log("Email sent successfully");
 
 //     // ===============================
 //     // 4️⃣ Save / Update in Database
@@ -465,6 +468,7 @@ router.post("/feedback", async (req, res) => {
   try {
     const {
       interview_id,
+      candidateId,
       userName,
       userEmail,
       feedback,
@@ -479,8 +483,6 @@ router.post("/feedback", async (req, res) => {
         message: "interview_id is required",
       });
     }
-
-    console.log("Generating feedback for:", interview_id);
 
     // ==================================================
     // 🔥 Calculate Technical & Relevance Scores
@@ -534,7 +536,6 @@ router.post("/feedback", async (req, res) => {
       uploadStream.end(pdfBuffer);
     });
 
-    console.log("Cloudinary upload success:", uploadResult.secure_url);
 
     // ===============================
     // 3️⃣ Send Email
@@ -583,15 +584,18 @@ router.post("/feedback", async (req, res) => {
       ],
     });
 
-    console.log("Email sent successfully");
+    
 
     // ===============================
     // 4️⃣ Save / Update in Database
     // ===============================
     const doc = await InterviewFeedback.findOneAndUpdate(
-      { interview_id },
+      { interview_id,interview_id,
+      candidateId, },
       {
         $set: {
+          interview_id,
+      candidateId, // 🔥 THIS WAS MISSING
           userName,
           userEmail,
           feedback,
@@ -622,7 +626,7 @@ router.post("/feedback", async (req, res) => {
       }
     );
 
-    console.log("Candidate status updated");
+   
 
     // ==================================================
     // 7️⃣ Auto Mark Interview Completed (If All Done)
@@ -636,7 +640,7 @@ router.post("/feedback", async (req, res) => {
     if (allCompleted) {
       interview.status = "completed";
       await interview.save();
-      console.log("Interview marked as completed");
+   
     }
 
     return res.json({
@@ -757,13 +761,11 @@ router.delete("/feedback/:interview_id", async (req, res) => {
 // ─── Validation helpers ─────────────────────────────
 function isValidBody(body) {
   return (
-    typeof body === "object" &&
-    body !== null &&
-    typeof body.prompt === "string" &&
-    body.prompt.trim().length > 0
+    body &&
+    Array.isArray(body.transcript) &&
+    body.transcript.length > 0
   );
 }
-
 function safeJsonParse(raw) {
   try {
     const cleaned = raw.replace(/```json|```/gi, "").trim();
@@ -777,6 +779,7 @@ function safeJsonParse(raw) {
 
 router.post("/ai-feedback", async (req, res) => {
   // 1. Validate
+  //console.log("req.body",req.body)
   if (!isValidBody(req.body)) {
     return res.status(400).json({
       feedback: "",
@@ -794,7 +797,7 @@ router.post("/ai-feedback", async (req, res) => {
   }
 
   try {
-    // 2. Call HuggingFace Router (OpenAI-compatible endpoint)
+    // 2. Call Grok Router (OpenAI-compatible endpoint)
   const response = await fetch(
   "https://api.groq.com/openai/v1/chat/completions",
   {
@@ -830,7 +833,7 @@ router.post("/ai-feedback", async (req, res) => {
       console.error("[ai-feedback] HF HTTP error:", response.status, rawText);
       return res.status(response.status).json({
         feedback: "",
-        error: `HuggingFace API error (${response.status})`,
+        error: `Grok API error (${response.status})`,
         details: rawText,
       });
     }
@@ -843,7 +846,7 @@ router.post("/ai-feedback", async (req, res) => {
       console.error("[ai-feedback] HF returned non-JSON:", rawText);
       return res.status(502).json({
         feedback: "",
-        error: "HuggingFace returned a non-JSON response.",
+        error: "Grok returned a non-JSON response.",
         details: rawText,
       });
     }

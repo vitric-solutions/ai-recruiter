@@ -5,6 +5,7 @@ import { AxiosError } from "axios";
 import { adminService } from "../../services/service/adminService";
 import { useAuth } from "../../context/context";
 import SignIN_BG_Image from "../../assets/sign_in_bg.png";
+import { adminPath } from "../../routes/EncryptRoute";
 
 interface LoginFormData {
   email: string;
@@ -31,7 +32,7 @@ const LoginPage: React.FC = () => {
 
     try {
       const response = await adminService.login(data);
-      console.log(response)
+      //console.log(response)
 
       const { accessToken, refreshToken, user } = response;
 
@@ -57,7 +58,7 @@ const LoginPage: React.FC = () => {
       localStorage.setItem("user", JSON.stringify(user));
 
       // 🔥 Navigate AFTER user is set
-      navigate("/admin/dashboard", { replace: true });
+    navigate(`/admin${adminPath("dashboard")}`,{ replace: true });
 
     } catch (err) {
       const axiosError = err as AxiosError<{ message: string }>;

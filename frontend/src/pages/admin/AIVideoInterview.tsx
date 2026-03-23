@@ -3,7 +3,7 @@ import {
   type DragEvent,
   type ChangeEvent,
   useEffect,
-  useRef
+  useRef,
 } from "react";
 import toast from "react-hot-toast";
 import { CheckCircle2, X } from "lucide-react";
@@ -17,6 +17,7 @@ import Calender from "../../assets/admin/calender.png";
 import Bookmark from "../../assets/admin/assessment/bookmark.png";
 import Edit from "../../assets/admin/assessment/edit1.png";
 import ActiveInterviews from "../../components/admin/AI Interview/ActiveInterviews";
+import { userPath } from "../../routes/EncryptRoute";
 import { adminService } from "../../services/service/adminService";
 
 export default function InterviewSetup() {
@@ -41,7 +42,8 @@ export default function InterviewSetup() {
   const [isGenerated, setIsGenerated] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
-
+  //console.log(interviewLink);
+  //console.log(subject);
   // Candidate States
   const [candidates, setCandidates] = useState<any[]>([]);
   const [filteredCandidates, setFilteredCandidates] = useState<any[]>([]);
@@ -54,93 +56,193 @@ export default function InterviewSetup() {
   //edit
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [useTemplateMode, setUseTemplateMode] = useState(false);
 
- const handleFileDrop = async (e: DragEvent<HTMLDivElement>) => {
-  e.preventDefault();
-  const droppedFile = e.dataTransfer.files[0];
+  const [jdLoading, setJdLoading] = useState(false);
+  const [candidatesLoading, setCandidatesLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [jdAnalysis, setJdAnalysis] = useState<any>(null);
+  const [scoredCandidates, setScoredCandidates] = useState<any[]>([]);
+  const [groqLoading, setGroqLoading] = useState(false);
+  const [reDirect, setReDirect] = useState(false);
+  const [showCandidateModal, setShowCandidateModal] = useState(false);
+  const [candidateSearch, setCandidateSearch] = useState("");
+  const handleFileDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const droppedFile = e.dataTransfer.files[0];
 
-  if (!droppedFile || !/\.(pdf|docx?|txt)$/i.test(droppedFile.name)) {
-    toast.error("Invalid file type");
-    return;
-  }
-
-  // Simulate input change
-  const fakeEvent = {
-    target: { files: [droppedFile] },
-  } as any;
-
-  await handleFileChange(fakeEvent);
-};
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
-
- const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-  const selectedFile = e.target.files?.[0];
-  if (!selectedFile || !/\.(pdf|docx?|txt)$/i.test(selectedFile.name)) {
-    toast.error("Invalid file type");
-    return;
-  }
-
-  setFileName(selectedFile.name);
-  setFile(selectedFile);
-
-  try {
-    const fd = new FormData();
-    fd.append("jobDescription", selectedFile);
-
-    const res = await adminService.analyzeJD(fd);
-    const analysis = res.analysis;
-
-    if (!analysis) return;
-
-    // 🔥 Map difficulty
-    const difficultyLevel =
-      mapExperienceToDifficulty(
-        analysis?.experienceLevel,
-        analysis?.experienceYears
-      ) || "";
-
-    const autoQuestions = getDefaultQuestions(difficultyLevel);
-    const autoDuration = getDefaultDuration(difficultyLevel);
-
-    // 🔥 Auto-fill without overwriting user values
-    setPosition((prev) => prev || analysis?.jobTitle || "");
-    setDescription((prev) => prev || analysis?.jobSummary || analysis?.fullJobDescription || "");
-    setDifficulty((prev) => prev || difficultyLevel);
-    setNumberOfQuestions((prev) => prev || autoQuestions);
-    setDuration((prev) => prev || autoDuration);
-    setPassingScore((prev) => prev || "70");
-
-    // 🔥 Merge skills (requiredSkills + niceToHaveSkills)
-    const combinedSkills = [
-      ...(analysis?.requiredSkills || []),
-      ...(analysis?.niceToHaveSkills || []),
-    ];
-
-    if (combinedSkills.length > 0) {
-      setSkills((prev) => {
-        const unique = new Set([...prev, ...combinedSkills]);
-        return Array.from(unique);
-      });
+    if (!droppedFile || !/\.(pdf|docx?|txt)$/i.test(droppedFile.name)) {
+      toast.error("Invalid file type");
+      return;
     }
 
-    toast.success("JD analyzed & fields auto-filled ✅");
-  } catch (error: any) {
-    console.error(error);
-    toast.error("Failed to analyze JD");
-  }
-};
+    // Simulate input change
+    const fakeEvent = {
+      target: { files: [droppedFile] },
+    } as any;
 
+    await handleFileChange(fakeEvent);
+  };
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile || !/\.(pdf|docx?|txt)$/i.test(selectedFile.name)) {
+      toast.error("Invalid file type");
+      return;
+    }
+
+    setFileName(selectedFile.name);
+    setFile(selectedFile);
+
+    try {
+      setJdLoading(true);
+      const fd = new FormData();
+      fd.append("jobDescription", selectedFile);
+
+      const res = await adminService.analyzeJD(fd);
+      const analysis = res.analysis;
+
+      if (!analysis) return;
+      setJdAnalysis(analysis);
+
+      // 🔥 Map difficulty
+      const difficultyLevel =
+        mapExperienceToDifficulty(
+          analysis?.experienceLevel,
+          analysis?.experienceYears,
+        ) || "";
+
+      const autoQuestions = getDefaultQuestions(difficultyLevel);
+      const autoDuration = getDefaultDuration(difficultyLevel);
+
+      // 🔥 Auto-fill without overwriting user values
+      setPosition((prev) => prev || analysis?.jobTitle || "");
+      setDescription(
+        (prev) =>
+          prev || analysis?.jobSummary || analysis?.fullJobDescription || "",
+      );
+      setDifficulty((prev) => prev || difficultyLevel);
+      setNumberOfQuestions((prev) => prev || autoQuestions);
+      setDuration((prev) => prev || autoDuration);
+      setPassingScore((prev) => prev || "70");
+
+      // 🔥 Merge skills (requiredSkills + niceToHaveSkills)
+      const combinedSkills = [
+        ...(analysis?.requiredSkills || []),
+        ...(analysis?.niceToHaveSkills || []),
+      ];
+
+      if (combinedSkills.length > 0) {
+        setSkills((prev) => {
+          const unique = new Set([...prev, ...combinedSkills]);
+          return Array.from(unique);
+        });
+      }
+
+      toast.success("JD analyzed & fields auto-filled ✅");
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Failed to analyze JD");
+    } finally {
+      setJdLoading(false);
+    }
+  };
+
+  const scoreCandidatesWithGroq = async (
+    candidates: any[],
+    jdAnalysis: any,
+  ) => {
+    if (!jdAnalysis || candidates.length === 0) return candidates;
+
+    // 🔥 Step 1: Extract keywords (same as your other file logic)
+    const extractKeywords = (skills: string[]) => {
+      return skills.flatMap(
+        (skill) =>
+          skill
+            .toLowerCase()
+            .replace(/[^\w\s]/g, "")
+            .split(" ")
+            .filter((word) => word.length > 3), // ignore small words
+      );
+    };
+
+    const requiredSkills = jdAnalysis.requiredSkills || [];
+    const keywords = extractKeywords(requiredSkills);
+
+    // 🔥 Step 2: Filter candidates based on keyword match
+    const filtered = candidates.filter((c: any) => {
+      const candidateSkills = (
+        c.skills ||
+        c.key_Skills ||
+        c.primarySkill ||
+        c.secondarySkill ||
+        ""
+      )
+        .toString()
+        .toLowerCase();
+
+      return keywords.some((word) => candidateSkills.includes(word));
+    });
+
+    // 🔥 Step 3: Fallback (IMPORTANT)
+    // If nothing matched → return all candidates
+    return filtered.length > 0 ? filtered : candidates;
+  };
+
+  // AI candidates (dropdown)
+  const aiCandidates = scoredCandidates || [];
+
+  // Manual candidates (modal)
+  const manualCandidates = candidates.filter(
+    (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
+  );
+  const toggleCandidateSelection = (candidate: any) => {
+    const exists = selectedCandidates.some((c) => c._id === candidate._id);
+
+    if (exists) {
+      setSelectedCandidates((prev) =>
+        prev.filter((c) => c._id !== candidate._id),
+      );
+    } else {
+      setSelectedCandidates((prev) => [...prev, candidate]);
+    }
+  };
+  useEffect(() => {
+    const runAI = async () => {
+      try {
+        if (jdAnalysis && candidates.length > 0) {
+          setGroqLoading(true);
+
+          const filtered = await scoreCandidatesWithGroq(
+            candidates,
+            jdAnalysis,
+          );
+
+          setScoredCandidates(filtered);
+        } else {
+          setScoredCandidates(candidates);
+        }
+      } catch (error) {
+        console.error("AI filtering error:", error);
+      } finally {
+        setGroqLoading(false);
+      }
+    };
+
+    runAI();
+  }, [jdAnalysis, candidates]);
   const handleGenerateAndSendInvites = async () => {
     try {
       if (!file) {
         toast.error("Please upload job description file");
         return;
       }
-      
+
       setLoading(true);
-      
+
       const formData = new FormData();
-      
+
       formData.append("jobDescription", file);
       formData.append("position", position);
       formData.append("description", description);
@@ -149,17 +251,20 @@ export default function InterviewSetup() {
       formData.append("passingScore", passingScore);
       formData.append("secondaryJobDescription", secondaryJobDescription);
       formData.append("numberOfQuestions", numberOfQuestions);
-      
+
       skills.forEach((skill) => {
         formData.append("skills", skill);
       });
-      
+
       const response = await adminService.generateAIInterview(formData);
-      console.log("Interview Created:", response);
+      //console.log("Interview Created:", response);
       setCreatedJobId(response.jobId);
-      
+
       setIsGenerated(true);
-      setInterviewLink(`${import.meta.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${response.jobId}`);
+      await fetchCandidates();
+      setInterviewLink(
+        `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}${userPath("loginWithId", response.jobId)},`,
+      );
 
       setSubject("Invitations to Complete Your AI Video Interview");
 
@@ -197,7 +302,7 @@ export default function InterviewSetup() {
       });
 
       const response = await adminService.generateAIInterview(formData);
-      console.log("Interview Created:", response);
+      //console.log("Interview Created:", response);
       setCreatedJobId(response.jobId);
       setActiveTab("template");
     } catch (error: any) {
@@ -209,12 +314,16 @@ export default function InterviewSetup() {
   };
 
   const onNavigateToInterviewSetup = async (assessment: any) => {
-    console.log("Navigating to Interview Setup with assessment:", assessment);
+    //console.log("Navigating to Interview Setup with assessment:", assessment);
     setActiveTab("setup");
-   
-    setInterviewLink(`${import.meta.env.FRONTEND_URL || "http://localhost:5173"}/user/login/${assessment.jobId}`);
+    setUseTemplateMode(true);
+
+    setInterviewLink(
+      `${import.meta.env.FRONTEND_URL || "http://localhost:5173"}${userPath("loginWithId", assessment.jobId)}`,
+    );
 
     try {
+      setReDirect(true);
       const res = await adminService.getDraft(assessment._id);
       const data = res.data; // ✅ correct structure
 
@@ -246,6 +355,7 @@ export default function InterviewSetup() {
 
       // Open email section
       setIsGenerated(true);
+      await fetchCandidates();
 
       // Default email
       setSubject("Invitations to Complete Your AI Video Interview");
@@ -254,6 +364,8 @@ export default function InterviewSetup() {
       );
     } catch (error) {
       console.error("Failed to load interview", error);
+    } finally {
+      setReDirect(false);
     }
   };
 
@@ -261,34 +373,43 @@ export default function InterviewSetup() {
 
   const fetchCandidates = async () => {
     try {
+      setCandidatesLoading(true);
+
       const res: any = await adminService.getAllCandidate(1, 100, "all");
       setCandidates(res.data);
       setFilteredCandidates(res.data);
     } catch (error) {
       console.error("Failed to fetch candidates", error);
+    } finally {
+      setCandidatesLoading(false);
     }
   };
 
   // ================= SEARCH FILTER =================
 
   useEffect(() => {
-    const filtered = candidates.filter((c: any) =>
+    if (!searchTerm) {
+      setFilteredCandidates(scoredCandidates);
+      return;
+    }
+
+    const filtered = scoredCandidates.filter((c: any) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
-    setFilteredCandidates(filtered);
-  }, [searchTerm, candidates]);
 
+    setFilteredCandidates(filtered);
+  }, [searchTerm, scoredCandidates]);
   // ================= SEND INVITATIONS =================
 
   const handleSendInvitations = async () => {
-
     try {
       setLoading(true);
+
       if (!createdJobId) return toast.error("Create interview first");
       if (!selectedCandidates.length) return toast.error("Select candidates");
       if (!startDate || !endDate) return toast.error("Select dates");
 
-      const data = {
+      const payload = {
         jobId: createdJobId,
         candidateIds: selectedCandidates.map((c) => c._id),
         messageBody,
@@ -297,18 +418,47 @@ export default function InterviewSetup() {
         testTitle: position,
       };
 
-      await adminService.sendInvitations(data);
+      const res = await adminService.sendInvitations(payload);
+      //console.log(res);
 
-      toast.success("Invitations Sent Successfully");
+      const invited = res.invitedEmails || [];
+      const skipped = res.skippedEmails || [];
+
+      // 🔴 CASE 1: ALL SKIPPED (MOST IMPORTANT FIX)
+      if (res.isPartial && invited.length === 0) {
+        toast.error(`All candidates already invited: ${skipped.join(", ")}`);
+        return; // ❌ stop further execution
+      }
+
+      // 🟡 CASE 2: PARTIAL SUCCESS
+      if (res.isPartial) {
+        if (invited.length > 0) {
+          toast.success(`Invited: ${invited.join(", ")}`);
+        }
+
+        if (skipped.length > 0) {
+          setTimeout(() => {
+            toast.error(`Skipped (already invited): ${skipped.join(", ")}`);
+          }, 300);
+        }
+      }
+
+      // 🟢 CASE 3: FULL SUCCESS
+      else {
+        toast.success(`Invitations sent to ${invited.length} candidate(s)`);
+      }
+
+      // ✅ reset UI
       setSelectedCandidates([]);
       setActiveTab("template");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to send invitations");
-    }finally {
+      //console.log(error);
+      toast.error(error?.res?.message || "Failed to send invitations");
+    } finally {
       setLoading(false);
     }
   };
-  const candidateDropdownRef = useRef(null);
+  const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -325,17 +475,6 @@ export default function InterviewSetup() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const handleCopyLink = () => {
-    navigator.clipboard
-      .writeText(interviewLink)
-      .then(() => {
-        toast.success("Link copied to clipboard!");
-      })
-      .catch((err) => {
-        console.error("Failed to copy link: ", err);
-      });
-  };
 
   const handleUpdateInterview = async () => {
     if (!editingId) return;
@@ -397,12 +536,14 @@ export default function InterviewSetup() {
   };
 
   const handleEditAssessment = async (assessment: any) => {
-    console.log("Editing assessment:", assessment);
+    //console.log("Editing assessment:", assessment);
     setActiveTab("setup");
+    setUseTemplateMode(false); // ✅ ADD THIS LINE
 
     try {
+      setEditLoading(true);
       const res = await adminService.getDraft(assessment._id);
-      console.log("Fetched Interview for Editing:", res);
+      //console.log("Fetched Interview for Editing:", res);
       const data = res.data;
 
       setEditingId(data._id);
@@ -418,56 +559,63 @@ export default function InterviewSetup() {
       setSkills(data.skills || []);
     } catch (error) {
       console.error("Failed to load interview", error);
+    } finally {
+      setEditLoading(false);
     }
   };
 
   // ================= AI AUTO FILL HELPERS =================
 
-const mapExperienceToDifficulty = (level?: string, years?: string) => {
-  if (!level && !years) return "";
+  const mapExperienceToDifficulty = (level?: string, years?: string) => {
+    if (!level && !years) return "";
 
-  const lvl = level?.toLowerCase();
+    const lvl = level?.toLowerCase();
 
-  if (lvl?.includes("entry") || lvl?.includes("junior")) return "Easy";
-  if (lvl?.includes("mid")) return "Medium";
-  if (lvl?.includes("senior") || lvl?.includes("lead")) return "Hard";
+    if (lvl?.includes("entry") || lvl?.includes("junior")) return "Easy";
+    if (lvl?.includes("mid")) return "Medium";
+    if (lvl?.includes("senior") || lvl?.includes("lead")) return "Hard";
 
-  const y = Number(years);
-  if (!isNaN(y)) {
-    if (y <= 1) return "Easy";
-    if (y <= 4) return "Medium";
-    return "Hard";
-  }
+    const y = Number(years);
+    if (!isNaN(y)) {
+      if (y <= 1) return "Easy";
+      if (y <= 4) return "Medium";
+      return "Hard";
+    }
 
-  return "";
+    return "";
+  };
+
+  const getDefaultQuestions = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "10";
+      case "Medium":
+        return "15";
+      case "Hard":
+        return "20";
+      default:
+        return "";
+    }
+  };
+
+  const getDefaultDuration = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "15 minutes";
+      case "Medium":
+        return "30 minutes";
+      case "Hard":
+        return "60 minutes";
+      default:
+        return "";
+    }
+  };
+  const handleRemoveFile = () => {
+  setFile(null);
+  setFileName(null);
+  setExistingFilePath(null);
+  setJdAnalysis(null); // reset only AI data
 };
-
-const getDefaultQuestions = (difficulty: string) => {
-  switch (difficulty) {
-    case "Easy":
-      return "10";
-    case "Medium":
-      return "15";
-    case "Hard":
-      return "20";
-    default:
-      return "";
-  }
-};
-
-const getDefaultDuration = (difficulty: string) => {
-  switch (difficulty) {
-    case "Easy":
-      return "15 minutes";
-    case "Medium":
-      return "30 minutes";
-    case "Hard":
-      return "60 minutes";
-    default:
-      return "";
-  }
-};
-
 
   return (
     <>
@@ -476,16 +624,38 @@ const getDefaultDuration = (difficulty: string) => {
         subheading="AI-powered video interviews"
         showSearch={false}
       >
+        {/* ── Full-page loader overlay ── */}
+        {(loading || jdLoading || editLoading || reDirect || groqLoading) && (
+          <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-40 flex flex-col items-center justify-center gap-4">
+            <div className="relative flex items-center justify-center">
+              <div className="h-16 w-16 rounded-full border-4 border-indigo-100" />
+              <div className="absolute h-13 w-13 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
+            </div>
 
-{/* 
-  {loading && (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-[#4318FF] rounded-full animate-spin" />
-        <p className="text-sm text-gray-500 font-medium">Please wait...</p>
-      </div>
-    </div>
-  )} */}
+            <p className="text-sm font-medium text-indigo-700">
+              {jdLoading
+                ? "Analyzing Job Description..."
+                : groqLoading
+                  ? "AI is ranking candidates by JD match..."
+                  : editLoading
+                    ? "Updating interview details..."
+                    : reDirect
+                      ? "Redirecting to interview page..."
+                      : "Please wait..."}
+            </p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-indigo-200 border-t-[#4318FF] rounded-full animate-spin" />
+              <p className="text-sm text-gray-500 font-medium">
+                Please wait...
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="min-h-screen">
           {/* Tabs */}
@@ -529,7 +699,11 @@ const getDefaultDuration = (difficulty: string) => {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full">
                 {/* Left: AI Generator */}
-                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm">
+                <div
+                  className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm relative ${
+                    useTemplateMode ? "opacity-90 pointer-events-none" : ""
+                  }`}
+                >
                   <div className="flex items-center mb-4">
                     <div className="p-2 rounded-lg">
                       <img
@@ -609,11 +783,8 @@ const getDefaultDuration = (difficulty: string) => {
                       {/* Remove */}
                       <button
                         type="button"
-                        onClick={() => {
-                          setFile(null);
-                          setFileName(null);
-                          setExistingFilePath(null);
-                        }}
+                          onClick={handleRemoveFile}
+                      
                         className="text-sm font-medium text-red-500 hover:text-red-600 transition"
                       >
                         Remove
@@ -621,7 +792,7 @@ const getDefaultDuration = (difficulty: string) => {
                     </div>
                   )}
 
-                   <h3 className="text-gray-800 pb-2 text-xs sm:text-sm mt-4">
+                  <h3 className="text-gray-800 pb-2 text-xs sm:text-sm mt-4">
                     Position
                   </h3>
                   <input
@@ -641,7 +812,6 @@ const getDefaultDuration = (difficulty: string) => {
                     onChange={(e) => setDescription(e.target.value)}
                   ></textarea>
 
-                 
                   <div className="w-full flex items-center justify-between gap-5">
                     <div className="w-full md:w-1/2">
                       <h3 className="text-gray-800 pb-2 text-xs sm:text-sm">
@@ -663,7 +833,7 @@ const getDefaultDuration = (difficulty: string) => {
                       </h3>
                       <input
                         type="text"
-                        placeholder="10"
+                        placeholder="e.g. 10"
                         className="w-full p-2 mb-3 border border-gray-300 rounded-lg outline-none text-xs sm:text-sm"
                         value={numberOfQuestions}
                         onChange={(e) => {
@@ -770,7 +940,7 @@ const getDefaultDuration = (difficulty: string) => {
                     )}
 
                     {/* ================= CREATE MODE ================= */}
-                    {!editMode && !isGenerated && (
+                    {!editMode && !isGenerated && !useTemplateMode && (
                       <div className="flex justify-end gap-4">
                         <button
                           onClick={handleDraft}
@@ -870,7 +1040,9 @@ const getDefaultDuration = (difficulty: string) => {
                         className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-all"
                         onClick={() => {
                           setShowDropdown(!showDropdown);
-                          if (!candidates.length) fetchCandidates();
+                          if (candidates.length === 0) {
+                            fetchCandidates();
+                          }
                         }}
                       >
                         {selectedCandidates.length === 0 ? (
@@ -918,7 +1090,14 @@ const getDefaultDuration = (difficulty: string) => {
 
                             {/* List */}
                             <div className="max-h-48 overflow-y-auto">
-                              {filteredCandidates.length === 0 ? (
+                              {candidatesLoading ? (
+                                <div className="flex items-center justify-center py-6">
+                                  <div className="flex items-center gap-2 text-indigo-600 text-sm">
+                                    <div className="h-4 w-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                    Loading candidates...
+                                  </div>
+                                </div>
+                              ) : filteredCandidates.length === 0 ? (
                                 <div className="px-4 py-3 text-sm text-gray-500 text-center">
                                   No candidates found
                                 </div>
@@ -980,7 +1159,14 @@ const getDefaultDuration = (difficulty: string) => {
                           </div>
                         </>
                       )}
-
+                      <div className="flex justify-end mt-3">
+                        <button
+                          onClick={() => setShowCandidateModal(true)}
+                          className="flex items-center gap-1.5 text-xs px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+                        >
+                          + Add More Candidates
+                        </button>
+                      </div>
                       <div className="w-full mt-4">
                         <label className="block text-xs sm:text-sm text-gray-500 mb-1">
                           Message Body
@@ -1028,10 +1214,10 @@ const getDefaultDuration = (difficulty: string) => {
                               type="datetime-local"
                               value={
                                 startDate
-                                  ? startDate.toISOString().substring(0,16)
+                                  ? startDate.toISOString().substring(0, 16)
                                   : ""
                               }
-                              min={new Date().toISOString().substring(0,16)}
+                              min={new Date().toISOString().substring(0, 16)}
                               onChange={(e) => {
                                 const value = e.target.value;
                                 const selected = value ? new Date(value) : null;
@@ -1064,13 +1250,13 @@ const getDefaultDuration = (difficulty: string) => {
                               type="datetime-local"
                               value={
                                 endDate
-                                  ? endDate.toISOString().substring(0,16)
+                                  ? endDate.toISOString().substring(0, 16)
                                   : ""
                               }
                               min={
                                 startDate
-                                  ? startDate.toISOString().substring(0,16)
-                                  : new Date().toISOString().substring(0,16)
+                                  ? startDate.toISOString().substring(0, 16)
+                                  : new Date().toISOString().substring(0, 16)
                               }
                               onChange={(e) => {
                                 const value = e.target.value;
@@ -1091,7 +1277,7 @@ const getDefaultDuration = (difficulty: string) => {
                       <div className="w-full mt-6 flex justify-end gap-2 flex-wrap">
                         <button
                           onClick={handleSendInvitations}
-                           disabled={loading}
+                          disabled={loading}
                           className="flex items-center gap-2 px-4 py-2 bg-[#4318FF] text-white rounded-md text-xs sm:text-sm"
                         >
                           <img src={SendEmail} alt="send" className="w-4 h-4" />
@@ -1105,6 +1291,121 @@ const getDefaultDuration = (difficulty: string) => {
             </>
           )}
         </div>
+        {showCandidateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden">
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Add Candidates
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Select additional candidates for this assessment
+                  </p>
+                </div>
+
+                <button onClick={() => setShowCandidateModal(false)}>
+                  <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+                </button>
+              </div>
+
+              {/* SEARCH */}
+              <div className="p-3 border-b border-gray-200">
+                <input
+                  type="text"
+                  placeholder="Search by name or role..."
+                  value={candidateSearch}
+                  onChange={(e) => setCandidateSearch(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* INFO BAR */}
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500">
+                <span>{manualCandidates.length} candidates available</span>
+                {selectedCandidates.length > 0 && (
+                  <span className="text-indigo-600 font-medium">
+                    {selectedCandidates.length} selected
+                  </span>
+                )}
+              </div>
+
+              {/* LIST */}
+              <div className="max-h-72 overflow-y-auto">
+                {manualCandidates
+                  .filter((c: any) =>
+                    `${c.name} ${c.role || ""} ${c.email}`
+                      .toLowerCase()
+                      .includes(candidateSearch.toLowerCase()),
+                  )
+                  .map((candidate: any) => {
+                    const isSelected = selectedCandidates.some(
+                      (c: any) => c._id === candidate._id,
+                    );
+
+                    return (
+                      <div
+                        key={candidate._id}
+                        onClick={() => toggleCandidateSelection(candidate)}
+                        className={`px-4 py-3 cursor-pointer transition ${
+                          isSelected
+                            ? "bg-indigo-50 hover:bg-indigo-100 border-l-4 border-indigo-500"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          {/* LEFT */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-gray-900">
+                                {candidate.name}
+                              </span>
+
+                              {candidate.role && (
+                                <span className="text-xs text-gray-400">
+                                  — {candidate.role}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {candidate.email}
+                            </div>
+                          </div>
+
+                          {/* RIGHT */}
+                          {isSelected && (
+                            <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {manualCandidates.length === 0 && (
+                  <div className="px-4 py-6 text-center text-sm text-gray-400">
+                    No candidates available
+                  </div>
+                )}
+              </div>
+
+              {/* FOOTER */}
+              <div className="flex justify-between items-center px-5 py-4 border-t border-gray-200 bg-gray-50">
+                <span className="text-xs text-gray-500">
+                  Click to select / deselect candidates
+                </span>
+
+                <button
+                  onClick={() => setShowCandidateModal(false)}
+                  className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </AdminLayout>
     </>
   );

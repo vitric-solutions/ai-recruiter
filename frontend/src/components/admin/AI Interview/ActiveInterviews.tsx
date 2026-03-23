@@ -1,15 +1,6 @@
 import { Button } from "../../../ui/button";
 import { useEffect, useState, useMemo } from "react";
-import {
-  FileText,
-  Clock,
-  Calendar as CalendarIcon,
-  Upload,
-  X,
-  AlertCircle,
-  CheckCircle2,
-  Users,
-} from "lucide-react";
+import { FileText, Clock, X, CheckCircle2, Users } from "lucide-react";
 import { adminService } from "../../../services/service/adminService";
 
 interface ActiveInterviewsProps {
@@ -26,7 +17,7 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
   const [isResultOpen, setIsResultOpen] = useState(false);
   const [isReminderOpen, setIsReminderOpen] = useState(false);
   const [assessments, setAssessments] = useState<any[]>([]);
-  console.log("Assessments:", assessments);
+  //console.log("Assessments:", assessments);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<any>(null);
 
@@ -53,34 +44,27 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
   };
 
   useEffect(() => {
-    let isMounted = true;
+    
+  
+    const loadAssessments = async () => {
+      setTemplatesLoading(true);
+      try {
+        const res: any = await adminService.getDraft();
+        //console.log("API Response for getDraft:", res);
 
-const loadAssessments = async () => {
-  setTemplatesLoading(true);
-  try {
-    const res: any = await adminService.getDraft();
-    console.log("API Response for getDraft:", res);
+        const interviews =
+          res?.data?.interviews || res?.interviews || res?.drafts || [];
 
-    const interviews =
-      res?.data?.interviews ||
-      res?.interviews ||
-      res?.drafts ||
-      [];
-
-    setAssessments(interviews);
-  } catch (error) {
-    console.error("Error fetching assessments:", error);
-    setAssessments([]); // never allow undefined
-  } finally {
-    setTemplatesLoading(false);
-  }
-};
+        setAssessments(interviews);
+      } catch (error) {
+        console.error("Error fetching assessments:", error);
+        setAssessments([]); // never allow undefined
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
 
     loadAssessments();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   /* ================= FILTER LOGIC ================= */
@@ -108,31 +92,31 @@ const loadAssessments = async () => {
     (page - 1) * ROWS_PER_PAGE,
     page * ROWS_PER_PAGE,
   );
-  console.log(paginatedCandidates);
+  //console.log(paginatedCandidates);
 
-  const getTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const past = new Date(dateString);
+  // const getTimeAgo = (dateString: string) => {
+  //   const now = new Date();
+  //   const past = new Date(dateString);
 
-    const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+  //   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
 
-    if (diffInSeconds < 60) {
-      return "Just now";
-    }
+  //   if (diffInSeconds < 60) {
+  //     return "Just now";
+  //   }
 
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""} ago`;
-    }
+  //   const diffInMinutes = Math.floor(diffInSeconds / 60);
+  //   if (diffInMinutes < 60) {
+  //     return `${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""} ago`;
+  //   }
 
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
-    }
+  //   const diffInHours = Math.floor(diffInMinutes / 60);
+  //   if (diffInHours < 24) {
+  //     return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+  //   }
 
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
-  };
+  //   const diffInDays = Math.floor(diffInHours / 24);
+  //   return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+  // };
 
   return (
     <div className=" flex  ">

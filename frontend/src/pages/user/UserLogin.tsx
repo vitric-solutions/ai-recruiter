@@ -6,6 +6,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { userService } from "../../services/service/userService";
 import { useAuth } from "../../context/context";
+import { userPath } from "../../routes/EncryptRoute";
 
 interface LoginFormData {
   email: string;
@@ -51,7 +52,7 @@ const UserLogin: React.FC = () => {
     try {
       const response = await userService.login(id!, data);
 
-      console.log(response);
+      //console.log(response);
 
       const { token, interviewId, candidateEntry } = response;
 
@@ -73,7 +74,7 @@ const UserLogin: React.FC = () => {
 
 
       // Navigate to user dashboard or next page
-      navigate(`/user/${interviewId}/system-check`);
+     navigate(userPath("systemCheck", interviewId));
     } catch (err) {
       const axiosError = err as AxiosError<{ message: string }>;
 

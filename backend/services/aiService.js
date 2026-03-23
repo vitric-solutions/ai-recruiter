@@ -55,7 +55,7 @@ export const generateQuestions = async (
   const totalBatches = Math.ceil(count / BATCH_SIZE);
   let allQuestions = [];
 
-  console.log(`🤖 Generating ${count} ${Exam_Type} questions in ${totalBatches} batches...`);
+  //console.log(`🤖 Generating ${count} ${Exam_Type} questions in ${totalBatches} batches...`);
 
   for (let i = 0; i < totalBatches; i++) {
     const remaining = count - allQuestions.length;
@@ -97,9 +97,9 @@ Format exactly like this:
     const batchQuestions = await fetchBatch(prompt);
     allQuestions = [...allQuestions, ...batchQuestions];
 
-    console.log(`✅ Batch ${i + 1}/${totalBatches} done — ${allQuestions.length}/${count} questions`);
+    //console.log(`✅ Batch ${i + 1}/${totalBatches} done — ${allQuestions.length}/${count} questions`);
   }
 
-  console.log(`✅ Done! Generated ${allQuestions.length} ${Exam_Type} questions`);
+  //console.log(`✅ Done! Generated ${allQuestions.length} ${Exam_Type} questions`);
   return allQuestions.slice(0, count);
 };

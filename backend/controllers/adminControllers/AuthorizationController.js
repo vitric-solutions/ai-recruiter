@@ -13,7 +13,8 @@ import {
 } from "../../services/emailService.js";
 
 export const RegisterUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { userName, email, password } = req.body; // ✅ add userName
+
 
   try {
     let admin = await Admin.findOne({ email });
@@ -21,19 +22,25 @@ export const RegisterUser = async (req, res) => {
       return res.status(400).json({ message: "Admin already exists" });
     }
 
-    admin = new Admin({ email, password, role: "admin" });
+    admin = new Admin({
+      userName, // ✅ REQUIRED FIELD
+      email,
+      password,
+      role: "admin"
+    });
+
     await admin.save();
 
     const accessToken = jwt.sign(
       { id: admin._id, role: "admin" },
       process.env.JWT_SECRET,
-      { expiresIn: "12h" },
+      { expiresIn: "12h" }
     );
 
     const refreshToken = jwt.sign(
       { id: admin._id, role: "admin" },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "7d" }
     );
 
     admin.refreshToken = refreshToken;
@@ -52,6 +59,7 @@ export const RegisterUser = async (req, res) => {
       .json({
         user: {
           _id: admin._id,
+          userName: admin.userName, // ✅ include in response
           email: admin.email,
           role: admin.role,
         },
@@ -119,7 +127,7 @@ export const LoginUser = async (req, res) => {
 };
 
 export const getMe = async (req, res) => {
-  // console.log("getMe called with user ID:", req.user);
+  // //console.log("getMe called with user ID:", req.user);
   try {
     const user = await Admin.findById(req.user.id).select("-password");
 
@@ -449,7 +457,6 @@ export const GetAllSchedule = async (req, res) => {
       .populate("candidates.candidateId")
       .lean();
 
-    console.log(JSON.stringify(MCQ, null, 2));
     const mcqData = await MCQ_Interview.aggregate([
       { $unwind: "$candidates" },
       {
@@ -724,7 +731,6 @@ export const rescheduleInterview = async (req, res) => {
         );
       }
 
-      console.log("Reschedule email sent to:", candidate.email);
     } catch (emailError) {
       console.error("Email sending failed:", emailError);
     }
@@ -820,7 +826,6 @@ export const getStudentScores = async (req, res) => {
           },
         })
         .lean();
-      console.log("aiData", aiData);
       // Compute score for records that don't have it
       const data = aiData.map((item) => {
         if (item.score != null) return item;

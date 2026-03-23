@@ -4,7 +4,6 @@ import ViewCandidateModal from "../../components/Candidates/ViewCandidate";
 import ViewCandidateReportModal from "../../components/Candidates/ViewCandidateReport";
 import {
   Plus,
-  Filter,
   MoreVertical,
   Search,
   SlidersHorizontal,
@@ -140,9 +139,11 @@ const CandidateFormModal = ({
     }
     setSaving(true);
     try {
+      //console.log("form",form)
       if (mode === "edit" && candidate) {
         // ── Edit ──────────────────────────────
         const res = await adminService.updateCandidate(candidate._id, form);
+        //console.log("res",res)
         const updated = res?.data?.data ??
           res?.data ?? { ...candidate, ...form };
         onSuccess(updated as Candidate);
@@ -489,7 +490,7 @@ const Candidates = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [experienceFilter, setExperienceFilter] = useState("");
@@ -881,12 +882,12 @@ const Candidates = () => {
           ) : data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="text-gray-400 mb-2">No candidates found</div>
-              <button
+              {/* <button
                 onClick={() => setFormModal({ open: true, mode: "add" })}
                 className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
               >
                 Add your first candidate
-              </button>
+              </button> */}
             </div>
           ) : (
             <>

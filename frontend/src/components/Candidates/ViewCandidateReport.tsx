@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { X, Download } from "lucide-react";
+import { X } from "lucide-react";
 
 interface ViewCandidateReportModalProps {
   isOpen: boolean;
@@ -17,21 +17,21 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
   if (!isOpen || !candidateData) return null;
 
   const { interviews } = candidateData;
-  const BASE_URL = import.meta.env.VITE_BASE_URL;
+  // const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const [examFilter, setExamFilter] = useState("all");
   const [resultFilter, setResultFilter] = useState("all");
   const [page, setPage] = useState(1);
 
   /* ================= DOWNLOAD ================= */
-  const handleDownload = (pdfPath: string) => {
-    const link = document.createElement("a");
-    link.href = `${BASE_URL}/${pdfPath}`;
-    link.download = pdfPath.split("/").pop() || "scorecard.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // const handleDownload = (pdfPath: string) => {
+  //   const link = document.createElement("a");
+  //   link.href = `${BASE_URL}/${pdfPath}`;
+  //   link.download = pdfPath.split("/").pop() || "scorecard.pdf";
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
 
   /* ================= FILTER LOGIC ================= */
   const filteredData = useMemo(() => {
@@ -55,13 +55,12 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
 
   const paginatedData = filteredData.slice(
     (page - 1) * ROWS_PER_PAGE,
-    page * ROWS_PER_PAGE
+    page * ROWS_PER_PAGE,
   );
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-
         {/* HEADER */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
@@ -80,10 +79,8 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
 
         {/* CONTENT */}
         <div className="p-6 space-y-6 overflow-y-auto">
-
           {/* ================= FILTERS ================= */}
           <div className="flex flex-wrap gap-4 items-center  justify-end">
-
             {/* Exam Type Filter */}
             <select
               value={examFilter}
@@ -140,8 +137,7 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
                   </tr>
                 ) : (
                   paginatedData.map((interview: any) => {
-                    const passed =
-                      interview.score >= interview.passingScore;
+                    const passed = interview.score >= interview.passingScore;
 
                     return (
                       <tr
@@ -171,10 +167,16 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
                             className={`px-2 py-1 text-xs rounded-full ${
                               passed
                                 ? "bg-green-100 text-green-600"
-                                : "bg-red-100 text-red-600"
+                                : interview.status === "scheduled"
+                                  ? ""
+                                  : "bg-red-100 text-red-600"
                             }`}
                           >
-                            {passed ? "Passed" : "Failed"}
+                            {passed
+                              ? "Passed"
+                              : interview.status === "scheduled"
+                                ? "Scheduled"
+                                : "Failed"}
                           </span>
                         </td>
 
@@ -189,13 +191,13 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
                             //   <Download size={14} />
                             //   Download
                             // </button>
-                             <a
-                        href={interview.pdfPath}
-                        download
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
-                      >
-                        Download Scorecard
-                      </a>
+                            <a
+                              href={interview.pdfPath}
+                              download
+                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+                            >
+                              Download Scorecard
+                            </a>
                           ) : (
                             <span className="text-gray-400 text-xs">
                               Not Available
@@ -221,21 +223,19 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
                 ‹
               </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`px-3 py-1 rounded ${
-                      page === p
-                        ? "bg-indigo-600 text-white"
-                        : "border  border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`px-3 py-1 rounded ${
+                    page === p
+                      ? "bg-indigo-600 text-white"
+                      : "border  border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
 
               <button
                 disabled={page === totalPages}

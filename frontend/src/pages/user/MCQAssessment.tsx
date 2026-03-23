@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   ChevronLeft, ChevronRight, Flag, Clock, X, CheckCircle,
-  BarChart2, Loader2, Trophy, VideoOff, AlertTriangle, ShieldAlert,
+  BarChart2, Loader2, VideoOff, AlertTriangle, ShieldAlert,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { userService } from "../../services/service/userService";
 import * as faceapi from "@vladmandic/face-api";
+import { userPath } from "../../routes/EncryptRoute";
 
 // ─── face-api model source ────────────────────────────────────────────────────
 const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
@@ -106,7 +107,7 @@ const MCQAssessment: React.FC = () => {
   const [savingAnswer, setSavingAnswer] = useState(false);
   const [finalSubmitting, setFinalSubmitting] = useState(false);
   const [phase, setPhase] = useState<"quiz" | "result">("quiz");
-  const [totalScore, setTotalScore] = useState(0);
+  const [_, setTotalScore] = useState(0);
 
   // ── Proctoring state ──
   const [violationCount, setViolationCount] = useState(0);
@@ -197,7 +198,8 @@ const MCQAssessment: React.FC = () => {
       }));
       const res = await userService.finalSubmitMCQAssessment(id!, { answers: answersArray });
       if (res){
-        navigate(`/user/${id}/assessment-complete`);
+       
+navigate(userPath("complete", id));
       setTotalScore(res?.totalScore ?? 0);
 
       }

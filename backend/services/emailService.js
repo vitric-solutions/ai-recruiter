@@ -4,15 +4,25 @@ import nodemailer from "nodemailer";
 dotenv.config();
 
 
-// Email transporter configuration
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  service: "gmail",
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS
   },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+transporter.verify(function (error, success) {
+  if (error) {
+    //console.log(error);
+  } else {
+    //console.log("Server is ready to send emails");
+  }
 });
 
 // Format date helper
@@ -284,7 +294,7 @@ const emailHTML = `
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully to ${candidateEmail}`);
+    //console.log(`✅ Email sent successfully to ${candidateEmail}`);
     return { success: true, email: candidateEmail };
   } catch (error) {
     console.error(`❌ Error sending email to ${candidateEmail}:`, error);
@@ -303,14 +313,14 @@ export const sendAIInterviewLink = async (
   scheduledEndDate,
   scheduledStartDate
 ) => {
-  console.log("candidateEmail:", candidateEmail);
-  console.log("interviewLink:", interviewLink);
-  console.log("password:", password);
-  console.log("subjectLine:", subjectLine);
-  console.log("passingScore:", passingScore);
-  console.log("messageBody:", messageBody);
-  console.log("scheduledEndDate:", scheduledEndDate);
-  console.log("scheduledStartDate:", scheduledStartDate);
+  //console.log("candidateEmail:", candidateEmail);
+  //console.log("interviewLink:", interviewLink);
+  //console.log("password:", password);
+  //console.log("subjectLine:", subjectLine);
+  //console.log("passingScore:", passingScore);
+  //console.log("messageBody:", messageBody);
+  //console.log("scheduledEndDate:", scheduledEndDate);
+  //console.log("scheduledStartDate:", scheduledStartDate);
  const emailHTML = `
 <!DOCTYPE html>
 <html>
@@ -446,7 +456,7 @@ export const sendAIInterviewLink = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ AI Interview email sent to ${candidateEmail}`);
+    //console.log(`✅ AI Interview email sent to ${candidateEmail}`);
   } catch (error) {
     console.error(`❌ Error sending AI interview email:`, error);
     throw error;
@@ -499,7 +509,7 @@ export const sendMCQScorecard = async (candidateEmail, candidateName, scoreData)
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Scorecard sent to ${candidateEmail}`);
+    //console.log(`✅ Scorecard sent to ${candidateEmail}`);
   } catch (error) {
     console.error(`❌ Error sending scorecard:`, error);
     throw error;

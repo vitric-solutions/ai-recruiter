@@ -60,7 +60,6 @@ Format exactly like this:
           }),
         }
       );
-console.log("AI Response Status:", response);
       if (!response.ok) {
         const errorText = await response.text();
         return res.status(response.status).json({

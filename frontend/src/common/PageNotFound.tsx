@@ -1,9 +1,10 @@
 import React from "react";
 import { ArrowLeft, Home } from "lucide-react";
+import { adminPath } from "../routes/EncryptRoute";
 
 const PageNotFound: React.FC = () => {
   const handleGoHome = () => {
-    window.location.href = "/admin/dashboard";
+    window.location.href = `/admin${adminPath("dashboard")}`;
   };
 
   const handleGoBack = () => {

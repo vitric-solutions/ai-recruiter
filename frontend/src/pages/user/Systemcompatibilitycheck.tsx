@@ -10,6 +10,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { userPath } from "../../routes/EncryptRoute";
 
 interface SystemTest {
   id: string;
@@ -193,7 +194,7 @@ const SystemCompatibilityCheck: React.FC = () => {
     }
 
     // Navigate to identity verification
-    navigate(`/user/${id}/identity-verification`);
+    navigate(userPath("identity", id));
   };
 
   const handleBack = () => {
