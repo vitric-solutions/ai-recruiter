@@ -848,7 +848,7 @@ const IdentityVerification: React.FC = () => {
  
   const [____, setCountdown] = useState<number | null>(null);
   const [modelsReady, setModelsReady] = useState(false);
-console.log(modelsReady)
+//console.log(modelsReady)
   // ── card-camera state (new) ──────────────────────────────────────────────────
   const [cardCamStatus, setCardCamStatus] = useState<CardCamStatus>("idle");
   const [cardCamError, setCardCamError] = useState<string | null>(null);

@@ -52,7 +52,7 @@ const UserLogin: React.FC = () => {
     try {
       const response = await userService.login(id!, data);
 
-      console.log(response);
+      //console.log(response);
 
       const { token, interviewId, candidateEntry } = response;
 

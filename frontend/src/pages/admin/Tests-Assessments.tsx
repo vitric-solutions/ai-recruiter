@@ -36,8 +36,8 @@ const scoreCandidatesWithGroq = async (
   candidates: any[],
   jdAnalysis: any,
 ): Promise<any[]> => {
-  console.log(candidates);
-  console.log(jdAnalysis);
+  //console.log(candidates);
+  //console.log(jdAnalysis);
   if (
     !import.meta.env.VITE_GROQ_API_KEY ||
     !jdAnalysis ||
@@ -114,9 +114,9 @@ Return ONLY JSON array.`;
         }),
       },
     );
-    console.log("response", response);
+    //console.log("response", response);
     const data = await response.json();
-    console.log("data", data);
+    //console.log("data", data);
     const raw = data.choices?.[0]?.message?.content?.trim() || "[]";
 
     // Strip any accidental markdown fences
@@ -247,7 +247,7 @@ const TestsAssessments = () => {
   const [editLoading, setEditLoading] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [reDirect, setReDirect] = useState(false);
-
+  console.log("formData",formData)
   const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
   // const skills = jdAnalysis?.requiredSkills ?? [];
   useEffect(() => {
@@ -363,7 +363,7 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
     setTemplatesLoading(true);
     try {
       const response = await adminService.getAssesments();
-      console.log(response);
+      //console.log(response);
       setAssessments(response.data?.data || response.data || []);
     } catch (err) {
       console.error("Error fetching assessments:", err);
@@ -373,6 +373,8 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
   };
 
   const handleUseTemplate = (item: any) => {
+
+    //console.log(item)
     const toLocalDatetime = (input: any) => {
       if (!input) return "";
       const d = new Date(input);
@@ -406,14 +408,21 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
     setMode("prefill");
     setErrors({});
     setActiveTab("create");
+    setCurrentStep(3);
   };
 
   const handleEditTemplate = async (item: any) => {
     setEditLoading(item._id);
     setReDirect(true);
     try {
-      const response = await adminService.getAssesments(item._id);
-      const data = response.data;
+      console.log("Id",item._id)
+      const res = await adminService.getAssesments(item._id);
+    const data = Array.isArray(res.data)
+  ? res.data.find((item: any) => item._id === item._id)
+  : res.data || res;
+  console.log("data",data)
+
+      console.log("data",data)
       if (!data) {
         showToast("error", "Assessment data not found");
         return;
@@ -451,6 +460,7 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
       setMode("edit");
       setErrors({});
       setActiveTab("create");
+      setCurrentStep(1);
     } catch (err) {
       console.error(err);
       showToast("error", "Failed to load assessment for editing");
@@ -550,7 +560,7 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
             analysis?.experienceYears,
           ) || "";
         const defaultQuestions = getDefaultQuestionsByLevel(difficulty);
-        console.log(defaultQuestions);
+        //console.log(defaultQuestions);
         // const defaultDuration = getDefaultDuration(defaultQuestions);
         setFormData((prev) => ({
           ...prev,
@@ -840,7 +850,7 @@ const removeFile = () => {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showToast("error", "Please select candidates and set valid dates");
+      showToast("error", "Please select at least one candidate to send invites");
       return;
     }
 
@@ -853,7 +863,7 @@ const removeFile = () => {
         end_date: formData.endDate,
       });
 
-      console.log("FULL RESPONSE:", res);
+      //console.log("FULL RESPONSE:", res);
 
       const data = res.data;
 
@@ -861,8 +871,8 @@ const removeFile = () => {
       const invited = res.invitedEmails || [];
       const skipped = res.skippedEmails || [];
 
-      console.log("invited:", invited);
-      console.log("skipped:", skipped);
+      //console.log("invited:", invited);
+      //console.log("skipped:", skipped);
 
       // 🔥 CASE 1: ONLY SKIPPED
       if (res.isPartial && invited.length === 0 && skipped.length > 0) {
@@ -898,7 +908,7 @@ const removeFile = () => {
         setMode("create");
       }, 2000);
     } catch (err: any) {
-      console.log("ERROR:", err);
+      //console.log("ERROR:", err);
 
       showToast(
         "error",
@@ -1152,6 +1162,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("testTitle", e.target.value)
                     }
+                     disabled={mode === "prefill"}
                     placeholder="e.g. Frontend Developer Test"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                   />
@@ -1167,6 +1178,8 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("primarySkill", e.target.value)
                     }
+                     disabled={mode === "prefill"}
+
                     placeholder="e.g. React.js"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                   />
@@ -1182,6 +1195,8 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("secondarySkill", e.target.value)
                     }
+                     disabled={mode === "prefill"}
+
                     placeholder="e.g. TypeScript"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                   />
@@ -1196,9 +1211,11 @@ const removeFile = () => {
                 <textarea
                   rows={4}
                   value={formData.jobDescriptionText}
+                  disabled={mode === "prefill"}
                   onChange={(e) =>
                     handleInputChange("jobDescriptionText", e.target.value)
                   }
+
                   placeholder="Paste or edit job description..."
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                 />

@@ -108,7 +108,7 @@ const TopPerformance = () => {
       setLoading(true);
 
       const res = await adminService.getTopPerformance(type);
-      // console.log("Top Performance Response:", res);
+      // //console.log("Top Performance Response:", res);
 
       if (res?.success) {
         const ranked = res.data.slice(0, 3).map((item: any, index: number) => {
@@ -432,7 +432,7 @@ const Dashboard = () => {
       }
 
       const scheduleRes = await adminService.getTotalSchedule();
-      console.log("total Shedule", scheduleRes);
+      //console.log("total Shedule", scheduleRes);
 
       if (scheduleRes?.status === 200) {
         setTotalScheduledTests(
@@ -474,7 +474,7 @@ const Dashboard = () => {
   /* ================= RESCHEDULE ================= */
 
   const handleReschedule = (interview: any) => {
-    console.log("Selected Interview for Reschedule:", interview);
+    //console.log("Selected Interview for Reschedule:", interview);
     setSelectedInterview(interview);
     setNewStartDate("");
     setNewEndDate("");
