@@ -247,7 +247,7 @@ const TestsAssessments = () => {
   const [editLoading, setEditLoading] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [reDirect, setReDirect] = useState(false);
-  console.log("formData",formData)
+console.log("selectedAssessment",assessments)
   const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
   // const skills = jdAnalysis?.requiredSkills ?? [];
   useEffect(() => {
@@ -359,11 +359,11 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
     }
   };
 
-  const fetchAssessments = async () => {
+  const fetchAssessments = async (id?:any) => {
     setTemplatesLoading(true);
     try {
-      const response = await adminService.getAssesments();
-      //console.log(response);
+      const response = await adminService.getAssesments(id);
+      console.log("response",response);
       setAssessments(response.data?.data || response.data || []);
     } catch (err) {
       console.error("Error fetching assessments:", err);
@@ -415,14 +415,14 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
     setEditLoading(item._id);
     setReDirect(true);
     try {
-      console.log("Id",item._id)
+   
       const res = await adminService.getAssesments(item._id);
     const data = Array.isArray(res.data)
   ? res.data.find((item: any) => item._id === item._id)
   : res.data || res;
-  console.log("data",data)
 
-      console.log("data",data)
+
+     
       if (!data) {
         showToast("error", "Assessment data not found");
         return;
@@ -624,6 +624,7 @@ const removeFile = () => {
 };
 
   const toggleCandidateSelection = (candidate: any) => {
+    console.log("candidate",candidate)
     const isSelected = formData.candidates.some(
       (c: any) => c._id === candidate._id,
     );
@@ -853,7 +854,7 @@ const removeFile = () => {
       showToast("error", "Please select at least one candidate to send invites");
       return;
     }
-
+   
     setLoading(true);
 
     try {
@@ -915,13 +916,14 @@ const removeFile = () => {
         err.response?.data?.message || "Failed to send invites",
       );
     } finally {
+      setActiveTab("templates");
       setLoading(false);
     }
   };
 
   const handleViewCandidates = (assessment: any) => {
-    setSelectedAssessment(assessment);
-    setShowCandidateModal(true);
+  setSelectedAssessment(assessment);
+  setShowCandidateModal(true);
   };
 
   const closeCandidateModal = () => {
@@ -1247,6 +1249,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("examLevel", e.target.value)
                     }
+                    disabled={mode === "prefill"}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                   >
                     <option value="">Select level</option>
@@ -1266,6 +1269,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("noOfQuestions", e.target.value)
                     }
+                    disabled={mode === "prefill"}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
                   >
                     <option value="">Select</option>
@@ -1286,6 +1290,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("passingScore", e.target.value)
                     }
+                    disabled={mode === "prefill"}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
                   />
                 </div>
@@ -1300,6 +1305,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("duration", e.target.value)
                     }
+                    disabled={mode === "prefill"}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
                   >
                     <option value="">Select</option>
@@ -1321,6 +1327,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("startDate", e.target.value)
                     }
+                    disabled={mode === "prefill"}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
                   />
                 </div>
@@ -1337,6 +1344,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("endDate", e.target.value)
                     }
+                    disabled={mode === "prefill"}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
                   />
                 </div>
@@ -1703,7 +1711,7 @@ const removeFile = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {assessments.map((item: any) => {
+              {assessments?.map((item: any) => {
                 const primarySkills = item.primary_skill
                   ? item.primary_skill
                       .split(",")

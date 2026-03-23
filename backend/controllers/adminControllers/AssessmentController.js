@@ -948,58 +948,56 @@ import { encryptPath } from "../../utils/routeEncrypt.js";
 export const GetAllMCQInterviews = async (req, res) => {
   try {
     const adminId = req.user.id;
+    const { id } = req.query;
 
-    // const { id } = req.query;
+    /* ================= GET SINGLE ================= */
+    if (id) {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid interview ID",
+        });
+      }
 
-    // /* ================= GET SINGLE ================= */
+      const interview = await MCQ_Interview.findOne({
+        _id: id,
+        createdBy: adminId,
+      })
+        .populate("createdBy", "email")
+        .populate("candidates.candidateId");
 
-    // if (id) {
-    //   if (!mongoose.Types.ObjectId.isValid(id)) {
-    //     return res.status(400).json({
-    //       success: false,
-    //       message: "Invalid interview ID",
-    //     });
-    //   }
+      if (!interview) {
+        return res.status(404).json({
+          success: false,
+          message: "Interview not found",
+        });
+      }
 
-    //   const interview = await MCQ_Interview.findOne({
-    //     _id: id,
-    //     createdBy: adminId,
-    //   })
-    //     .populate("createdBy", "email")
-    //     .populate("candidates.candidateId");
+      const scores = await Score.find({
+        interviewId: id,
+      });
 
-    //   if (!interview) {
-    //     return res.status(404).json({
-    //       success: false,
-    //       message: "Interview not found",
-    //     });
-    //   }
+      const updatedCandidates = interview.candidates.map((candidate) => {
+        const candidateScore = scores.find(
+          (s) =>
+            s.candidateId.toString() ===
+            candidate.candidateId?._id.toString()
+        );
 
-    //   // 🔥 Fetch all scores for this interview
-    //   const scores = await Score.find({
-    //     interviewId: id,
-    //   });
+        return {
+          ...candidate.toObject(),
+          scoreDetails: candidateScore || null,
+        };
+      });
 
-    //   const updatedCandidates = interview.candidates.map((candidate) => {
-    //     const candidateScore = scores.find(
-    //       (s) =>
-    //         s.candidateId.toString() === candidate.candidateId._id.toString(),
-    //     );
-
-    //     return {
-    //       ...candidate.toObject(),
-    //       scoreDetails: candidateScore || null, // 👈 FULL SCORE OBJECT
-    //     };
-    //   });
-
-    //   return res.status(200).json({
-    //     success: true,
-    //     data: {
-    //       ...interview.toObject(),
-    //       candidates: updatedCandidates,
-    //     },
-    //   });
-    // }
+      return res.status(200).json({
+        success: true,
+        data: {
+          ...interview.toObject(),
+          candidates: updatedCandidates,
+        },
+      });
+    }
 
     /* ================= GET ALL ================= */
 
@@ -1012,25 +1010,23 @@ export const GetAllMCQInterviews = async (req, res) => {
 
     const interviewIds = interviews.map((i) => i._id);
 
-    // 🔥 Fetch all related scores in one query
+    // 🔥 get all scores at once
     const scores = await Score.find({
       interviewId: { $in: interviewIds },
     });
 
     const updatedInterviews = interviews.map((interview) => {
-      const interviewScores = scores.filter(
-        (s) => s.interviewId.toString() === interview._id.toString(),
-      );
-
       const updatedCandidates = interview.candidates.map((candidate) => {
-     
-        const candidateScore = interviewScores.find(
-          (s) => s.candidateId.toString() === candidate._id.toString(),
+        const candidateScore = scores.find(
+          (s) =>
+            s.interviewId.toString() === interview._id.toString() &&
+            s.candidateId.toString() ===
+              candidate.candidateId?._id.toString()
         );
 
         return {
           ...candidate.toObject(),
-          scoreDetails: candidateScore || null, // 👈 FULL SCORE DOCUMENT
+          scoreDetails: candidateScore || null,
         };
       });
 

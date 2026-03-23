@@ -50,35 +50,38 @@ router.post("/login/:id", async (req, res) => {
         c.password === password,
     );
 
+    console.log(candidateEntry)
     if (!candidateEntry) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 5️⃣ Date Check
-    const now = new Date();
-    const startDate = new Date(candidateEntry.start_Date);
-    const endDate = new Date(candidateEntry.end_Date);
-
-    if (now < startDate) {
-      return res.status(403).json({
-        message: "Interview has not started yet",
-      });
-    }
-
-    if (now > endDate) {
-      candidateEntry.status = "expired";
-      await interview.save();
-
-      return res.status(403).json({
-        message: "Interview has expired",
-      });
-    }
-
-    if (candidateEntry.status === "completed") {
+      if (candidateEntry.status === "completed") {
       return res.status(403).json({
         message: "Interview already completed",
       });
     }
+
+    // // 5️⃣ Date Check
+    // const now = new Date();
+    // const startDate = new Date(candidateEntry.start_Date);
+    // const endDate = new Date(candidateEntry.end_Date);
+
+    // if (now < startDate) {
+    //   return res.status(403).json({
+    //     message: "Interview has not started yet",
+    //   });
+    // }
+
+    // if (now > endDate) {
+    //   candidateEntry.status = "expired";
+    //   await interview.save();
+
+    //   return res.status(403).json({
+    //     message: "Interview has expired",
+    //   });
+    // }
+
+  
 
     // 6️⃣ Generate Token
     const token = jwt.sign(
@@ -88,13 +91,12 @@ router.post("/login/:id", async (req, res) => {
     );
 
     // 🔌 Emit real-time event to admins
-    try {
-      getIO().to("admins").emit("candidate-logged-in", {
-        candidateId: candidateEntry.candidateId._id,
-        candidateName: candidateEntry.candidateId.email,
-        interviewId: id,
-      });
-    } catch (_) {}
+  
+      // getIO().to("admins").emit("candidate-logged-in", {
+      //   candidateId: candidateEntry.candidateId._id,
+      //   candidateName: candidateEntry.candidateId.email,
+      //   interviewId: id,
+      // });
 
     res.json({
       token,
@@ -102,7 +104,7 @@ router.post("/login/:id", async (req, res) => {
       candidateEntry,
     });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).json({error});
   }
 });

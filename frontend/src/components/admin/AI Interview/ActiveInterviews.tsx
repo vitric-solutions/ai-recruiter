@@ -28,6 +28,7 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
 
   const handleViewCandidates = async (assessment: any) => {
     const res = await adminService.getDraft(assessment._id);
+    console.log("res",res)
     setSelectedInterview(res.data);
     // Reset filters when opening modal
     setStatusFilter("all");
