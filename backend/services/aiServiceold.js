@@ -76,7 +76,7 @@
 //     const result = await model.generateContent(prompt);
 //     const response = await result.response;
 //     const rawText = response.text();
-//     console.log("Raw response from Gemini:", rawText);
+//     //console.log("Raw response from Gemini:", rawText);
 //     const cleanedText = cleanResponseText(rawText);
 //     const questions = JSON.parse(cleanedText);
 
@@ -119,7 +119,7 @@
 //     const result = await model.generateContent(prompt);
 //     const response = await result.response;
 //     const rawText = response.text();
-//     console.log("Raw response from Gemini (evaluateAnswer):", rawText); // Debugging
+//     //console.log("Raw response from Gemini (evaluateAnswer):", rawText); // Debugging
 //     const cleanedText = cleanResponseText(rawText);
 //     const evaluation = JSON.parse(cleanedText);
 //     if (!evaluation.score || !evaluation.feedback) {
@@ -136,7 +136,7 @@
 //   if (!process.env.HF_API_TOKEN) {
 //     throw new Error("HF_API_TOKEN is not set in .env");
 //   }
-//   console.log("HF_API_TOKEN",process.env.HF_API_TOKEN)
+//   //console.log("HF_API_TOKEN",process.env.HF_API_TOKEN)
 //   const response = await fetch(HF_URL, {
 //     method: "POST",
 //     headers: {
@@ -181,7 +181,7 @@
 // //     const result = await model.generateContent(prompt);
 // //     const response = await result.response;
 // //     const rawText = response.text();
-// //     console.log('Raw response from Gemini (generateSummary):', rawText); // Debugging
+// //     //console.log('Raw response from Gemini (generateSummary):', rawText); // Debugging
 // //     const cleanedText = cleanResponseText(rawText);
 // //     const summary = JSON.parse(cleanedText);
 // //     if (typeof summary !== 'string') {
@@ -195,7 +195,7 @@
 // // };
 
 // export const generateSummary = async (scores) => {
-//   console.log("Generating summary with scores:", scores);
+//   //console.log("Generating summary with scores:", scores);
 
 //   if (!Array.isArray(scores) || scores.length === 0) {
 //     return "No performance data available.";
@@ -305,7 +305,7 @@ export const generateQuestions = async (
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const rawText = response.text();
-    console.log("Raw response from Gemini:", rawText);
+    //console.log("Raw response from Gemini:", rawText);
     const cleanedText = cleanResponseText(rawText);
     const questions = JSON.parse(cleanedText);
 
@@ -348,7 +348,7 @@ export const evaluateAnswer = async (question, answer) => {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const rawText = response.text();
-    console.log("Raw response from Gemini (evaluateAnswer):", rawText);
+    //console.log("Raw response from Gemini (evaluateAnswer):", rawText);
     const cleanedText = cleanResponseText(rawText);
     const evaluation = JSON.parse(cleanedText);
     if (!evaluation.score || !evaluation.feedback) {
@@ -363,7 +363,7 @@ export const evaluateAnswer = async (question, answer) => {
 
 // ✅ FIXED: Now uses Gemini instead of HuggingFace/Together.ai
 export const generateSummary = async (scores) => {
-  console.log("Generating summary with scores:", scores);
+  //console.log("Generating summary with scores:", scores);
 
   if (!Array.isArray(scores) || scores.length === 0) {
     return "No performance data available.";

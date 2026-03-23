@@ -42,7 +42,7 @@ const corsOptions = {
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.log("❌ Blocked CORS:", origin); // 🔥 DEBUG
+     
       callback(new Error(`CORS blocked: ${origin}`));
     }
   },

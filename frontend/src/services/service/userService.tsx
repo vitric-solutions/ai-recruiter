@@ -7,21 +7,21 @@ class UserService {
 
   // adhar verification
   adharVerification(id: string, data: any) {
-    // console.log("Received data for adhar verification:", data);
+    // //console.log("Received data for adhar verification:", data);
     const formData = new FormData();
     // backend expects field name 'aadharCard'
     formData.append("aadharCard", data);
-    //  console.log("FormData created for adhar verification:", formData);
+    //  //console.log("FormData created for adhar verification:", formData);
     return userApi.AdharVerification(id, formData);
   }
 
   //  selfie verification
   selfieVerification(id: string, data: any) {
-    // console.log("Received data for selfie verification:", data);
+    // //console.log("Received data for selfie verification:", data);
     const formData = new FormData();
     // backend expects field name 'photo'
     formData.append("photo", data);
-    //  console.log("FormData created for selfie verification:", formData);
+    //  //console.log("FormData created for selfie verification:", formData);
     return userApi.SelfieVerification(id, formData);
   }
 

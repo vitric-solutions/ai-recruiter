@@ -78,7 +78,7 @@ const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
 
       const response = await adminService.analyzeResume(formData);
 
-      console.log("Analyze API Response:", response);
+      //console.log("Analyze API Response:", response);
 
       // Support both axios and direct data return
       const data = response?.data ?? response;

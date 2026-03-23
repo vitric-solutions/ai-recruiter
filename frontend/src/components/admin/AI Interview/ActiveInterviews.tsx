@@ -17,7 +17,7 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
   const [isResultOpen, setIsResultOpen] = useState(false);
   const [isReminderOpen, setIsReminderOpen] = useState(false);
   const [assessments, setAssessments] = useState<any[]>([]);
-  console.log("Assessments:", assessments);
+  //console.log("Assessments:", assessments);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<any>(null);
 
@@ -50,7 +50,7 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
       setTemplatesLoading(true);
       try {
         const res: any = await adminService.getDraft();
-        console.log("API Response for getDraft:", res);
+        //console.log("API Response for getDraft:", res);
 
         const interviews =
           res?.data?.interviews || res?.interviews || res?.drafts || [];
@@ -92,7 +92,7 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
     (page - 1) * ROWS_PER_PAGE,
     page * ROWS_PER_PAGE,
   );
-  console.log(paginatedCandidates);
+  //console.log(paginatedCandidates);
 
   // const getTimeAgo = (dateString: string) => {
   //   const now = new Date();

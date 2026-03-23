@@ -47,7 +47,7 @@
 // //       .sort({ createdAt: -1 })
 // //       .populate("createdBy", "email")
 // //       .populate("candidates.candidateId");
-// //     // console.log("interviews", interviews);
+// //     // //console.log("interviews", interviews);
 // //     return res.status(200).json({
 // //       success: true,
 // //       count: interviews.length,
@@ -210,7 +210,7 @@
 
 //     // Get job description file path if uploaded
 //     const jobDescription = req.file ? req.file.path.replace(/\\/g, "/") : "";
-//     // console.log("Job description path:", jobDescription);
+//     // //console.log("Job description path:", jobDescription);
 
 //     // // Generate questions using AI
 //     // const questions = await generateQuestions(
@@ -220,7 +220,7 @@
 //     //   "MCQ",
 //     //   parseInt(no_of_questions),
 //     // );
-//     // console.log("Generated questions for template:", questions);
+//     // //console.log("Generated questions for template:", questions);
 
 //     // Create interview template
 //     const interview = await MCQ_Interview.create({
@@ -764,7 +764,7 @@
 
 //     res.json({ candidates });
 //   } catch (error) {
-//     console.log(error);
+//     //console.log(error);
 //     res.status(500).json({error});
 //   }
 // };
@@ -774,7 +774,7 @@
 //     const { id } = req.params;
 
 //     const interview = await MCQ_Interview.findById(id);
-//     console.log("Found interview for update:", interview);
+//     //console.log("Found interview for update:", interview);
 //     if (!interview) {
 //       return res.status(404).json({ message: "Interview not found" });
 //     }
@@ -856,7 +856,7 @@
 
 //     res.json({ interview: interview, user: candidate._doc });
 //   } catch (error) {
-//     console.log(error);
+//     //console.log(error);
 //     res.status(500).json({error});
 //   }
 // };
@@ -929,7 +929,7 @@ import { encryptPath } from "../../utils/routeEncrypt.js";
 //       .sort({ createdAt: -1 })
 //       .populate("createdBy", "email")
 //       .populate("candidates.candidateId");
-//     // console.log("interviews", interviews);
+//     // //console.log("interviews", interviews);
 //     return res.status(200).json({
 //       success: true,
 //       count: interviews.length,
@@ -948,8 +948,7 @@ import { encryptPath } from "../../utils/routeEncrypt.js";
 export const GetAllMCQInterviews = async (req, res) => {
   try {
     const adminId = req.user.id;
-    console.log("adminId", adminId);
-    console.log(req.query);
+
     // const { id } = req.query;
 
     // /* ================= GET SINGLE ================= */
@@ -1010,7 +1009,7 @@ export const GetAllMCQInterviews = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate("createdBy", "email")
       .populate("candidates.candidateId");
-  console.log("interviews",interviews)
+
     const interviewIds = interviews.map((i) => i._id);
 
     // 🔥 Fetch all related scores in one query
@@ -1024,7 +1023,7 @@ export const GetAllMCQInterviews = async (req, res) => {
       );
 
       const updatedCandidates = interview.candidates.map((candidate) => {
-        console.log("candi", candidate);
+     
         const candidateScore = interviewScores.find(
           (s) => s.candidateId.toString() === candidate._id.toString(),
         );
@@ -1086,8 +1085,7 @@ export const CreateMCQTemplate = async (req, res) => {
 
     // Get job description file path if uploaded
     const jobDescription = req.file ? req.file.path.replace(/\\/g, "/") : "";
-    // console.log("Job description path:", jobDescription);
-
+    
     // // Generate questions using AI
     // const questions = await generateQuestions(
     //   jobDescription,
@@ -1096,7 +1094,6 @@ export const CreateMCQTemplate = async (req, res) => {
     //   "MCQ",
     //   parseInt(no_of_questions),
     // );
-    // console.log("Generated questions for template:", questions);
 
     // Create interview template
     const interview = await MCQ_Interview.create({
@@ -1653,7 +1650,6 @@ export const GetCandidatesInInterview = async (req, res) => {
     res.json({ candidates });
     ``;
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error });
   }
 };
@@ -1663,7 +1659,6 @@ export const updateMCQInterview = async (req, res) => {
     const { id } = req.params;
 
     const interview = await MCQ_Interview.findById(id);
-    console.log("Found interview for update:", interview);
     if (!interview) {
       return res.status(404).json({ message: "Interview not found" });
     }
@@ -1745,7 +1740,6 @@ export const getMCQInterviewById = async (req, res) => {
 
     res.json({ interview: interview, user: candidate._doc });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error });
   }
 };

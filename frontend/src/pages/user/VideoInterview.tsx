@@ -629,7 +629,7 @@
 // // ═══════════════════════════════════════════════════════════════════════════ */
 // // const VideoInterview: React.FC = () => {
 // //   const { interviewInfo } = useAuth();
-// //   console.log("info", interviewInfo);
+// //   //console.log("info", interviewInfo);
 // //   const { id } = useParams();
 // //   const navigate = useNavigate();
 // //   const interview_id = id || "";
@@ -1498,7 +1498,7 @@
 // // ═══════════════════════════════════════════════════════════════════════════ */
 // // const VideoInterview: React.FC = () => {
 // //   const { interviewInfo } = useAuth();
-// //   console.log("info", interviewInfo);
+// //   //console.log("info", interviewInfo);
 // //   const { id } = useParams();
 // //   const navigate = useNavigate();
 // //   const interview_id = id || "";
@@ -2892,7 +2892,7 @@
 
 // //     let mlReady=false;
 // //     loadFaceModels()
-// //       .then(()=>{mlReady=true;console.log("[Proctor] face-api ready ✓");})
+// //       .then(()=>{mlReady=true;//console.log("[Proctor] face-api ready ✓");})
 // //       .catch(e=>console.warn("[Proctor] face-api failed, canvas-only:",e));
 
 // //     // ── Canvas analysis ──────────────────────────────────────────────────
@@ -2930,7 +2930,7 @@
 // //           .detectAllFaces(vid,new faceapi.SsdMobilenetv1Options({minConfidence:MULTI_CONFIDENCE}))
 // //           .withFaceLandmarks();
 
-// //         console.log(`[Proctor] ML: ${dets.length} face(s) detected`);
+// //         //console.log(`[Proctor] ML: ${dets.length} face(s) detected`);
 
 // //         if(dets.length>1)return{faceCount:dets.length,gazeHard:false,eyesHard:false};
 // //         if(dets.length===0)return{faceCount:0,gazeHard:false,eyesHard:false};
@@ -3944,7 +3944,7 @@
 
 //     let mlReady=false;
 //     loadFaceModels()
-//       .then(()=>{mlReady=true;console.log("[Proctor] face-api ready ✓");})
+//       .then(()=>{mlReady=true;//console.log("[Proctor] face-api ready ✓");})
 //       .catch(e=>console.warn("[Proctor] face-api failed, canvas-only:",e));
 
 //     const canvasAnalyse=(vid:HTMLVideoElement)=>{
@@ -4164,7 +4164,7 @@
 //             const isAudioCheck=lt.includes("can you hear")||lt.includes("audio")||lt.includes("video working")||lt.includes("hear me");
 //             if(!isAudioCheck&&!preCheckDone.current){
 //               preCheckDone.current=true;
-//               console.log("[Interview] Pre-check done, interview questions now active");
+//               //console.log("[Interview] Pre-check done, interview questions now active");
 //             }
 //           }
 
@@ -4198,7 +4198,7 @@
 //             candidateRespondedRef.current=true; // prevent double-counting same utterance
 //             questionCount.current++;
 //             setQuestionProgress(questionCount.current);
-//             console.log(`[Interview] Answer ${questionCount.current}/${maxQuestions.current} received`);
+//             //console.log(`[Interview] Answer ${questionCount.current}/${maxQuestions.current} received`);
 
 //             if(questionCount.current>=maxQuestions.current){
 //               questionLimitReached.current=true;
@@ -5923,7 +5923,7 @@ const [, setVapiReady] = useState(false);
     loadFaceModels()
       .then(() => {
         mlReady = true;
-        console.log("[Proctor] face-api ready ✓");
+        //console.log("[Proctor] face-api ready ✓");
       })
       .catch((e) => console.warn("[Proctor] face-api failed, canvas-only:", e));
 
@@ -6307,9 +6307,6 @@ const [, setVapiReady] = useState(false);
               lt.includes("hear me");
             if (!isAudioCheck && !preCheckDone.current) {
               preCheckDone.current = true;
-              console.log(
-                "[Interview] Pre-check done, interview questions now active",
-              );
             }
           }
         } else if (msg.role === "user") {
@@ -6334,9 +6331,6 @@ const [, setVapiReady] = useState(false);
             candidateRespondedRef.current = true;
             questionCount.current++;
             setQuestionProgress(questionCount.current);
-            console.log(
-              `[Interview] Answer ${questionCount.current}/${maxQuestions.current} received`,
-            );
 
             if (questionCount.current >= maxQuestions.current) {
               questionLimitReached.current = true;
@@ -6544,7 +6538,9 @@ ${RULES}`;
                   "[SYSTEM]: Candidate is unresponsive. Thank them warmly and conclude the interview.",
               },
             });
-          } catch {}
+          } catch {
+            console.log("Erorr")
+          }
         } else {
           const prompts = [
             "Candidate has been silent for 30 seconds. Gently ask if they are ready to continue.",

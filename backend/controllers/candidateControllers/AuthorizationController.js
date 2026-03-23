@@ -107,11 +107,7 @@ export const CreateCandidate = async (req, res) => {
       newCandidate: candidate,
     });
   } catch (error) {
-    console.log(error);
-
     res.status(500).json({ message: "Server error" });
-
-   
   }
 };
 export const GetFilteredCandidates = async (req, res) => {
@@ -364,7 +360,6 @@ export const UpdateCandidate = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    console.log("updateData:", updateData);
 
     if (!id) {
       return res.status(400).json({

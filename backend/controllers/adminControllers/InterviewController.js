@@ -66,7 +66,6 @@ export const CreateAITemplate = async (req, res) => {
       status: "draft", // default
     });
 
-    console.log("Created AI Interview:", interview);
 
     // ================= RESPONSE =================
     return res.status(201).json({
@@ -117,7 +116,7 @@ export const CreateAITemplate = async (req, res) => {
 //   select: "name email mobile",
 // });
 
-//       // console.log("interview",interview)
+//       // //console.log("interview",interview)
 //       if (!interview) {
 //         return res.status(404).json({
 //           success: false,
@@ -201,10 +200,9 @@ export const GetAllAIInterview = async (req, res) => {
       const feedbacks = await InterviewFeedback.find({
         interview_id: id,
       });
-      // console.log("feedbacks",feedbacks)
+      // //console.log("feedbacks",feedbacks)
 
       const feedbackMap = new Map();
-      console.log("feedbackMap", feedbackMap);
 
       feedbacks.forEach((f) => {
         if (f?.candidateId) {
@@ -216,13 +214,12 @@ export const GetAllAIInterview = async (req, res) => {
       const updatedCandidates = interview.candidates.map((candidate) => {
         const candidateId = candidate?.candidateId?._id?.toString();
 
-        console.log("candidate", candidateId);
 
         const matchedFeedback = candidateId
           ? feedbackMap.get(candidateId)
           : null;
 
-        // console.log("matchedFeedback",matchedFeedback)
+        // //console.log("matchedFeedback",matchedFeedback)
 
         return {
           ...candidate.toObject(),
@@ -232,7 +229,7 @@ export const GetAllAIInterview = async (req, res) => {
         };
       });
 
-      // console.log("updatedCandidates",updatedCandidates)
+      // //console.log("updatedCandidates",updatedCandidates)
       const interviewObj = interview.toObject();
 
       interviewObj.candidates = updatedCandidates;
@@ -537,7 +534,6 @@ export const UpdateAIInterview = async (req, res) => {
   try {
     const { id } = req.params;
     const interview = await AI_Interview.findById(id);
-    console.log("Interview to update:", interview);
     if (!interview) {
       return res.status(404).json({ message: "Interview not found" });
     }
@@ -641,7 +637,7 @@ export const ScheduleAiInterview = async (req, res) => {
     const interview = await AI_Interview.findById(interviewId);
     if (!interview)
       return res.status(404).json({ message: "Interview not found" });
-    // console.log("interview existing candidates:", interview);
+    // //console.log("interview existing candidates:", interview);
     const scheduledCandidates = [];
     const cooldownCandidates = [];
 

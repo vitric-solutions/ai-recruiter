@@ -277,7 +277,6 @@ router.get("/interview/:id/questions", auth("candidate"), async (req, res) => {
   const { id } = req.params;
   try {
     const questions = await Question.find({ interviewId: id });
-    console.log("Questions fetched for interview", questions);
     res.json({ questions });
   } catch (error) {
     res.status(500).json({error});
@@ -299,7 +298,7 @@ router.get("/interview/:id/questions", auth("candidate"), async (req, res) => {
 //     );
 
 //     let evaluation;
-//     console.log("interview.Exam_Type", interview);
+//     //console.log("interview.Exam_Type", interview);
 
 //     // For MCQ, check if answer is correct, feedback should be blank
 //     const isCorrect =
@@ -332,7 +331,7 @@ router.get("/interview/:id/questions", auth("candidate"), async (req, res) => {
 
 //     res.json({ message: "Answer submitted", evaluation });
 //   } catch (error) {
-//     console.log(error);
+//     //console.log(error);
 //     res.status(500).json({error});
 //   }
 // });
@@ -341,7 +340,7 @@ router.post("/interview/:id/answer", auth("candidate"), async (req, res) => {
   const { id } = req.params;
   const { questionId, answerText } = req.body;
 
-  // console.log("Answer submission received:", { id, questionId, answerText });
+  // //console.log("Answer submission received:", { id, questionId, answerText });
 
   try {
     const interview = await Interview.findById(id);
@@ -360,13 +359,13 @@ router.post("/interview/:id/answer", auth("candidate"), async (req, res) => {
       answerText.trim() === question.correctAnswer.trim();
 
     const score = isCorrect ? 10 : 0;
-    // console.log(question);
-    // console.log(req);
+    // //console.log(question);
+    // //console.log(req);
     // Find existing answer for same candidate
     const existingAnswer = question.answers.find(
       (a) => a.candidateId.toString() === req.user.id,
     );
-    // console.log("Existing Answer:", existingAnswer);
+    // //console.log("Existing Answer:", existingAnswer);
     if (existingAnswer) {
       // ✅ UPDATE existing score
       existingAnswer.answerText = answerText;
@@ -403,7 +402,7 @@ router.post("/interview/:id/submit", auth("candidate"), async (req, res) => {
     const { id } = req.params;
     const candidateId = req.user.id;
 
-    // console.log("Submit called for interview", id);
+    // //console.log("Submit called for interview", id);
 
     // 🔥 1️⃣ Try finding interview in both collections
     let interview = await MCQ_Interview.findById(id);
@@ -423,7 +422,6 @@ router.post("/interview/:id/submit", auth("candidate"), async (req, res) => {
     const candidateEntry = interview.candidates.find(
       (c) => c.candidateId.toString() === candidateId,
     );
-    console.log("candidateEntry",candidateEntry)
 
     if (!candidateEntry) {
       return res.status(403).json({ message: "Not authorized" });

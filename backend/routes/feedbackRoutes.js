@@ -308,7 +308,7 @@ const calculateScores = (feedback) => {
 //       });
 //     }
 
-//     console.log("Generating feedback for:", interview_id);
+//     //console.log("Generating feedback for:", interview_id);
 //  const { technicalScore, relevanceScore } = calculateScores(feedback);
 
 //     // Inject into feedback object
@@ -351,7 +351,7 @@ const calculateScores = (feedback) => {
 //       uploadStream.end(pdfBuffer); // pipe buffer directly
 //     });
 
-//     console.log("Cloudinary upload success:", uploadResult.secure_url);
+//     //console.log("Cloudinary upload success:", uploadResult.secure_url);
 
 //     // ===============================
 //     // 3️⃣ Send Email with PDF Attachment
@@ -422,7 +422,7 @@ const calculateScores = (feedback) => {
 //       ],
 //     });
 
-//     console.log("Email sent successfully");
+//     //console.log("Email sent successfully");
 
 //     // ===============================
 //     // 4️⃣ Save / Update in Database
@@ -484,8 +484,6 @@ router.post("/feedback", async (req, res) => {
       });
     }
 
-    console.log("Generating feedback for:", interview_id);
-
     // ==================================================
     // 🔥 Calculate Technical & Relevance Scores
     // ==================================================
@@ -538,7 +536,6 @@ router.post("/feedback", async (req, res) => {
       uploadStream.end(pdfBuffer);
     });
 
-    console.log("Cloudinary upload success:", uploadResult.secure_url);
 
     // ===============================
     // 3️⃣ Send Email
@@ -587,7 +584,7 @@ router.post("/feedback", async (req, res) => {
       ],
     });
 
-    console.log("Email sent successfully");
+    
 
     // ===============================
     // 4️⃣ Save / Update in Database
@@ -629,7 +626,7 @@ router.post("/feedback", async (req, res) => {
       }
     );
 
-    console.log("Candidate status updated");
+   
 
     // ==================================================
     // 7️⃣ Auto Mark Interview Completed (If All Done)
@@ -643,7 +640,7 @@ router.post("/feedback", async (req, res) => {
     if (allCompleted) {
       interview.status = "completed";
       await interview.save();
-      console.log("Interview marked as completed");
+   
     }
 
     return res.json({
@@ -782,7 +779,7 @@ function safeJsonParse(raw) {
 
 router.post("/ai-feedback", async (req, res) => {
   // 1. Validate
-  console.log("req.body",req.body)
+  //console.log("req.body",req.body)
   if (!isValidBody(req.body)) {
     return res.status(400).json({
       feedback: "",

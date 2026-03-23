@@ -379,7 +379,7 @@ router.get("/student-scores",auth("admin"), getStudentScores);
 
 //       res.json({ candidates });
 //     } catch (error) {
-//       console.log(error);
+//       //console.log(error);
 //       res.status(500).json({ message: "Server error" });
 //     }
 //   },

@@ -14,7 +14,7 @@ import {
 
 export const RegisterUser = async (req, res) => {
   const { userName, email, password } = req.body; // ✅ add userName
-  console.log(req.body);
+
 
   try {
     let admin = await Admin.findOne({ email });
@@ -126,7 +126,7 @@ export const LoginUser = async (req, res) => {
 };
 
 export const getMe = async (req, res) => {
-  // console.log("getMe called with user ID:", req.user);
+  // //console.log("getMe called with user ID:", req.user);
   try {
     const user = await Admin.findById(req.user.id).select("-password");
 
@@ -456,7 +456,6 @@ export const GetAllSchedule = async (req, res) => {
       .populate("candidates.candidateId")
       .lean();
 
-    console.log(JSON.stringify(MCQ, null, 2));
     const mcqData = await MCQ_Interview.aggregate([
       { $unwind: "$candidates" },
       {
@@ -731,7 +730,6 @@ export const rescheduleInterview = async (req, res) => {
         );
       }
 
-      console.log("Reschedule email sent to:", candidate.email);
     } catch (emailError) {
       console.error("Email sending failed:", emailError);
     }
@@ -827,7 +825,6 @@ export const getStudentScores = async (req, res) => {
           },
         })
         .lean();
-      console.log("aiData", aiData);
       // Compute score for records that don't have it
       const data = aiData.map((item) => {
         if (item.score != null) return item;

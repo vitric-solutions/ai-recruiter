@@ -42,8 +42,8 @@ export default function InterviewSetup() {
   const [isGenerated, setIsGenerated] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const [existingFilePath, setExistingFilePath] = useState<string | null>(null);
-  console.log(interviewLink);
-  console.log(subject);
+  //console.log(interviewLink);
+  //console.log(subject);
   // Candidate States
   const [candidates, setCandidates] = useState<any[]>([]);
   const [filteredCandidates, setFilteredCandidates] = useState<any[]>([]);
@@ -257,7 +257,7 @@ export default function InterviewSetup() {
       });
 
       const response = await adminService.generateAIInterview(formData);
-      console.log("Interview Created:", response);
+      //console.log("Interview Created:", response);
       setCreatedJobId(response.jobId);
 
       setIsGenerated(true);
@@ -302,7 +302,7 @@ export default function InterviewSetup() {
       });
 
       const response = await adminService.generateAIInterview(formData);
-      console.log("Interview Created:", response);
+      //console.log("Interview Created:", response);
       setCreatedJobId(response.jobId);
       setActiveTab("template");
     } catch (error: any) {
@@ -314,7 +314,7 @@ export default function InterviewSetup() {
   };
 
   const onNavigateToInterviewSetup = async (assessment: any) => {
-    console.log("Navigating to Interview Setup with assessment:", assessment);
+    //console.log("Navigating to Interview Setup with assessment:", assessment);
     setActiveTab("setup");
     setUseTemplateMode(true);
 
@@ -419,7 +419,7 @@ export default function InterviewSetup() {
       };
 
       const res = await adminService.sendInvitations(payload);
-      console.log(res);
+      //console.log(res);
 
       const invited = res.invitedEmails || [];
       const skipped = res.skippedEmails || [];
@@ -452,7 +452,7 @@ export default function InterviewSetup() {
       setSelectedCandidates([]);
       setActiveTab("template");
     } catch (error: any) {
-      console.log(error);
+      //console.log(error);
       toast.error(error?.res?.message || "Failed to send invitations");
     } finally {
       setLoading(false);
@@ -536,14 +536,14 @@ export default function InterviewSetup() {
   };
 
   const handleEditAssessment = async (assessment: any) => {
-    console.log("Editing assessment:", assessment);
+    //console.log("Editing assessment:", assessment);
     setActiveTab("setup");
     setUseTemplateMode(false); // ✅ ADD THIS LINE
 
     try {
       setEditLoading(true);
       const res = await adminService.getDraft(assessment._id);
-      console.log("Fetched Interview for Editing:", res);
+      //console.log("Fetched Interview for Editing:", res);
       const data = res.data;
 
       setEditingId(data._id);
@@ -610,6 +610,12 @@ export default function InterviewSetup() {
         return "";
     }
   };
+  const handleRemoveFile = () => {
+  setFile(null);
+  setFileName(null);
+  setExistingFilePath(null);
+  setJdAnalysis(null); // reset only AI data
+};
 
   return (
     <>
@@ -777,11 +783,8 @@ export default function InterviewSetup() {
                       {/* Remove */}
                       <button
                         type="button"
-                        onClick={() => {
-                          setFile(null);
-                          setFileName(null);
-                          setExistingFilePath(null);
-                        }}
+                          onClick={handleRemoveFile}
+                      
                         className="text-sm font-medium text-red-500 hover:text-red-600 transition"
                       >
                         Remove
