@@ -267,7 +267,7 @@ export const getCandidateProfile = async (req, res) => {
     // ------------------ MCQ ------------------
     mcqInterviews.forEach((interview) => {
       const candidateData = interview.candidates.find(
-        (c) => c.candidateId.toString() === id
+        (c) => c.candidateId === id
       );
 
       const scoreData = scores.find(

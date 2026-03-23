@@ -15,6 +15,7 @@ const ViewAssignedCandidate: React.FC<ViewAssignedCandidateProps> = ({
   assessmentData,
 }) => {
   if (!isOpen || !assessmentData) return null;
+  console.log("assessmentData",assessmentData)
 
   const { candidates } = assessmentData;
 

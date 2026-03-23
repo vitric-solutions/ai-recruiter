@@ -159,7 +159,7 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
                         </td>
 
                         <td className="px-5 py-4">
-                          {interview.score} / {interview.passingScore}
+                          {interview.score} / 100
                         </td>
 
                         <td className="px-5 py-4">

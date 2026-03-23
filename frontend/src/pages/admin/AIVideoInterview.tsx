@@ -611,10 +611,47 @@ export default function InterviewSetup() {
     }
   };
   const handleRemoveFile = () => {
+  // 🧹 File reset
   setFile(null);
   setFileName(null);
   setExistingFilePath(null);
-  setJdAnalysis(null); // reset only AI data
+  setJdAnalysis(null);
+
+  // 🧹 Form reset
+  setPosition("");
+  setDescription("");
+  setSecondaryJobDescription("");
+  setSkills([]);
+  setInputValue("");
+
+  setDuration("");
+  setPassingScore("");
+  setNumberOfQuestions("");
+  setDifficulty("");
+
+  // 🧹 Email + interview reset
+  setSubject("");
+  setMessageBody("");
+  setInterviewLink("");
+
+  setStartDate(null);
+  setEndDate(null);
+
+  // 🧹 Candidates reset
+  setSelectedCandidates([]);
+  setScoredCandidates([]);
+  setCandidates([]);
+
+  // 🧹 UI states reset
+  setIsGenerated(false);
+  setCreatedJobId(null);
+  setEditMode(false);
+  setEditingId(null);
+  setUseTemplateMode(false);
+
+  // optional UX
+  setShowDropdown(false);
+  setSearchTerm("");
 };
 
   return (
@@ -727,6 +764,7 @@ export default function InterviewSetup() {
                     <div
                       onDrop={handleFileDrop}
                       onDragOver={handleDragOver}
+                      
                       className="relative flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center transition-all duration-200 hover:border-indigo-400 hover:bg-indigo-50/30"
                     >
                       {/* Upload Icon */}
@@ -787,7 +825,9 @@ export default function InterviewSetup() {
                       
                         className="text-sm font-medium text-red-500 hover:text-red-600 transition"
                       >
-                        Remove
+                
+                      <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                   
                       </button>
                     </div>
                   )}

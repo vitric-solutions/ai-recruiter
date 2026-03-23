@@ -66,17 +66,28 @@ const InterviewFeedbackSchema = new mongoose.Schema(
       },
     ],
 
-    behaviorReport: {
-      totalEvents: Number,
-      noFaceCount: Number,
-      multipleFacesCount: Number,
-      events: [
-        {
-          type: String,
-          timestamp: Number,
-        },
-      ],
+   behaviorReport: {
+  totalEvents: Number,
+  noFaceCount: Number,
+  multipleFacesCount: Number,
+  lookingAwayCount: Number,
+  eyesClosedCount: Number,
+
+  events: [
+    {
+      type: {
+        type: String,
+        enum: [
+          "looking_away",
+          "no_face",
+          "multiple_faces",
+          "eyes_closed"
+        ],
+      },
+      timestamp: Number,
     },
+  ],
+}
   },
   { timestamps: true },
 );
