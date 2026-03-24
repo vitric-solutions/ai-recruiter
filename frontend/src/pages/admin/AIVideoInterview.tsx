@@ -34,9 +34,9 @@ export default function InterviewSetup() {
   const [numberOfQuestions, setNumberOfQuestions] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [loading, setLoading] = useState(false);
-  const [subject, setSubject] = useState("");
+  const [_, setSubject] = useState("");
   const [messageBody, setMessageBody] = useState("");
-  const [interviewLink, setInterviewLink] = useState("");
+  const [__, setInterviewLink] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [isGenerated, setIsGenerated] = useState(false);

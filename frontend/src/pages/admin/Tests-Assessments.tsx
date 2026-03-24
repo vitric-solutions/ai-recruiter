@@ -491,33 +491,33 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
     }
   };
 
-  const mapExperienceToLevel = (level?: string, years?: string) => {
-    if (!level && !years) return "";
-    const lvl = level?.toLowerCase();
-    if (lvl?.includes("entry") || lvl?.includes("junior")) return "Easy";
-    if (lvl?.includes("mid")) return "Intermediate";
-    if (lvl?.includes("senior") || lvl?.includes("lead")) return "Advanced";
-    const y = Number(years);
-    if (!isNaN(y)) {
-      if (y <= 1) return "Easy";
-      if (y <= 4) return "Intermediate";
-      return "Advanced";
-    }
-    return "";
-  };
+  // const mapExperienceToLevel = (level?: string, years?: string) => {
+  //   if (!level && !years) return "";
+  //   const lvl = level?.toLowerCase();
+  //   if (lvl?.includes("entry") || lvl?.includes("junior")) return "Easy";
+  //   if (lvl?.includes("mid")) return "Intermediate";
+  //   if (lvl?.includes("senior") || lvl?.includes("lead")) return "Advanced";
+  //   const y = Number(years);
+  //   if (!isNaN(y)) {
+  //     if (y <= 1) return "Easy";
+  //     if (y <= 4) return "Intermediate";
+  //     return "Advanced";
+  //   }
+  //   return "";
+  // };
 
-  const getDefaultQuestionsByLevel = (level: string) => {
-    switch (level) {
-      case "Easy":
-        return "20";
-      case "Intermediate":
-        return "30";
-      case "Advanced":
-        return "40";
-      default:
-        return "";
-    }
-  };
+  // const getDefaultQuestionsByLevel = (level: string) => {
+  //   switch (level) {
+  //     case "Easy":
+  //       return "20";
+  //     case "Intermediate":
+  //       return "30";
+  //     case "Advanced":
+  //       return "40";
+  //     default:
+  //       return "";
+  //   }
+  // };
 
   // const getDefaultDuration = (questions: string) => {
   //   const q = Number(questions);
@@ -554,12 +554,12 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
       const analysis = response.analysis;
       if (analysis) {
         setJdAnalysis(analysis);
-        const difficulty =
-          mapExperienceToLevel(
-            analysis?.experienceLevel,
-            analysis?.experienceYears,
-          ) || "";
-        const defaultQuestions = getDefaultQuestionsByLevel(difficulty);
+        // const difficulty =
+        //   mapExperienceToLevel(
+        //     analysis?.experienceLevel,
+        //     analysis?.experienceYears,
+        //   ) || "";
+        // const defaultQuestions = getDefaultQuestionsByLevel(difficulty);
         //console.log(defaultQuestions);
         // const defaultDuration = getDefaultDuration(defaultQuestions);
         setFormData((prev) => ({
