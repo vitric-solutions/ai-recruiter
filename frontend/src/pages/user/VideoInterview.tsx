@@ -894,7 +894,7 @@
 // //       name: "AI Recruiter",
 // //       firstMessage,
 // //       transcriber: null,
-// //       voice: { provider: "vapi", voiceId: "Neha", speed: 0.95, fillerInjectionEnabled: true },
+// //       voice: { provider: "vapi", voiceId: "Neha", speed: 0.95, fillerInjectionEnabled: true }, abc
 // //       model: {
 // //         provider: "openai",
 // //         model: "gpt-4-turbo",
@@ -4689,21 +4689,6 @@
 
 // export default VideoInterview;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // import React, { useEffect, useState, useRef, useCallback } from "react";
 // import { useParams, useNavigate } from "react-router-dom";
 // import Vapi from "@vapi-ai/web";
@@ -7312,10 +7297,8 @@
 
 // export default VideoInterview;
 
-
-
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, useNavigate,useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Vapi from "@vapi-ai/web";
 import { Base_Url } from "../../utils/constants";
 import {
@@ -7358,20 +7341,35 @@ async function loadFaceModels() {
 // ElevenLabs voice IDs — Indian accent, natural cadence
 const VOICE_CONFIG = {
   female: {
-    voiceId: "pFZP5JQG7iQjIQuC4Bku", // "Lily" — warm, natural Indian-English female
-    stability: 0.48,
-    similarityBoost: 0.78,
-    style: 0.32,
-    speed: 0.93,
+    // voiceId: "pFZP5JQG7iQjIQuC4Bku", 
+    // voiceId: "21m00Tcm4TlvDq8ikWAM",
+    voiceId:"Neha",// "Lily" — warm, natural Indian-English female
+    // stability: 0.6,
+    // similarityBoost: 0.78,
+    // style: 0.62,
+    speed: 1,
+    // emotion: {
+    //   happy: 0.3,
+    //   sad: 0.2,
+    //   angry: 0.1,
+    // },
   },
   male: {
-    voiceId: "nPczCjzI2devNBz1zQrb", // "Brian" — replace with Indian male voice ID
-    stability: 0.50,
-    similarityBoost: 0.75,
-    style: 0.30,
-    speed: 0.95,
+    // voiceId: "nPczCjzI2devNBz1zQrb",
+    // voiceId: "pNInz6obpgDQGcFmaJgB",
+     voiceId:"Rohan",// "Brian" — replace with Indian male voice ID
+    // stability: 0.6,
+    // similarityBoost: 0.75,
+    // style: 0.6,
+    speed: 1,
+    //   emotion: {
+    //   happy: 0.3,
+    //   sad: 0.2,
+    //   angry: 0.1,
+    // },
   },
 } as const;
+
 // ─── AVATAR CONFIG ─────────────────────────────────────────────────────────
 const AVATAR_CONFIG = {
   heygen: {
@@ -7514,7 +7512,12 @@ type Screen = "lobby" | "spotlight" | "grid";
 type AvatarMode = "heygen" | "ganai" | "animated";
 type AvatarState = "idle" | "thinking" | "speaking";
 // Turn state for natural conversation flow
-type TurnState = "ai-speaking" | "user-turn" | "user-speaking" | "processing" | "idle";
+type TurnState =
+  | "ai-speaking"
+  | "user-turn"
+  | "user-speaking"
+  | "processing"
+  | "idle";
 
 interface AlertState {
   type: string;
@@ -7554,8 +7557,7 @@ const VIOLATION_MSGS: Record<
       r > 0
         ? `You navigated away. ${r} warning(s) remaining before automatic submission.`
         : `Maximum warnings reached. Interview will be submitted on completion.`,
-    spoken:
-      "I noticed you switched tabs. Please stay on the interview window.",
+    spoken: "I noticed you switched tabs. Please stay on the interview window.",
   },
   "camera-off": {
     title: "Camera Turned Off",
@@ -7759,20 +7761,73 @@ const AnimatedAvatar = React.memo(({ state }: { state: AvatarState }) => {
               />
             </filter>
           </defs>
-          <rect x="122" y="232" width="36" height="45" rx="6" fill="url(#av_skin)" />
-          <path d="M 48 330 Q 50 268 90 256 L 140 266 L 190 256 Q 230 268 232 330 Z" fill="url(#av_suit)" />
-          <path d="M 118 258 L 140 278 L 162 258 L 155 250 L 140 268 L 125 250 Z" fill="#f0f4ff" />
-          <path d="M 134 263 L 140 308 L 146 263 L 140 258 Z" fill="#2D55FB" opacity="0.9" />
-          <path d="M 90 256 Q 112 245 130 250 L 118 258 Q 78 272 68 292 Z" fill="#101840" opacity="0.65" />
-          <path d="M 190 256 Q 168 245 150 250 L 162 258 Q 202 272 212 292 Z" fill="#101840" opacity="0.65" />
-          <ellipse cx="140" cy="146" rx="88" ry="100" fill="url(#av_skin)" filter="url(#av_shadow)" />
-          <path d="M 56 108 Q 50 48 140 36 Q 230 48 224 108 L 220 128 Q 212 73 140 66 Q 68 73 60 128 Z" fill="url(#av_hair)" />
-          <path d="M 56 108 Q 52 142 58 165 Q 54 132 60 128 Z" fill="url(#av_hair)" />
-          <path d="M 224 108 Q 228 142 222 165 Q 226 132 220 128 Z" fill="url(#av_hair)" />
+          <rect
+            x="122"
+            y="232"
+            width="36"
+            height="45"
+            rx="6"
+            fill="url(#av_skin)"
+          />
+          <path
+            d="M 48 330 Q 50 268 90 256 L 140 266 L 190 256 Q 230 268 232 330 Z"
+            fill="url(#av_suit)"
+          />
+          <path
+            d="M 118 258 L 140 278 L 162 258 L 155 250 L 140 268 L 125 250 Z"
+            fill="#f0f4ff"
+          />
+          <path
+            d="M 134 263 L 140 308 L 146 263 L 140 258 Z"
+            fill="#2D55FB"
+            opacity="0.9"
+          />
+          <path
+            d="M 90 256 Q 112 245 130 250 L 118 258 Q 78 272 68 292 Z"
+            fill="#101840"
+            opacity="0.65"
+          />
+          <path
+            d="M 190 256 Q 168 245 150 250 L 162 258 Q 202 272 212 292 Z"
+            fill="#101840"
+            opacity="0.65"
+          />
+          <ellipse
+            cx="140"
+            cy="146"
+            rx="88"
+            ry="100"
+            fill="url(#av_skin)"
+            filter="url(#av_shadow)"
+          />
+          <path
+            d="M 56 108 Q 50 48 140 36 Q 230 48 224 108 L 220 128 Q 212 73 140 66 Q 68 73 60 128 Z"
+            fill="url(#av_hair)"
+          />
+          <path
+            d="M 56 108 Q 52 142 58 165 Q 54 132 60 128 Z"
+            fill="url(#av_hair)"
+          />
+          <path
+            d="M 224 108 Q 228 142 222 165 Q 226 132 220 128 Z"
+            fill="url(#av_hair)"
+          />
           <ellipse cx="52" cy="153" rx="10" ry="14" fill="url(#av_skin)" />
           <ellipse cx="228" cy="153" rx="10" ry="14" fill="url(#av_skin)" />
-          <path d="M 86 106 Q 104 100 120 105" stroke="#3a2c1e" strokeWidth="3.2" fill="none" strokeLinecap="round" />
-          <ellipse cx="103" cy="126" rx="16" ry={blink ? 0.8 : 12} fill="white" />
+          <path
+            d="M 86 106 Q 104 100 120 105"
+            stroke="#3a2c1e"
+            strokeWidth="3.2"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <ellipse
+            cx="103"
+            cy="126"
+            rx="16"
+            ry={blink ? 0.8 : 12}
+            fill="white"
+          />
           {!blink && (
             <>
               <ellipse cx="105" cy="127" rx="9" ry="9" fill="url(#av_iris)" />
@@ -7780,9 +7835,31 @@ const AnimatedAvatar = React.memo(({ state }: { state: AvatarState }) => {
               <circle cx="102" cy="124" r="2.5" fill="white" opacity="0.9" />
             </>
           )}
-          <path d={blink ? "M 87 126 Q 103 126 119 126" : "M 87 118 Q 103 113 119 118"} stroke="#3a2c1e" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-          <path d="M 160 105 Q 176 100 194 106" stroke="#3a2c1e" strokeWidth="3.2" fill="none" strokeLinecap="round" />
-          <ellipse cx="177" cy="126" rx="16" ry={blink ? 0.8 : 12} fill="white" />
+          <path
+            d={
+              blink
+                ? "M 87 126 Q 103 126 119 126"
+                : "M 87 118 Q 103 113 119 118"
+            }
+            stroke="#3a2c1e"
+            strokeWidth="1.8"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 160 105 Q 176 100 194 106"
+            stroke="#3a2c1e"
+            strokeWidth="3.2"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <ellipse
+            cx="177"
+            cy="126"
+            rx="16"
+            ry={blink ? 0.8 : 12}
+            fill="white"
+          />
           {!blink && (
             <>
               <ellipse cx="175" cy="127" rx="9" ry="9" fill="url(#av_iris)" />
@@ -7790,13 +7867,49 @@ const AnimatedAvatar = React.memo(({ state }: { state: AvatarState }) => {
               <circle cx="172" cy="124" r="2.5" fill="white" opacity="0.9" />
             </>
           )}
-          <path d={blink ? "M 161 126 Q 177 126 193 126" : "M 161 118 Q 177 113 193 118"} stroke="#3a2c1e" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-          <path d="M 140 133 L 135 168 Q 140 175 145 168 Z" fill="#d4956a" opacity="0.28" />
-          <path d="M 130 171 Q 140 177 150 171" stroke="#c4856a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-          <path d="M 116 213 Q 128 208 140 210 Q 152 208 164 213" stroke="#c0766a" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-          <path d={mD} stroke="#a85a5a" strokeWidth="2.5" fill={mouth > 1 ? "#7a3030" : "none"} strokeLinecap="round" />
+          <path
+            d={
+              blink
+                ? "M 161 126 Q 177 126 193 126"
+                : "M 161 118 Q 177 113 193 118"
+            }
+            stroke="#3a2c1e"
+            strokeWidth="1.8"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 140 133 L 135 168 Q 140 175 145 168 Z"
+            fill="#d4956a"
+            opacity="0.28"
+          />
+          <path
+            d="M 130 171 Q 140 177 150 171"
+            stroke="#c4856a"
+            strokeWidth="1.5"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 116 213 Q 128 208 140 210 Q 152 208 164 213"
+            stroke="#c0766a"
+            strokeWidth="1.8"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d={mD}
+            stroke="#a85a5a"
+            strokeWidth="2.5"
+            fill={mouth > 1 ? "#7a3030" : "none"}
+            strokeLinecap="round"
+          />
           {mouth > 1 && (
-            <path d="M 120 216 Q 140 228 160 216 L 158 220 Q 140 232 122 220 Z" fill="white" opacity="0.88" />
+            <path
+              d="M 120 216 Q 140 228 160 216 L 158 220 Q 140 232 122 220 Z"
+              fill="white"
+              opacity="0.88"
+            />
           )}
         </svg>
       </motion.div>
@@ -7823,7 +7936,12 @@ const AnimatedAvatar = React.memo(({ state }: { state: AvatarState }) => {
                 key={i}
                 className="w-0.5 rounded-full bg-[#2D55FB]"
                 animate={{ height: ["3px", `${6 + (i % 3) * 4}px`, "3px"] }}
-                transition={{ duration: 0.45, repeat: Infinity, delay: d, ease: "easeInOut" }}
+                transition={{
+                  duration: 0.45,
+                  repeat: Infinity,
+                  delay: d,
+                  ease: "easeInOut",
+                }}
               />
             ))}
             <span className="text-[#2D55FB] text-[10px] ml-1.5 font-semibold">
@@ -7846,7 +7964,14 @@ interface AvatarTileProps {
   heygenReady: boolean;
 }
 const AvatarTile = React.memo(
-  ({ mode, state, heygenVideoRef, ganAiVideoUrl, ganAiLoading, heygenReady }: AvatarTileProps) => {
+  ({
+    mode,
+    state,
+    heygenVideoRef,
+    ganAiVideoUrl,
+    ganAiLoading,
+    heygenReady,
+  }: AvatarTileProps) => {
     const ganRef = useRef<HTMLVideoElement>(null);
     useEffect(() => {
       if (ganAiVideoUrl && ganRef.current) {
@@ -7856,7 +7981,9 @@ const AvatarTile = React.memo(
     }, [ganAiVideoUrl]);
     return (
       <div className="absolute inset-0">
-        <AnimatedAvatar state={mode === "heygen" && heygenReady ? "idle" : state} />
+        <AnimatedAvatar
+          state={mode === "heygen" && heygenReady ? "idle" : state}
+        />
         {mode === "heygen" && (
           <video
             ref={heygenVideoRef}
@@ -7880,13 +8007,17 @@ const AvatarTile = React.memo(
             <div
               className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border backdrop-blur-sm text-[9px] font-semibold ${heygenReady ? "bg-green-500/15 border-green-500/30 text-green-300" : "bg-amber-500/15 border-amber-500/30 text-amber-300"}`}
             >
-              <div className={`w-1.5 h-1.5 rounded-full ${heygenReady ? "bg-green-400" : "bg-amber-400"} animate-pulse`} />
+              <div
+                className={`w-1.5 h-1.5 rounded-full ${heygenReady ? "bg-green-400" : "bg-amber-400"} animate-pulse`}
+              />
               {heygenReady ? "Live Avatar" : "Connecting…"}
             </div>
           )}
           {mode === "ganai" && (
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border backdrop-blur-sm bg-purple-500/15 border-purple-500/30 text-purple-300 text-[9px] font-semibold">
-              <div className={`w-1.5 h-1.5 rounded-full ${ganAiLoading ? "bg-amber-400 animate-pulse" : "bg-purple-400"}`} />
+              <div
+                className={`w-1.5 h-1.5 rounded-full ${ganAiLoading ? "bg-amber-400 animate-pulse" : "bg-purple-400"}`}
+              />
               {ganAiLoading ? "Rendering…" : "Gan.AI"}
             </div>
           )}
@@ -7918,7 +8049,9 @@ const AudioWave = ({ active = true }: { active?: boolean }) => (
         <span className="w-0.75 h-2.25 bg-white rounded-sm block" />
       </span>
     </div>
-    {[0, 0.07, 0.14, 0.21, 0.1, 0.28, 0.05, 0.18, 0.12, 0.24, 0.08, 0.2, 0.16].map((d, i) => (
+    {[
+      0, 0.07, 0.14, 0.21, 0.1, 0.28, 0.05, 0.18, 0.12, 0.24, 0.08, 0.2, 0.16,
+    ].map((d, i) => (
       <WaveBar key={i} delay={d} active={active} />
     ))}
   </div>
@@ -7927,7 +8060,11 @@ const MicCircle = ({ muted }: { muted: boolean }) => (
   <div
     className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${muted ? "bg-red-500 shadow-red-500/40" : "bg-[#2D55FB] shadow-[#2D55FB]/40"}`}
   >
-    {muted ? <MicOff className="h-4 w-4 text-white" /> : <Mic className="h-4 w-4 text-white" />}
+    {muted ? (
+      <MicOff className="h-4 w-4 text-white" />
+    ) : (
+      <Mic className="h-4 w-4 text-white" />
+    )}
   </div>
 );
 const CtrlBtn = ({
@@ -8031,7 +8168,9 @@ const ViolationModal = React.memo(
           <h3 className="text-white font-bold text-lg mb-1">
             {atMax ? "Maximum Warnings Reached" : alert.title}
           </h3>
-          <p className={`text-sm mb-2 ${atMax ? "text-red-400" : "text-amber-400"}`}>
+          <p
+            className={`text-sm mb-2 ${atMax ? "text-red-400" : "text-amber-400"}`}
+          >
             {atMax
               ? "Interview flagged — will auto-submit when complete"
               : `Warning ${alert.count} of ${MAX_VIOLATIONS}`}
@@ -8072,7 +8211,13 @@ const ViolationModal = React.memo(
 );
 
 // ─── TURN INDICATOR ─────────────────────────────────────────────────────────
-const TurnIndicator = ({ turnState, pauseCountdown }: { turnState: TurnState; pauseCountdown: number }) => {
+const TurnIndicator = ({
+  turnState,
+  pauseCountdown,
+}: {
+  turnState: TurnState;
+  pauseCountdown: number;
+}) => {
   if (turnState === "ai-speaking") {
     return (
       <div className="flex items-center gap-1.5 bg-emerald-600/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
@@ -8163,7 +8308,9 @@ const VideoInterview: React.FC = () => {
   const [noiseWarning, setNoiseWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFSBanner, setShowFSBanner] = useState(false);
-  const [faceStatus, setFaceStatus] = useState<"ok" | "warn" | "unknown">("unknown");
+  const [faceStatus, setFaceStatus] = useState<"ok" | "warn" | "unknown">(
+    "unknown",
+  );
   const [noFaceVisible, setNoFaceVisible] = useState(false);
   const [, setHeygenStreamLive] = useState(false);
   const [, setVapiReady] = useState(false);
@@ -8235,11 +8382,18 @@ const VideoInterview: React.FC = () => {
   const lastUserSpeechActivityRef = useRef(Date.now());
   // Track if we're in a mid-answer pause (user paused but hasn't finished)
   const midAnswerPauseTimerRef = useRef<any>(null);
-const location = useLocation();
-const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
-  useEffect(() => { vapiRef.current = vapi; }, [vapi]);
-  useEffect(() => { isCallActiveRef.current = isCallActive; }, [isCallActive]);
-  useEffect(() => { micOnRef.current = micOn; }, [micOn]);
+  const location = useLocation();
+  const selectedVoice =
+    (location.state?.voice as "female" | "male") ?? "female";
+  useEffect(() => {
+    vapiRef.current = vapi;
+  }, [vapi]);
+  useEffect(() => {
+    isCallActiveRef.current = isCallActive;
+  }, [isCallActive]);
+  useEffect(() => {
+    micOnRef.current = micOn;
+  }, [micOn]);
 
   // ── Keyboard lock ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -8260,7 +8414,10 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
     document.addEventListener("keydown", blk, opts);
     document.addEventListener("keyup", blk, opts);
     document.addEventListener("keypress", blk, opts);
-    document.addEventListener("contextmenu", bCtx, { capture: true, passive: false });
+    document.addEventListener("contextmenu", bCtx, {
+      capture: true,
+      passive: false,
+    });
     document.addEventListener("copy", bClp, { capture: true });
     document.addEventListener("cut", bClp, { capture: true });
     document.addEventListener("paste", bClp, { capture: true });
@@ -8268,7 +8425,9 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
       document.removeEventListener("keydown", blk, { capture: true } as any);
       document.removeEventListener("keyup", blk, { capture: true } as any);
       document.removeEventListener("keypress", blk, { capture: true } as any);
-      document.removeEventListener("contextmenu", bCtx, { capture: true } as any);
+      document.removeEventListener("contextmenu", bCtx, {
+        capture: true,
+      } as any);
       document.removeEventListener("copy", bClp, { capture: true } as any);
       document.removeEventListener("cut", bClp, { capture: true } as any);
       document.removeEventListener("paste", bClp, { capture: true } as any);
@@ -8287,14 +8446,18 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
         trigViolRef.current("fullscreen-exit");
       }
     };
-    ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange"].forEach(
-      (e) => document.addEventListener(e, onChange),
-    );
+    [
+      "fullscreenchange",
+      "webkitfullscreenchange",
+      "mozfullscreenchange",
+    ].forEach((e) => document.addEventListener(e, onChange));
     const poll = setInterval(() => setIsFullscreen(isInFS()), 2000);
     return () => {
-      ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange"].forEach(
-        (e) => document.removeEventListener(e, onChange),
-      );
+      [
+        "fullscreenchange",
+        "webkitfullscreenchange",
+        "mozfullscreenchange",
+      ].forEach((e) => document.removeEventListener(e, onChange));
       clearInterval(poll);
     };
   }, []);
@@ -8330,7 +8493,11 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
     (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "user",
+          },
           audio: true,
         });
         streamRef.current = stream;
@@ -8403,8 +8570,10 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
     setTurnState("idle");
     // Clear pause timers
     if (pauseGraceTimerRef.current) clearTimeout(pauseGraceTimerRef.current);
-    if (pauseCountdownTimerRef.current) clearInterval(pauseCountdownTimerRef.current);
-    if (midAnswerPauseTimerRef.current) clearTimeout(midAnswerPauseTimerRef.current);
+    if (pauseCountdownTimerRef.current)
+      clearInterval(pauseCountdownTimerRef.current);
+    if (midAnswerPauseTimerRef.current)
+      clearTimeout(midAnswerPauseTimerRef.current);
     try {
       vapiRef.current?.stop();
     } catch {}
@@ -8418,7 +8587,8 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
   const speakWarning = useCallback((type: string) => {
     const v = vapiRef.current;
     if (!v) return;
-    const spoken = VIOLATION_MSGS[type]?.spoken ?? "You have received a warning.";
+    const spoken =
+      VIOLATION_MSGS[type]?.spoken ?? "You have received a warning.";
     try {
       v.send({
         type: "add-message",
@@ -8451,7 +8621,9 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
       };
       const remaining = Math.max(0, MAX_VIOLATIONS - count);
 
-      console.warn(`[Proctor] WARNING #${count} type=${type} remaining=${remaining}`);
+      console.warn(
+        `[Proctor] WARNING #${count} type=${type} remaining=${remaining}`,
+      );
       behaviorTracker.current.addEvent(type.replace(/-/g, "_"));
 
       setActiveAlert({
@@ -8517,35 +8689,56 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
 
     let mlReady = false;
     loadFaceModels()
-      .then(() => { mlReady = true; })
+      .then(() => {
+        mlReady = true;
+      })
       .catch((e) => console.warn("[Proctor] face-api failed:", e));
 
     const canvasAnalyse = (vid: HTMLVideoElement) => {
-      const W = 160, H = 120;
+      const W = 160,
+        H = 120;
       const cnv = document.createElement("canvas");
-      cnv.width = W; cnv.height = H;
+      cnv.width = W;
+      cnv.height = H;
       const ctx = cnv.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return { dark: false, skinRatio: 0, gazeDrift: 0, skinBlobs: 0 };
+      if (!ctx)
+        return { dark: false, skinRatio: 0, gazeDrift: 0, skinBlobs: 0 };
       ctx.drawImage(vid, 0, 0, W, H);
       const { data } = ctx.getImageData(0, 0, W, H);
-      let bright = 0, skinCount = 0, skinSumX = 0;
+      let bright = 0,
+        skinCount = 0,
+        skinSumX = 0;
       const skinMap = new Uint8Array(W * H);
       for (let i = 0; i < data.length; i += 4) {
-        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const r = data[i],
+          g = data[i + 1],
+          b = data[i + 2];
         bright += (r + g + b) / 3;
         const isSkin =
-          r > 50 && g > 25 && b > 10 && r > b && r > g &&
-          r - Math.min(g, b) > 8 && Math.abs(r - g) < 90 && r < 250;
+          r > 50 &&
+          g > 25 &&
+          b > 10 &&
+          r > b &&
+          r > g &&
+          r - Math.min(g, b) > 8 &&
+          Math.abs(r - g) < 90 &&
+          r < 250;
         const px = i / 4;
-        if (isSkin) { skinMap[px] = 1; skinCount++; skinSumX += px % W; }
+        if (isSkin) {
+          skinMap[px] = 1;
+          skinCount++;
+          skinSumX += px % W;
+        }
       }
-      const total = W * H, skinRatio = skinCount / total;
+      const total = W * H,
+        skinRatio = skinCount / total;
       let gazeDrift = 0;
       if (skinCount > 50) {
         const cx = skinSumX / skinCount / W;
         gazeDrift = Math.abs(cx - 0.5) * 2;
       }
-      const third = Math.floor(W / 3), thirds = [0, 0, 0];
+      const third = Math.floor(W / 3),
+        thirds = [0, 0, 0];
       for (let px = 0; px < total; px++) {
         if (skinMap[px]) thirds[Math.min(2, Math.floor((px % W) / third))]++;
       }
@@ -8557,22 +8750,39 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
       if (!mlReady) return null;
       try {
         const dets = await faceapi
-          .detectAllFaces(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: MULTI_CONFIDENCE }))
+          .detectAllFaces(
+            vid,
+            new faceapi.SsdMobilenetv1Options({
+              minConfidence: MULTI_CONFIDENCE,
+            }),
+          )
           .withFaceLandmarks();
-        if (dets.length > 1) return { faceCount: dets.length, gazeHard: false, eyesHard: false };
-        if (dets.length === 0) return { faceCount: 0, gazeHard: false, eyesHard: false };
+        if (dets.length > 1)
+          return { faceCount: dets.length, gazeHard: false, eyesHard: false };
+        if (dets.length === 0)
+          return { faceCount: 0, gazeHard: false, eyesHard: false };
         const { detection, landmarks } = dets[0];
-        if (detection.score < 0.35) return { faceCount: 1, gazeHard: false, eyesHard: false };
-        const nose = landmarks.getNose(), jaw = landmarks.getJawOutline(),
-          lEye = landmarks.getLeftEye(), rEye = landmarks.getRightEye();
+        if (detection.score < 0.35)
+          return { faceCount: 1, gazeHard: false, eyesHard: false };
+        const nose = landmarks.getNose(),
+          jaw = landmarks.getJawOutline(),
+          lEye = landmarks.getLeftEye(),
+          rEye = landmarks.getRightEye();
         let gazeHard = false;
         if (nose?.length && jaw?.length) {
-          const jL = jaw[0].x, jR = jaw[jaw.length - 1].x, jawW = jR - jL, jawM = (jL + jR) / 2;
+          const jL = jaw[0].x,
+            jR = jaw[jaw.length - 1].x,
+            jawW = jR - jL,
+            jawM = (jL + jR) / 2;
           if (jawW > 15) {
-            const tip = nose[nose.length - 1], hOff = Math.abs(tip.x - jawM) / jawW;
+            const tip = nose[nose.length - 1],
+              hOff = Math.abs(tip.x - jawM) / jawW;
             let eyeOff = 0;
             if (lEye?.length && rEye?.length) {
-              const em = (lEye.reduce((s, p) => s + p.x, 0) / lEye.length + rEye.reduce((s, p) => s + p.x, 0) / rEye.length) / 2;
+              const em =
+                (lEye.reduce((s, p) => s + p.x, 0) / lEye.length +
+                  rEye.reduce((s, p) => s + p.x, 0) / rEye.length) /
+                2;
               eyeOff = Math.abs(em - jawM) / jawW;
             }
             gazeHard = hOff > GAZE_HARD || eyeOff > GAZE_HARD;
@@ -8598,54 +8808,103 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
         vid.play().catch(() => {});
         return;
       }
-      if (vid.readyState < 2 || vid.videoWidth === 0 || vid.videoHeight === 0) return;
+      if (vid.readyState < 2 || vid.videoWidth === 0 || vid.videoHeight === 0)
+        return;
       const T = ticks.current;
       const cv = canvasAnalyse(vid);
       if (cv.dark) {
-        setNoFaceVisible(true); setFaceStatus("warn");
-        T.noface++; T.gaze = 0; T.multi = 0; T.eyes = 0;
-        if (T.noface >= 2) { T.noface = 0; trigViolRef.current("no-face"); }
+        setNoFaceVisible(true);
+        setFaceStatus("warn");
+        T.noface++;
+        T.gaze = 0;
+        T.multi = 0;
+        T.eyes = 0;
+        if (T.noface >= 2) {
+          T.noface = 0;
+          trigViolRef.current("no-face");
+        }
         return;
       }
       if (cv.skinRatio < 0.018) {
-        setNoFaceVisible(true); setFaceStatus("warn");
-        T.noface++; T.gaze = 0; T.multi = 0; T.eyes = 0;
-        if (T.noface >= HARD_TICKS) { T.noface = 0; trigViolRef.current("no-face"); }
+        setNoFaceVisible(true);
+        setFaceStatus("warn");
+        T.noface++;
+        T.gaze = 0;
+        T.multi = 0;
+        T.eyes = 0;
+        if (T.noface >= HARD_TICKS) {
+          T.noface = 0;
+          trigViolRef.current("no-face");
+        }
         return;
       }
       const ml = await mlAnalyse(vid);
       if (ml !== null) {
         if (ml.faceCount === 0) {
-          setNoFaceVisible(true); setFaceStatus("warn");
-          T.noface++; T.gaze = 0; T.eyes = 0;
-          if (T.noface >= HARD_TICKS) { T.noface = 0; trigViolRef.current("no-face"); }
+          setNoFaceVisible(true);
+          setFaceStatus("warn");
+          T.noface++;
+          T.gaze = 0;
+          T.eyes = 0;
+          if (T.noface >= HARD_TICKS) {
+            T.noface = 0;
+            trigViolRef.current("no-face");
+          }
           return;
         }
         if (ml.faceCount > 1) {
-          setFaceStatus("warn"); T.multi++; T.noface = 0; T.gaze = 0; T.eyes = 0;
-          if (T.multi >= MULTI_TICKS) { T.multi = 0; trigViolRef.current("multiple-faces"); }
+          setFaceStatus("warn");
+          T.multi++;
+          T.noface = 0;
+          T.gaze = 0;
+          T.eyes = 0;
+          if (T.multi >= MULTI_TICKS) {
+            T.multi = 0;
+            trigViolRef.current("multiple-faces");
+          }
           return;
         }
-        T.noface = 0; T.multi = 0; setNoFaceVisible(false);
+        T.noface = 0;
+        T.multi = 0;
+        setNoFaceVisible(false);
         if (ml.gazeHard) {
-          setFaceStatus("warn"); T.gaze++;
-          if (T.gaze >= HARD_TICKS) { T.gaze = 0; trigViolRef.current("looking-away"); }
+          setFaceStatus("warn");
+          T.gaze++;
+          if (T.gaze >= HARD_TICKS) {
+            T.gaze = 0;
+            trigViolRef.current("looking-away");
+          }
         } else T.gaze = 0;
         if (ml.eyesHard) {
           T.eyes++;
-          if (T.eyes >= HARD_TICKS + 1) { T.eyes = 0; trigViolRef.current("eyes-closed"); }
+          if (T.eyes >= HARD_TICKS + 1) {
+            T.eyes = 0;
+            trigViolRef.current("eyes-closed");
+          }
         } else T.eyes = 0;
         if (!ml.gazeHard && !ml.eyesHard) setFaceStatus("ok");
       } else {
-        T.noface = 0; setNoFaceVisible(false);
+        T.noface = 0;
+        setNoFaceVisible(false);
         if (cv.skinBlobs >= 3 && cv.skinRatio > 0.08) {
-          setFaceStatus("warn"); T.multi++;
-          if (T.multi >= HARD_TICKS) { T.multi = 0; trigViolRef.current("multiple-faces"); }
+          setFaceStatus("warn");
+          T.multi++;
+          if (T.multi >= HARD_TICKS) {
+            T.multi = 0;
+            trigViolRef.current("multiple-faces");
+          }
         } else T.multi = 0;
         if (cv.gazeDrift > 0.28 && cv.skinRatio > 0.03) {
-          setFaceStatus("warn"); T.gaze++;
-          if (T.gaze >= HARD_TICKS) { T.gaze = 0; trigViolRef.current("looking-away"); }
-        } else { T.gaze = 0; setFaceStatus("ok"); }
+          setFaceStatus("warn");
+          T.gaze++;
+          if (T.gaze >= HARD_TICKS) {
+            T.gaze = 0;
+            trigViolRef.current("looking-away");
+          }
+        } else {
+          T.gaze = 0;
+          setFaceStatus("ok");
+        }
       }
     }, TICK_MS);
 
@@ -8658,12 +8917,14 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
       navigate(userPath("instructions", interview_id));
       return;
     }
-    const dur = (parseInt(String(interviewInfo?.duration || "5"), 10) || 5) * 60;
+    const dur =
+      (parseInt(String(interviewInfo?.duration || "5"), 10) || 5) * 60;
     setTimeLeft(dur);
     setIsResumeInterview(
       (interviewInfo?.type || interviewInfo?.examType || "") === "resume-based",
     );
-    maxQuestions.current = parseInt(String(interviewInfo?.numberOfQuestions || "5"), 10) || 5;
+    maxQuestions.current =
+      parseInt(String(interviewInfo?.numberOfQuestions || "5"), 10) || 5;
     setLoading(false);
   }, [interviewInfo, interview_id, navigate]);
 
@@ -8813,7 +9074,9 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
       if (closingInProgress.current && isCallActiveRef.current) {
         closingInProgress.current = false;
         setTimeout(() => {
-          try { vapiRef.current?.stop(); } catch {}
+          try {
+            vapiRef.current?.stop();
+          } catch {}
         }, 3500);
       }
     });
@@ -8828,92 +9091,94 @@ const selectedVoice = (location.state?.voice as "female" | "male") ?? "female";
 
     inst.on("error", (e: any) => console.error("Vapi:", e));
 
-inst.on("message", (msg: any) => {
-  if (msg?.type === "transcript") {
-    const text = msg.transcript || msg.text || "";
-    const isFinal = msg.transcriptType === "final";   // ← ADD THIS CHECK
+    inst.on("message", (msg: any) => {
+      if (msg?.type === "transcript") {
+        const text = msg.transcript || msg.text || "";
+        const isFinal = msg.transcriptType === "final"; // ← ADD THIS CHECK
 
-    if (msg.role === "assistant") {
-      aiTranscriptBuf.current = text;
-      setAvatarSub(text);
-      if (!aiIsSpeakingRef.current) setAvatarState("thinking");
+        if (msg.role === "assistant") {
+          aiTranscriptBuf.current = text;
+          setAvatarSub(text);
+          if (!aiIsSpeakingRef.current) setAvatarState("thinking");
 
-      // Only persist when Vapi signals the utterance is complete
-      if (isFinal && text.trim()) {
-        conversationRef.current.push({
-          type: "transcript",
-          role: "assistant",
-          transcript: text.trim(),
-          timestamp: Date.now(),
-        });
-        aiTranscriptBuf.current = "";
-      }
+          // Only persist when Vapi signals the utterance is complete
+          if (isFinal && text.trim()) {
+            conversationRef.current.push({
+              type: "transcript",
+              role: "assistant",
+              transcript: text.trim(),
+              timestamp: Date.now(),
+            });
+            aiTranscriptBuf.current = "";
+          }
 
-      if (text.includes("?")) {
-        const lt = text.toLowerCase();
-        const isAudioCheck =
-          lt.includes("can you hear") || lt.includes("audio") ||
-          lt.includes("video working") || lt.includes("hear me");
-        if (!isAudioCheck && !preCheckDone.current) preCheckDone.current = true;
-      }
+          if (text.includes("?")) {
+            const lt = text.toLowerCase();
+            const isAudioCheck =
+              lt.includes("can you hear") ||
+              lt.includes("audio") ||
+              lt.includes("video working") ||
+              lt.includes("hear me");
+            if (!isAudioCheck && !preCheckDone.current)
+              preCheckDone.current = true;
+          }
+        } else if (msg.role === "user") {
+          if (!micOnRef.current) return;
 
-    } else if (msg.role === "user") {
-      if (!micOnRef.current) return;
+          userTranscriptBuf.current = text;
+          setUserSub(text);
+          setIsListening(true);
+          setTurnState("user-speaking");
+          lastSpeechRef.current = Date.now();
+          lastUserSpeechActivityRef.current = Date.now();
+          silenceWarnedRef.current = false;
+          silenceWarnCount.current = 0;
 
-      userTranscriptBuf.current = text;
-      setUserSub(text);
-      setIsListening(true);
-      setTurnState("user-speaking");
-      lastSpeechRef.current = Date.now();
-      lastUserSpeechActivityRef.current = Date.now();
-      silenceWarnedRef.current = false;
-      silenceWarnCount.current = 0;
+          // Only persist + count questions when utterance is complete
+          if (isFinal && text.trim()) {
+            conversationRef.current.push({
+              type: "transcript",
+              role: "user",
+              transcript: text.trim(),
+              timestamp: Date.now(),
+            });
 
-      // Only persist + count questions when utterance is complete
-      if (isFinal && text.trim()) {
-        conversationRef.current.push({
-          type: "transcript",
-          role: "user",
-          transcript: text.trim(),
-          timestamp: Date.now(),
-        });
+            if (
+              preCheckDone.current &&
+              !aiIsSpeakingRef.current &&
+              !questionLimitReached.current &&
+              !candidateRespondedRef.current &&
+              text.trim().length >= MIN_ANSWER_LENGTH
+            ) {
+              candidateRespondedRef.current = true;
+              questionCount.current++;
+              setQuestionProgress(questionCount.current);
 
-        if (
-          preCheckDone.current &&
-          !aiIsSpeakingRef.current &&
-          !questionLimitReached.current &&
-          !candidateRespondedRef.current &&
-          text.trim().length >= MIN_ANSWER_LENGTH
-        ) {
-          candidateRespondedRef.current = true;
-          questionCount.current++;
-          setQuestionProgress(questionCount.current);
+              if (questionCount.current >= maxQuestions.current) {
+                questionLimitReached.current = true;
+                setTimeout(() => {
+                  try {
+                    closingInProgress.current = true;
+                    vapiRef.current?.send({
+                      type: "add-message",
+                      message: {
+                        role: "system",
+                        content: `[SYSTEM]: The candidate has now answered all ${maxQuestions.current} questions. Do NOT ask any more questions. Give a warm farewell then end the call.`,
+                      },
+                    });
+                  } catch {}
+                }, 1000);
+              }
+            }
 
-          if (questionCount.current >= maxQuestions.current) {
-            questionLimitReached.current = true;
-            setTimeout(() => {
-              try {
-                closingInProgress.current = true;
-                vapiRef.current?.send({
-                  type: "add-message",
-                  message: {
-                    role: "system",
-                    content: `[SYSTEM]: The candidate has now answered all ${maxQuestions.current} questions. Do NOT ask any more questions. Give a warm farewell then end the call.`,
-                  },
-                });
-              } catch {}
-            }, 1000);
+            userTranscriptBuf.current = "";
           }
         }
-
-        userTranscriptBuf.current = "";
+      } else {
+        // Non-transcript messages (tool calls, etc.) — store as-is
+        conversationRef.current.push(msg);
       }
-    }
-  } else {
-    // Non-transcript messages (tool calls, etc.) — store as-is
-    conversationRef.current.push(msg);
-  }
-});
+    });
 
     // User starts speaking → cancel any grace timer
     (inst as any).on("user-speech-start", () => {
@@ -8964,14 +9229,17 @@ inst.on("message", (msg: any) => {
     candidateRespondedRef.current = false;
     setQuestionProgress(0);
 
-    const pos = interviewInfo?.position || interviewInfo?.jobPosition || "the role";
+    const pos =
+      interviewInfo?.position || interviewInfo?.jobPosition || "the role";
     const diff = interviewInfo?.difficulty || "Medium";
     const skills = Array.isArray(interviewInfo?.skills)
       ? interviewInfo.skills.join(", ")
       : interviewInfo?.skills || "";
     const numQs = maxQuestions.current;
-    const cName = interviewInfo?.username || interviewInfo?.candidateName || "Candidate";
-    const durationMins = parseInt(String(interviewInfo?.duration || "5"), 10) || 5;
+    const cName =
+      interviewInfo?.username || interviewInfo?.candidateName || "Candidate";
+    const durationMins =
+      parseInt(String(interviewInfo?.duration || "5"), 10) || 5;
 
     // Natural conversation system prompt — key improvements:
     // 1. Explicitly wait for user to finish (5s pause = done)
@@ -8985,7 +9253,8 @@ NATURAL CONVERSATION RULES (follow these strictly):
 4. Give brief, natural acknowledgements like "That makes sense", "Good point", "I appreciate that" before moving to the next question — never jump immediately.
 5. Speak at a conversational pace — not robotic. Use natural filler phrases like "So...", "Right, so...", "Let me ask you..." when transitioning.
 6. Keep your questions concise — one question at a time, never compound questions.
-7. If the candidate seems to be mid-thought, stay silent and let them finish.`;
+7. If the candidate seems to be mid-thought, stay silent and let them finish.
+8. NEVER treat silence alone as a completed answer. Only move on after you hear an actual response.`;
 
     const PRECHECK = `
 PHASE 1 — AUDIO CHECK:
@@ -9002,7 +9271,8 @@ PHASE 2 — INTERVIEW:
 - After each answer, give a brief natural acknowledgement, then ask the next question.
 - After all ${numQs} questions, wrap up warmly and naturally — like a real interviewer.`;
 
-    let sys = "", first = "";
+    let sys = "",
+      first = "";
 
     if (isResumeInterview) {
       sys = `You are a senior AI interviewer having a real, natural conversation.
@@ -9017,9 +9287,13 @@ ${RULES}`;
       try {
         const raw = interviewInfo?.questions ?? interviewInfo?.questionList;
         if (Array.isArray(raw) && raw.length)
-          qList = raw.map((x: any) => (typeof x === "string" ? x : x?.question)).filter(Boolean);
+          qList = raw
+            .map((x: any) => (typeof x === "string" ? x : x?.question))
+            .filter(Boolean);
         if (!qList.length && typeof raw === "string")
-          qList = (JSON.parse(raw) || []).map((x: any) => (typeof x === "string" ? x : x?.question)).filter(Boolean);
+          qList = (JSON.parse(raw) || [])
+            .map((x: any) => (typeof x === "string" ? x : x?.question))
+            .filter(Boolean);
       } catch {}
       const filt = qList
         .filter((q) => !q.toLowerCase().includes("tell me about yourself"))
@@ -9063,15 +9337,15 @@ ${RULES}`;
       //   fillerInjectionEnabled: false,
       // },
       voice: {
-  provider: "11labs",
-  voiceId: VOICE_CONFIG[selectedVoice].voiceId,
-  stability: VOICE_CONFIG[selectedVoice].stability,
-  similarityBoost: VOICE_CONFIG[selectedVoice].similarityBoost,
-  style: VOICE_CONFIG[selectedVoice].style,
-  useSpeakerBoost: true,
-  speed: VOICE_CONFIG[selectedVoice].speed,
-  fillerInjectionEnabled: false,
-},
+        provider: "vapi",
+        voiceId: VOICE_CONFIG[selectedVoice].voiceId,
+        // stability: VOICE_CONFIG[selectedVoice].stability,
+        // similarityBoost: VOICE_CONFIG[selectedVoice].similarityBoost,
+        // style: VOICE_CONFIG[selectedVoice].style,
+        // useSpeakerBoost: true,
+        speed: VOICE_CONFIG[selectedVoice].speed,
+        fillerInjectionEnabled: false,
+      },
       model: {
         provider: "openai",
         model: "gpt-4-turbo",
@@ -9132,13 +9406,13 @@ ${RULES}`;
             });
           } catch {}
         } else {
-          const prompts = [
-            "Candidate has been quiet for a while. Gently check in — ask if they're ready to continue.",
-            "Still quiet. Ask warmly if they can hear you.",
-            "Continuing silence. Ask if they're experiencing technical issues.",
-            "Check in one more time warmly.",
-            "Final check — give them one last chance to respond.",
-          ];
+         const prompts = [
+  "The candidate hasn't responded yet. Gently check in — say something like 'Just checking — can you still hear me okay? No rush, take your time.' Then wait for their answer before moving on.",
+  "Still quiet. Ask warmly 'Are you still there? Feel free to take a moment to think.' Do NOT move to the next question yet.",
+  "Ask if they are having technical issues. Say something like 'I want to make sure we're connected — are you experiencing any audio issues?' Wait for their reply.",
+  "Check in one more time. Ask 'Would you like me to repeat the question?' and then repeat it clearly. Wait.",
+  "Final check — say 'I just want to give you one more moment in case you're having trouble. We can move on whenever you're ready.' Then wait.",
+];
           try {
             vapiRef.current?.send({
               type: "add-message",
@@ -9175,16 +9449,18 @@ ${RULES}`;
         }))
         .filter((m) => m.text.trim());
 
-      const pos = interviewInfo?.position || interviewInfo?.jobPosition || "the role";
+      const pos =
+        interviewInfo?.position || interviewInfo?.jobPosition || "the role";
       const cName =
         interviewInfo?.username ||
         interviewInfo?.candidateName ||
         userData?.name ||
         "Candidate";
 
-      const violationSummary = alertCountRef.current > 0
-        ? `\n\nPROCTORING NOTES: ${alertCountRef.current} violation warning(s) were issued during this interview.`
-        : "";
+      const violationSummary =
+        alertCountRef.current > 0
+          ? `\n\nPROCTORING NOTES: ${alertCountRef.current} violation warning(s) were issued during this interview.`
+          : "";
 
       const prompt = `You are a senior recruitment analyst with 15+ years of hiring experience. Produce a rigorous, accurate, evidence-based assessment of the following interview. This assessment will directly determine whether the candidate is hired — be thorough and honest.\n\nCANDIDATE: ${cName}\nROLE: ${pos}${violationSummary}\n\nINTERVIEW TRANSCRIPT:\n${transcript.map((m) => `${m.role === "Interviewer" ? "Interviewer" : "Candidate"}: ${m.text}`).join("\n")}\n\nReturn a JSON object ONLY — no markdown, no extra text, no code fences:\n{\n  \"candidateName\": \"${cName}\",\n  \"role\": \"${pos}\",\n  \"confidenceScore\": <integer 0-100>,\n  \"confidenceLabel\": <\"High Confidence\" | \"Moderate Confidence\" | \"Low Confidence\">,\n  \"behavioralInsights\": [\n    { \"title\": \"Communication Style\",       \"description\": \"<precise one-sentence observation>\", \"status\": <\"good\"|\"warning\"|\"bad\"> },\n    { \"title\": \"Problem-Solving Approach\",  \"description\": \"<precise one-sentence observation>\", \"status\": <\"good\"|\"warning\"|\"bad\"> },\n    { \"title\": \"Professionalism & Poise\",   \"description\": \"<precise one-sentence observation>\", \"status\": <\"good\"|\"warning\"|\"bad\"> }\n  ],\n  \"technicalCompetency\": [\n    { \"title\": \"Core Knowledge\",       \"description\": \"<precise one-sentence observation>\", \"status\": <\"good\"|\"warning\"|\"bad\"> },\n    { \"title\": \"Practical Experience\", \"description\": \"<precise one-sentence observation>\", \"status\": <\"good\"|\"warning\"|\"bad\"> },\n    { \"title\": \"Advanced Topics\",      \"description\": \"<precise one-sentence observation>\", \"status\": <\"good\"|\"warning\"|\"bad\"> }\n  ],\n  \"speechPatterns\": {\n    \"clarityScore\": <integer 0-100>,\n    \"avgResponseTime\": \"<estimate e.g. '1.4s' or '5.2s'>\",\n    \"confidenceLevel\": <integer 0-100>,\n    \"complexityScore\": <float 1.0-5.0>\n  },\n  \"proctoringFlags\": ${alertCountRef.current},\n  \"recommendations\": [\n    \"<specific, actionable recommendation 1>\",\n    \"<specific, actionable recommendation 2>\"\n  ],\n  \"overallVerdict\": <\"hire\" | \"consider\" | \"reject\">,\n  \"verdictReason\": \"<one evidence-based sentence with specific transcript references>\"\n}`;
 
@@ -9199,7 +9475,9 @@ ${RULES}`;
         .trim();
       if (raw) {
         let parsed: any = {};
-        try { parsed = JSON.parse(raw); } catch {}
+        try {
+          parsed = JSON.parse(raw);
+        } catch {}
         await userService.generateFeedback({
           interview_id,
           candidateId: cand_id.candidateId._id,
@@ -9262,7 +9540,9 @@ ${RULES}`;
     setIsCallActive(false);
     if (silenceRef.current) clearInterval(silenceRef.current);
     clearPauseTimers();
-    try { vapi?.stop(); } catch {}
+    try {
+      vapi?.stop();
+    } catch {}
     tryExitFS();
     setScreen("lobby");
     setElapsed(0);
@@ -9273,13 +9553,17 @@ ${RULES}`;
 
   const toggleMic = () => {
     const n = !micOn;
-    streamRef.current?.getAudioTracks().forEach((t) => { t.enabled = n; });
+    streamRef.current?.getAudioTracks().forEach((t) => {
+      t.enabled = n;
+    });
     micOnRef.current = n;
     setMicOn(n);
     if (!n) userTranscriptBuf.current = "";
   };
   const toggleCam = () => {
-    streamRef.current?.getVideoTracks().forEach((t) => { t.enabled = !camOn; });
+    streamRef.current?.getVideoTracks().forEach((t) => {
+      t.enabled = !camOn;
+    });
     setCamOn((v) => !v);
   };
 
@@ -9290,13 +9574,18 @@ ${RULES}`;
       ? "00:00"
       : `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   const fmtC = (d: Date) => {
-    let h = d.getHours(), m = d.getMinutes();
+    let h = d.getHours(),
+      m = d.getMinutes();
     const ap = h >= 12 ? "PM" : "AM";
     h = h % 12 || 12;
     return `${h}:${String(m).padStart(2, "0")} ${ap}`;
   };
   const fmtD = (d: Date) =>
-    d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    d.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
 
   const username = userData?.name || "You";
   const avatarProps: AvatarTileProps = {
@@ -9319,7 +9608,9 @@ ${RULES}`;
     return (
       <div className="h-screen bg-[#050A24] flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin h-12 w-12 text-[#2D55FB]" />
-        <h2 className="text-white text-xl font-bold">Generating Your Feedback...</h2>
+        <h2 className="text-white text-xl font-bold">
+          Generating Your Feedback...
+        </h2>
         <p className="text-white/40 text-sm">Analyzing your performance</p>
       </div>
     );
@@ -9341,7 +9632,8 @@ ${RULES}`;
           <>
             <div className="w-px h-5 bg-white/15" />
             <span className="text-white/50 text-xs font-medium whitespace-nowrap">
-              Q {Math.min(questionProgress, maxQuestions.current)}/{maxQuestions.current}
+              Q {Math.min(questionProgress, maxQuestions.current)}/
+              {maxQuestions.current}
             </span>
           </>
         )}
@@ -9351,7 +9643,11 @@ ${RULES}`;
           {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
         </CtrlBtn>
         <CtrlBtn onClick={toggleCam} active={camOn}>
-          {camOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+          {camOn ? (
+            <Video className="h-4 w-4" />
+          ) : (
+            <VideoOff className="h-4 w-4" />
+          )}
         </CtrlBtn>
         <CtrlBtn>
           <MonitorUp className="h-4 w-4 text-gray-800" />
@@ -9368,7 +9664,9 @@ ${RULES}`;
           {isFullscreen ? "Fullscreen" : "Not FS!"}
         </div>
         {noFaceVisible && (
-          <span className="text-red-400 text-[10px] font-bold animate-pulse">⚠ No face</span>
+          <span className="text-red-400 text-[10px] font-bold animate-pulse">
+            ⚠ No face
+          </span>
         )}
         {!noFaceVisible && alertCountRef.current > 0 && (
           <span className="text-orange-400 text-[10px] font-bold">
@@ -9380,7 +9678,11 @@ ${RULES}`;
             className={`w-1.5 h-1.5 rounded-full ${faceStatus === "ok" ? "bg-green-400" : faceStatus === "warn" ? "bg-red-400 animate-pulse" : "bg-gray-500"}`}
           />
           <span className="text-white/30 text-[9px]">
-            {faceStatus === "ok" ? "Face OK" : faceStatus === "warn" ? "Alert" : "Scanning"}
+            {faceStatus === "ok"
+              ? "Face OK"
+              : faceStatus === "warn"
+                ? "Alert"
+                : "Scanning"}
           </span>
         </div>
       </div>
@@ -9410,7 +9712,10 @@ ${RULES}`;
             <span className="text-amber-950 text-xs font-semibold flex-1">
               Background noise detected — please reduce noise.
             </span>
-            <button onClick={() => setNoiseWarning(false)} className="text-amber-900/60 hover:text-amber-900">
+            <button
+              onClick={() => setNoiseWarning(false)}
+              className="text-amber-900/60 hover:text-amber-900"
+            >
               <X className="h-4 w-4" />
             </button>
           </motion.div>
@@ -9430,7 +9735,10 @@ ${RULES}`;
               Fullscreen exited — re-entering.
             </span>
             <button
-              onClick={() => { tryEnterFS(); setShowFSBanner(false); }}
+              onClick={() => {
+                tryEnterFS();
+                setShowFSBanner(false);
+              }}
               className="text-white/60 hover:text-white"
             >
               <X className="h-4 w-4" />
@@ -9486,7 +9794,9 @@ ${RULES}`;
       {screen === "lobby" && (
         <div className="h-screen bg-[#050A24] bg-[radial-gradient(ellipse_at_65%_0%,rgba(45,85,251,0.4),transparent_60%),radial-gradient(ellipse_at_0%_100%,rgba(20,40,120,0.4),transparent_60%)] flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-6 sm:px-10 py-5 shrink-0">
-            <h1 className="text-white font-bold text-lg sm:text-xl tracking-tight">Vitric IQ</h1>
+            <h1 className="text-white font-bold text-lg sm:text-xl tracking-tight">
+              Vitric IQ
+            </h1>
             <div className="flex items-center gap-2 text-white/60 text-sm font-medium">
               <span>{fmtC(now)}</span>
               <span className="text-white/20 mx-1">|</span>
@@ -9528,14 +9838,22 @@ ${RULES}`;
                   whileTap={{ scale: 0.9 }}
                   className={`w-10 h-10 rounded-full border flex items-center justify-center backdrop-blur transition-all ${micOn ? "bg-white/15 border-white/25 text-white hover:bg-white/25" : "bg-red-500 border-red-400 text-white"}`}
                 >
-                  {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                  {micOn ? (
+                    <Mic className="h-4 w-4" />
+                  ) : (
+                    <MicOff className="h-4 w-4" />
+                  )}
                 </motion.button>
                 <motion.button
                   onClick={toggleCam}
                   whileTap={{ scale: 0.9 }}
                   className={`w-10 h-10 rounded-full border flex items-center justify-center backdrop-blur transition-all ${camOn ? "bg-white/15 border-white/25 text-white hover:bg-white/25" : "bg-red-500 border-red-400 text-white"}`}
                 >
-                  {camOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+                  {camOn ? (
+                    <Video className="h-4 w-4" />
+                  ) : (
+                    <VideoOff className="h-4 w-4" />
+                  )}
                 </motion.button>
               </div>
             </motion.div>
@@ -9545,22 +9863,34 @@ ${RULES}`;
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.55, delay: 0.2 }}
             >
-              <h2 className="text-white text-2xl sm:text-3xl font-semibold">Ready to Join?</h2>
+              <h2 className="text-white text-2xl sm:text-3xl font-semibold">
+                Ready to Join?
+              </h2>
               <p className="text-white/40 text-sm text-center max-w-xs">
-                {interviewInfo?.position || interviewInfo?.jobPosition || "Interview"}{" "}
+                {interviewInfo?.position ||
+                  interviewInfo?.jobPosition ||
+                  "Interview"}{" "}
                 • {interviewInfo?.duration || "N/A"}
               </p>
               <div
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl max-w-xs border ${USE_HEYGEN ? "bg-green-500/10 border-green-500/25" : USE_GANAI ? "bg-purple-500/10 border-purple-500/25" : "bg-[#2D55FB]/10 border-[#2D55FB]/25"}`}
               >
-                <div className={`w-2 h-2 rounded-full ${USE_HEYGEN ? "bg-green-400" : USE_GANAI ? "bg-purple-400" : "bg-[#2D55FB]/60"}`} />
+                <div
+                  className={`w-2 h-2 rounded-full ${USE_HEYGEN ? "bg-green-400" : USE_GANAI ? "bg-purple-400" : "bg-[#2D55FB]/60"}`}
+                />
                 <span className="text-white/50 text-xs">
-                  {USE_HEYGEN ? "Photorealistic via HeyGen" : USE_GANAI ? "Via Gan.AI" : "Animated AI avatar"}
+                  {USE_HEYGEN
+                    ? "Photorealistic via HeyGen"
+                    : USE_GANAI
+                      ? "Via Gan.AI"
+                      : "Animated AI avatar"}
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3.5 py-2 bg-[#2D55FB]/10 border border-[#2D55FB]/25 rounded-xl max-w-xs">
                 <Maximize className="h-3.5 w-3.5 text-[#2D55FB]/70 shrink-0" />
-                <span className="text-white/50 text-xs">Fullscreen + proctored interview</span>
+                <span className="text-white/50 text-xs">
+                  Fullscreen + proctored interview
+                </span>
               </div>
               <div className="flex items-center">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-700 border-2 border-[#2D55FB] flex items-center justify-center shadow-lg">
@@ -9570,7 +9900,9 @@ ${RULES}`;
                   <User className="h-6 w-6 text-white/80" />
                 </div>
               </div>
-              <p className="text-white/50 text-sm -mt-2">{username} and AI Recruiter</p>
+              <p className="text-white/50 text-sm -mt-2">
+                {username} and AI Recruiter
+              </p>
               <motion.button
                 onClick={handleJoin}
                 whileHover={{ scale: 1.04 }}
@@ -9626,7 +9958,9 @@ ${RULES}`;
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
                 <div className="absolute bottom-2 left-2.5 z-10">
-                  <span className="text-white text-xs font-semibold drop-shadow">{username}</span>
+                  <span className="text-white text-xs font-semibold drop-shadow">
+                    {username}
+                  </span>
                 </div>
                 <div className="absolute bottom-2 right-2.5 z-10">
                   <MicCircle muted={!micOn} />
@@ -9635,21 +9969,43 @@ ${RULES}`;
               <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-0">
                 <div className="bg-[#0e1640]/90 rounded-xl p-3 border border-white/5">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[#7a9cff] text-[11px] font-semibold">AI Recruiter:</span>
+                    <span className="text-[#7a9cff] text-[11px] font-semibold">
+                      AI Recruiter:
+                    </span>
                     <div className="flex items-center gap-1.5">
-                      {isSpeaking && <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />}
-                      {isSpeaking && <span className="text-green-400 text-[9px] font-bold">Speaking</span>}
+                      {isSpeaking && (
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                      )}
+                      {isSpeaking && (
+                        <span className="text-green-400 text-[9px] font-bold">
+                          Speaking
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <p className="text-gray-300 text-[11px] leading-relaxed">{avatarSub}</p>
+                  <p className="text-gray-300 text-[11px] leading-relaxed">
+                    {avatarSub}
+                  </p>
                 </div>
                 <div className="bg-[#0e1640]/90 rounded-xl p-3 border border-white/5">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[#7a9cff] text-[11px] font-semibold">You:</span>
+                    <span className="text-[#7a9cff] text-[11px] font-semibold">
+                      You:
+                    </span>
                     <div className="flex items-center gap-1.5">
-                      {isListening && micOn && <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />}
-                      {isListening && micOn && <span className="text-blue-400 text-[9px] font-bold">Listening</span>}
-                      {!micOn && <span className="text-red-400/70 text-[9px] font-bold">MIC OFF</span>}
+                      {isListening && micOn && (
+                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+                      )}
+                      {isListening && micOn && (
+                        <span className="text-blue-400 text-[9px] font-bold">
+                          Listening
+                        </span>
+                      )}
+                      {!micOn && (
+                        <span className="text-red-400/70 text-[9px] font-bold">
+                          MIC OFF
+                        </span>
+                      )}
                     </div>
                   </div>
                   <p className="text-gray-300 text-[11px] leading-relaxed">
@@ -9665,7 +10021,9 @@ ${RULES}`;
                 <AudioWave active={isSpeaking} />
               </div>
               <div className="absolute bottom-4 left-5 z-10">
-                <span className="text-white font-medium text-sm">AI Recruiter</span>
+                <span className="text-white font-medium text-sm">
+                  AI Recruiter
+                </span>
               </div>
               {isCallActive && (
                 <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-red-600 text-white px-2.5 py-1 rounded-full text-xs font-bold z-10">
@@ -9676,7 +10034,10 @@ ${RULES}`;
               {/* Turn indicator — replaces the old "AI Speaking / Your Turn" logic */}
               {isCallActive && (
                 <div className="absolute top-4 left-4 z-10">
-                  <TurnIndicator turnState={turnState} pauseCountdown={pauseCountdown} />
+                  <TurnIndicator
+                    turnState={turnState}
+                    pauseCountdown={pauseCountdown}
+                  />
                 </div>
               )}
             </div>
@@ -9742,16 +10103,24 @@ ${RULES}`;
                   <MicCircle muted={!micOn} />
                 </div>
                 <div className="absolute bottom-4 left-4 z-10">
-                  <span className="text-white font-semibold text-base drop-shadow">{username}</span>
+                  <span className="text-white font-semibold text-base drop-shadow">
+                    {username}
+                  </span>
                 </div>
                 {turnState === "user-speaking" && micOn && (
                   <div className="absolute top-4 left-4 z-10">
-                    <TurnIndicator turnState={turnState} pauseCountdown={pauseCountdown} />
+                    <TurnIndicator
+                      turnState={turnState}
+                      pauseCountdown={pauseCountdown}
+                    />
                   </div>
                 )}
                 {turnState === "user-turn" && micOn && (
                   <div className="absolute top-4 left-4 z-10">
-                    <TurnIndicator turnState={turnState} pauseCountdown={pauseCountdown} />
+                    <TurnIndicator
+                      turnState={turnState}
+                      pauseCountdown={pauseCountdown}
+                    />
                   </div>
                 )}
               </div>
@@ -9762,23 +10131,31 @@ ${RULES}`;
                   <AudioWave active={isSpeaking} />
                 </div>
                 <div className="absolute bottom-4 left-4 z-10">
-                  <span className="text-white font-semibold text-base drop-shadow">AI Recruiter</span>
+                  <span className="text-white font-semibold text-base drop-shadow">
+                    AI Recruiter
+                  </span>
                 </div>
-                {(turnState === "ai-speaking" || turnState === "processing") && (
+                {(turnState === "ai-speaking" ||
+                  turnState === "processing") && (
                   <div className="absolute top-4 left-4 z-10">
                     <TurnIndicator turnState={turnState} pauseCountdown={0} />
                   </div>
                 )}
               </div>
             </div>
-            <div className="flex gap-4 sm:gap-5 mt-3" style={{ flex: "0 0 auto" }}>
+            <div
+              className="flex gap-4 sm:gap-5 mt-3"
+              style={{ flex: "0 0 auto" }}
+            >
               <div className="flex-1 flex items-start justify-center">
                 <p className="text-white/65 text-sm text-center leading-snug max-w-xs">
                   {micOn ? userSub : "🎤 Mic is muted"}
                 </p>
               </div>
               <div className="flex-1 flex items-start justify-center">
-                <p className="text-white/65 text-sm text-center leading-snug max-w-xs">{avatarSub}</p>
+                <p className="text-white/65 text-sm text-center leading-snug max-w-xs">
+                  {avatarSub}
+                </p>
               </div>
             </div>
             <div className="flex-1" />
