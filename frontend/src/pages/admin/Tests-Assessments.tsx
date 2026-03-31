@@ -14,6 +14,7 @@ import {
 import { adminService } from "../../services/service/adminService";
 import { useAdminSocket } from "../../hooks/useAdminSocket";
 import ViewAssignedCandidate from "../../components/admin/TestAssessgnment/ViewAssignedCandidate";
+import AddCandidateModal from "../../components/Candidates/AddCandidate";
 
 const EMPTY_FORM = {
   candidates: [],
@@ -224,6 +225,7 @@ type FormDataType = {
 
 const TestsAssessments = () => {
   const [activeTab, setActiveTab] = useState("create");
+  const [showAddCandidateModal, setShowAddCandidateModal] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState("Dashboard");
   const [formData, setFormData] = useState<FormDataType>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -247,7 +249,7 @@ const TestsAssessments = () => {
   const [editLoading, setEditLoading] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [reDirect, setReDirect] = useState(false);
-console.log("selectedAssessment",assessments)
+  console.log("selectedAssessment", assessments);
   const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
   // const skills = jdAnalysis?.requiredSkills ?? [];
   useEffect(() => {
@@ -264,7 +266,7 @@ console.log("selectedAssessment",assessments)
 
   useEffect(() => {
     fetchCandidates();
-  }, []);
+  }, [showAddCandidateModal]);
 
   useEffect(() => {
     if (activeTab === "templates") fetchAssessments();
@@ -284,67 +286,66 @@ console.log("selectedAssessment",assessments)
       fetchAssessments();
     },
   });
-// AI matched candidates
-const aiCandidates = scoredCandidates || [];
+  // AI matched candidates
+  const aiCandidates = scoredCandidates || [];
 
-// Manual candidates (ONLY remove AI ones)
-// ✅ keep selected candidates for highlight
-const manualCandidates = candidatesList.filter(
-  (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id)
-);
-const filteredCandidates = aiCandidates.filter((c: any) =>
-  `${c.name} ${c.role || ""} ${c.email}`
-    .toLowerCase()
-    .includes(candidateSearch.toLowerCase())
-);
-const runGroqScoring = async (candidates: any[], analysis: any) => {
-  setGroqLoading(true);
+  // Manual candidates (ONLY remove AI ones)
+  // ✅ keep selected candidates for highlight
+  const manualCandidates = candidatesList.filter(
+    (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
+  );
+  console.log("sdhfdsf",manualCandidates)
+  const filteredCandidates = manualCandidates.filter((c: any) =>
+    `${c.name} ${c.role || ""} ${c.email}`
+      .toLowerCase()
+      .includes(candidateSearch.toLowerCase()),
+  );
+  const runGroqScoring = async (candidates: any[], analysis: any) => {
+    setGroqLoading(true);
 
-  try {
-    const extractKeywords = (skills: string[]) =>
-      skills.flatMap((skill) =>
-        skill
-          .toLowerCase()
-          .replace(/[^\w\s]/g, "")
-          .split(" ")
-          .filter((word) => word.length > 3)
+    try {
+      const extractKeywords = (skills: string[]) =>
+        skills.flatMap((skill) =>
+          skill
+            .toLowerCase()
+            .replace(/[^\w\s]/g, "")
+            .split(" ")
+            .filter((word) => word.length > 3),
+        );
+
+      const requiredSkills = analysis?.requiredSkills || [];
+      const keywords = extractKeywords(requiredSkills);
+
+      const filtered = candidates.filter((c) => {
+        const candidateSkills = (
+          c.skills ||
+          c.key_Skills ||
+          c.primarySkill ||
+          ""
+        ).toLowerCase();
+
+        return keywords.some((word) => candidateSkills.includes(word));
+      });
+
+      // ✅ if no match → fallback to ALL candidates
+      const baseCandidates = filtered.length > 0 ? filtered : candidates;
+
+      const scored = await scoreCandidatesWithGroq(baseCandidates, analysis);
+
+      const sorted = [...scored].sort(
+        (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0),
       );
 
-    const requiredSkills = analysis?.requiredSkills || [];
-    const keywords = extractKeywords(requiredSkills);
+      setScoredCandidates(sorted);
+    } catch (err) {
+      console.error("Groq scoring failed:", err);
 
-    const filtered = candidates.filter((c) => {
-      const candidateSkills = (
-        c.skills ||
-        c.key_Skills ||
-        c.primarySkill ||
-        ""
-      ).toLowerCase();
-
-      return keywords.some((word) =>
-        candidateSkills.includes(word)
-      );
-    });
-
-    // ✅ if no match → fallback to ALL candidates
-    const baseCandidates = filtered.length > 0 ? filtered : candidates;
-
-    const scored = await scoreCandidatesWithGroq(baseCandidates, analysis);
-
-    const sorted = [...scored].sort(
-      (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0)
-    );
-
-    setScoredCandidates(sorted);
-  } catch (err) {
-    console.error("Groq scoring failed:", err);
-
-    // ✅ fallback to ALL candidates (not breaking UI)
-    setScoredCandidates(candidates);
-  } finally {
-    setGroqLoading(false);
-  }
-};
+      // ✅ fallback to ALL candidates (not breaking UI)
+      setScoredCandidates(candidates);
+    } finally {
+      setGroqLoading(false);
+    }
+  };
 
   const fetchCandidates = async () => {
     try {
@@ -359,11 +360,11 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
     }
   };
 
-  const fetchAssessments = async (id?:any) => {
+  const fetchAssessments = async (id?: any) => {
     setTemplatesLoading(true);
     try {
       const response = await adminService.getAssesments(id);
-      console.log("response",response);
+      console.log("response", response);
       setAssessments(response.data?.data || response.data || []);
     } catch (err) {
       console.error("Error fetching assessments:", err);
@@ -373,7 +374,6 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
   };
 
   const handleUseTemplate = (item: any) => {
-
     //console.log(item)
     const toLocalDatetime = (input: any) => {
       if (!input) return "";
@@ -415,14 +415,11 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
     setEditLoading(item._id);
     setReDirect(true);
     try {
-   
       const res = await adminService.getAssesments(item._id);
-    const data = Array.isArray(res.data)
-  ? res.data.find((item: any) => item._id === item._id)
-  : res.data || res;
+      const data = Array.isArray(res.data)
+        ? res.data.find((item: any) => item._id === item._id)
+        : res.data || res;
 
-
-     
       if (!data) {
         showToast("error", "Assessment data not found");
         return;
@@ -588,43 +585,43 @@ const runGroqScoring = async (candidates: any[], analysis: any) => {
       setJdLoading(false);
     }
   };
-const getMinDateTime = () => {
-  const now:any = new Date();
-  const tzOffset = now.getTimezoneOffset() * 60000;
-  return new Date(now - tzOffset).toISOString().slice(0, 16);
-};
-useEffect(() => {
-  if (
-    formData.startDate &&
-    formData.endDate &&
-    new Date(formData.endDate) < new Date(formData.startDate)
-  ) {
-    handleInputChange("endDate", "");
-  }
-}, [formData.startDate]);
-const removeFile = () => {
-  setFormData((prev) => ({
-    ...prev,
-    jobDescription: null,
-    jobDescriptionText: "",
-    testTitle: "",
-    primarySkill: "",
-    secondarySkill: "",
-  }));
+  const getMinDateTime = () => {
+    const now: any = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    return new Date(now - tzOffset).toISOString().slice(0, 16);
+  };
+  useEffect(() => {
+    if (
+      formData.startDate &&
+      formData.endDate &&
+      new Date(formData.endDate) < new Date(formData.startDate)
+    ) {
+      handleInputChange("endDate", "");
+    }
+  }, [formData.startDate]);
+  const removeFile = () => {
+    setFormData((prev) => ({
+      ...prev,
+      jobDescription: null,
+      jobDescriptionText: "",
+      testTitle: "",
+      primarySkill: "",
+      secondarySkill: "",
+    }));
 
-  setJdAnalysis(null);
-  setJdError(null);
+    setJdAnalysis(null);
+    setJdError(null);
 
-  // reset AI scoring
-  setScoredCandidates(candidatesList);
+    // reset AI scoring
+    setScoredCandidates(candidatesList);
 
-  // clear file input
-  const el = document.getElementById("jd-upload") as HTMLInputElement;
-  if (el) el.value = "";
-};
+    // clear file input
+    const el = document.getElementById("jd-upload") as HTMLInputElement;
+    if (el) el.value = "";
+  };
 
   const toggleCandidateSelection = (candidate: any) => {
-    console.log("candidate",candidate)
+    console.log("candidate", candidate);
     const isSelected = formData.candidates.some(
       (c: any) => c._id === candidate._id,
     );
@@ -642,7 +639,6 @@ const removeFile = () => {
       formData.candidates.filter((c: any) => c._id !== id),
     );
   };
-
 
   const showToast = (type: any, message: any, duration = 4000) => {
     setSubmitStatus({ type, message });
@@ -851,10 +847,13 @@ const removeFile = () => {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showToast("error", "Please select at least one candidate to send invites");
+      showToast(
+        "error",
+        "Please select at least one candidate to send invites",
+      );
       return;
     }
-   
+
     setLoading(true);
 
     try {
@@ -922,8 +921,8 @@ const removeFile = () => {
   };
 
   const handleViewCandidates = (assessment: any) => {
-  setSelectedAssessment(assessment);
-  setShowCandidateModal(true);
+    setSelectedAssessment(assessment);
+    setShowCandidateModal(true);
   };
 
   const closeCandidateModal = () => {
@@ -1164,7 +1163,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("testTitle", e.target.value)
                     }
-                     disabled={mode === "prefill"}
+                    disabled={mode === "prefill"}
                     placeholder="e.g. Frontend Developer Test"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                   />
@@ -1180,8 +1179,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("primarySkill", e.target.value)
                     }
-                     disabled={mode === "prefill"}
-
+                    disabled={mode === "prefill"}
                     placeholder="e.g. React.js"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                   />
@@ -1197,8 +1195,7 @@ const removeFile = () => {
                     onChange={(e) =>
                       handleInputChange("secondarySkill", e.target.value)
                     }
-                     disabled={mode === "prefill"}
-
+                    disabled={mode === "prefill"}
                     placeholder="e.g. TypeScript"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                   />
@@ -1217,7 +1214,6 @@ const removeFile = () => {
                   onChange={(e) =>
                     handleInputChange("jobDescriptionText", e.target.value)
                   }
-
                   placeholder="Paste or edit job description..."
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
                 />
@@ -1543,13 +1539,13 @@ const removeFile = () => {
                 )}
               </div>
               <div className="flex justify-end mt-2">
-  <button
-    onClick={() => setShowCandidateModal(true)}
-    className="text-xs px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-  >
-    + Add More Candidates
-  </button>
-</div>
+                <button
+                  onClick={() => setShowCandidateModal(true)}
+                  className="text-xs px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                >
+                  + Add More Candidates
+                </button>
+              </div>
             </div>
           )}
 
@@ -1847,127 +1843,135 @@ const removeFile = () => {
         </div>
       )}
 
-   {showCandidateModal && !selectedAssessment && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-    <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden">
-
-      {/* HEADER */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Add Candidates
-          </h3>
-          <p className="text-xs text-gray-500">
-            Select additional candidates for this assessment
-          </p>
-        </div>
-
-        <button onClick={() => setShowCandidateModal(false)}>
-          <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
-        </button>
-      </div>
-
-      {/* SEARCH */}
-      <div className="p-3 border-b border-gray-200">
-        <input
-          type="text"
-          placeholder="Search by name or role..."
-          value={candidateSearch}
-          onChange={(e) => setCandidateSearch(e.target.value)}
-          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
-
-      {/* INFO BAR */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
-        <span>{manualCandidates.length} candidates available</span>
-        {formData.candidates.length > 0 && (
-          <span className="text-indigo-600 font-medium">
-            {formData.candidates.length} selected
-          </span>
-        )}
-      </div>
-
-      {/* LIST */}
-      <div className="max-h-72 overflow-y-auto">
-        {manualCandidates
-          .filter((c: any) =>
-            `${c.name} ${c.role || ""} ${c.email}`
-              .toLowerCase()
-              .includes(candidateSearch.toLowerCase())
-          )
-          .map((candidate: any) => {
-            const isSelected = formData.candidates.some(
-              (c: any) => c._id === candidate._id
-            );
-
-            return (
-              <div
-                key={candidate._id}
-                onClick={() => toggleCandidateSelection(candidate)}
-                className={`px-4 py-3 cursor-pointer transition ${
-                  isSelected
-                    ? "bg-indigo-50 hover:bg-indigo-100"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-
-                  {/* LEFT */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-gray-900">
-                        {candidate.name}
-                      </span>
-
-                      {candidate.role && (
-                        <span className="text-xs text-gray-400">
-                          — {candidate.role}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {candidate.email}
-                    </div>
-                  </div>
-
-                  {/* RIGHT */}
-                  <div className="flex items-center gap-2">
-
-                    {/* CHECK ICON */}
-                    {isSelected && (
-                      <CheckCircle2 className="h-5 w-5 text-indigo-600" />
-                    )}
-                  </div>
-                </div>
+      {showCandidateModal && !selectedAssessment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden">
+            {/* HEADER */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Add Candidates
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Select additional candidates for this assessment
+                </p>
               </div>
-            );
-          })}
 
-        {manualCandidates.length === 0 && (
-          <div className="px-4 py-6 text-center text-sm text-gray-400">
-            No candidates available
+              <button onClick={() => setShowCandidateModal(false)}>
+                <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+
+            {/* SEARCH */}
+            <div className="p-3 border-b border-gray-200">
+              <input
+                type="text"
+                placeholder="Search by name or role..."
+                value={candidateSearch}
+                onChange={(e) => setCandidateSearch(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* INFO BAR */}
+            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+              <span>{candidatesList.length} candidates available</span>
+              {formData.candidates.length > 0 && (
+                <span className="text-indigo-600 font-medium">
+                  {formData.candidates.length} selected
+                </span>
+              )}
+            </div>
+
+            {/* LIST */}
+            <div className="max-h-72 overflow-y-auto">
+              {candidatesList
+                .filter((c: any) =>
+                  `${c.name} ${c.role || ""} ${c.email}`
+                    .toLowerCase()
+                    .includes(candidateSearch.toLowerCase()),
+                )
+                .map((candidate: any) => {
+                  const isSelected = formData.candidates.some(
+                    (c: any) => c._id === candidate._id,
+                  );
+
+                  return (
+                    <div
+                      key={candidate._id}
+                      onClick={() => toggleCandidateSelection(candidate)}
+                      className={`px-4 py-3 cursor-pointer transition ${
+                        isSelected
+                          ? "bg-indigo-50 hover:bg-indigo-100"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        {/* LEFT */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {candidate.name}
+                            </span>
+
+                            {candidate.role && (
+                              <span className="text-xs text-gray-400">
+                                — {candidate.role}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {candidate.email}
+                          </div>
+                        </div>
+
+                        {/* RIGHT */}
+                        <div className="flex items-center gap-2">
+                          {/* CHECK ICON */}
+                          {isSelected && (
+                            <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {candidatesList.length === 0 && (
+                <div className="px-4 py-6 text-center text-sm text-gray-400">
+                  No candidates available
+                </div>
+              )}
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex justify-between items-center px-5 py-4 border-t border-gray-200 bg-gray-50">
+              <span className="text-xs text-gray-500">
+                Click on candidates to select/deselect
+              </span>
+
+              <div className="flex gap-3">
+                {/* Add Candidate Button */}
+                <button
+                  onClick={() => setShowAddCandidateModal(true)}
+                  className="px-5 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                  + Add Candidate
+                </button>
+
+                {/* Done Button */}
+                <button
+                  onClick={() => setShowCandidateModal(false)}
+                  className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* FOOTER */}
-      <div className="flex justify-between items-center px-5 py-4 border-t border-gray-200 bg-gray-50">
-        <span className="text-xs text-gray-500">
-          Click on candidates to select/deselect
-        </span>
-
-        <button
-          onClick={() => setShowCandidateModal(false)}
-          className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-        >
-          Done
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        </div>
+      )}
 
       {/* Candidate Details Modal */}
       {showCandidateModal && selectedAssessment && (
@@ -1977,6 +1981,18 @@ const removeFile = () => {
           assessmentData={selectedAssessment}
         />
       )}
+
+{showAddCandidateModal && (
+  <AddCandidateModal
+    isOpen={showAddCandidateModal}
+    onClose={() => setShowAddCandidateModal(false)}
+    onAdd={() => {
+
+      setShowAddCandidateModal(false);
+    }}
+    onUpdate={() => {}}
+  />
+)}
     </AdminLayout>
   );
 };
