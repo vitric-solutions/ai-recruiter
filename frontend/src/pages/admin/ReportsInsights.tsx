@@ -67,6 +67,91 @@ const TableSkeleton = () => {
   );
 };
 
+// Deduplicates streaming transcript — takes last message per consecutive role turn
+function deduplicateTranscript(
+  transcript: Array<{ role: string; text: string; _id: string }>,
+) {
+  if (!transcript?.length) return [];
+
+  const turns: Array<{ role: string; text: string; _id: string }> = [];
+
+  for (let i = 0; i < transcript.length; i++) {
+    const current = transcript[i];
+    const next = transcript[i + 1];
+
+    // If next message is different role (or we're at the end), this is the final text for this turn
+    if (!next || next.role !== current.role) {
+      // Only add if text is non-empty and not just whitespace
+      if (current.text?.trim()) {
+        turns.push(current);
+      }
+    }
+    // Otherwise skip — it's an intermediate streaming chunk
+  }
+
+  return turns;
+}
+
+const ConversationView = ({
+  transcript,
+  candidateName,
+}: {
+  transcript: any[];
+  candidateName: string;
+}) => {
+  const turns = deduplicateTranscript(transcript);
+
+  if (!turns.length) {
+    return (
+      <p className="text-sm text-gray-500 text-center py-6">
+        No conversation data available
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3 max-h-96 overflow-y-auto pr-1 scrollbar-thin">
+      {turns.map((turn, idx) => {
+        const isInterviewer = turn.role === "Interviewer";
+        return (
+          <div
+            key={turn._id || idx}
+            className={`flex gap-3 ${isInterviewer ? "justify-start" : "justify-end"}`}
+          >
+            {isInterviewer && (
+              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="text-indigo-600 text-xs font-bold">AI</span>
+              </div>
+            )}
+            <div
+              className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                isInterviewer
+                  ? "bg-indigo-50 text-gray-800 border border-indigo-100 rounded-tl-sm"
+                  : "bg-gray-900 text-white rounded-tr-sm"
+              }`}
+            >
+              <p
+                className={`text-[10px] font-semibold mb-1 ${isInterviewer ? "text-indigo-500" : "text-gray-400"}`}
+              >
+                {isInterviewer
+                  ? "AI Interviewer"
+                  : candidateName || "Candidate"}
+              </p>
+              {turn.text}
+            </div>
+            {!isInterviewer && (
+              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="text-white text-xs font-bold">
+                  {(candidateName?.[0] || "C").toUpperCase()}
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 const ReportsInsights = () => {
   const [activeTab, setActiveTab] = useState<"AI" | "MCQ">("AI");
   const [scores, setScores] = useState<ScoreType[]>([]);
@@ -1377,6 +1462,34 @@ const ReportsInsights = () => {
                 </p>
               </div>
 
+              {/* conversation summary */}
+              {/* Interview Conversation */}
+              {selectedScore?.transcript?.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Interview Conversation
+                    </h3>
+                    <span className="text-xs text-gray-400 ml-auto">
+                      {deduplicateTranscript(selectedScore.transcript).length}{" "}
+                      exchanges
+                    </span>
+                  </div>
+                  <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                    <ConversationView
+                      transcript={selectedScore.transcript}
+                      candidateName={
+                        selectedScore.feedback?.candidateName ||
+                        selectedScore.userName ||
+                        "Candidate"
+                      }
+                    />
+                  </div>
+                </div>
+              )}
               {/* Recommendations */}
               {selectedScore.feedback?.recommendations &&
                 selectedScore.feedback.recommendations.length > 0 && (
@@ -1660,6 +1773,36 @@ const ReportsInsights = () => {
                   )}
                 </div>
               )}
+
+              {/* conversation summary */}
+              {/* Interview Conversation */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    Interview Conversation
+                  </h3>
+                  <span className="text-xs text-gray-400 ml-auto">
+                    {
+                      deduplicateTranscript(selectedScore.transcript || [])
+                        .length
+                    }{" "}
+                    exchanges
+                  </span>
+                </div>
+                <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                  <ConversationView
+                    transcript={selectedScore.transcript || []}
+                    candidateName={
+                      selectedScore.feedback?.candidateName ||
+                      selectedScore.userName ||
+                      "Candidate"
+                    }
+                  />
+                </div>
+              </div>
 
               {/* Verdict Summary */}
               <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">

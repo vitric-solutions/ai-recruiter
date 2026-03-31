@@ -385,12 +385,14 @@ import {
   FileText,
   Video,
   Maximize,
+  Check,
+  Mic,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { userService } from "../../services/service/userService";
 import { useAuth } from "../../context/context";
-import { userPath } from "../../routes/EncryptRoute"
+import { userPath } from "../../routes/EncryptRoute";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 18 },
@@ -496,13 +498,15 @@ const InterviewInstructions: React.FC = () => {
   const [interview, setInterview] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { setInterviewInfo, setUserData } = useAuth();
+  const [selectedVoice, setSelectedVoice] = useState<"female" | "male">(
+    "female",
+  );
 
   const isMCQ = interview?.examType === "MCQ";
   const guidelines = isMCQ ? MCQ_GUIDELINES : AI_GUIDELINES;
   const notice = isMCQ ? MCQ_NOTICE : AI_NOTICE;
   const structure = isMCQ ? MCQ_STRUCTURE : AI_STRUCTURE;
   const instructions = isMCQ ? MCQTitle : AITitle;
-  
 
   useEffect(() => {
     const fetchInterviewInstruction = async (id: string) => {
@@ -550,7 +554,7 @@ const InterviewInstructions: React.FC = () => {
       await requestFullscreen();
 
       navigate(userPath("videoInterview", id), {
-        state: { title: interview?.title, time: interview?.duration },
+        state: { title: interview?.title, time: interview?.duration,voice: selectedVoice },
       });
     }
   };
@@ -798,6 +802,96 @@ const InterviewInstructions: React.FC = () => {
               </div>
             </motion.div>
 
+            <motion.div
+              className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10"
+              {...fadeUp(0.3)}
+            >
+              {/* Voice Selection — AI Interview only */}
+              {!isMCQ && (
+                <motion.div
+                  className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10"
+                  {...fadeUp(0.18)}
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-[#2D55FB]/20 flex items-center justify-center">
+                      <Mic className="h-4 w-4 text-[#2D55FB]" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold text-sm">
+                        Choose Interviewer Voice
+                      </h3>
+                      <p className="text-gray-500 text-xs">
+                        Select the voice you're comfortable with
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Female */}
+                    <button
+                      onClick={() => setSelectedVoice("female")}
+                      className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                        selectedVoice === "female"
+                          ? "border-[#2D55FB] bg-[#2D55FB]/10"
+                          : "border-white/10 bg-white/5 hover:bg-white/10"
+                      }`}
+                    >
+                      {selectedVoice === "female" && (
+                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#2D55FB] flex items-center justify-center">
+                          <Check className="h-2.5 w-2.5 text-white" />
+                        </div>
+                      )}
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                          selectedVoice === "female"
+                            ? "bg-[#2D55FB]/20"
+                            : "bg-white/10"
+                        }`}
+                      >
+                        👩
+                      </div>
+                      <p className="text-white text-sm font-semibold">Female</p>
+                      <p className="text-gray-500 text-xs">Aria</p>
+                      {selectedVoice === "female" && (
+                        <span className="text-[10px] text-[#2D55FB] font-medium bg-[#2D55FB]/10 px-2 py-0.5 rounded-full">
+                          Default
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Male */}
+                    <button
+                      onClick={() => setSelectedVoice("male")}
+                      className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                        selectedVoice === "male"
+                          ? "border-[#2D55FB] bg-[#2D55FB]/10"
+                          : "border-white/10 bg-white/5 hover:bg-white/10"
+                      }`}
+                    >
+                      {selectedVoice === "male" && (
+                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#2D55FB] flex items-center justify-center">
+                          <Check className="h-2.5 w-2.5 text-white" />
+                        </div>
+                      )}
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                          selectedVoice === "male"
+                            ? "bg-[#2D55FB]/20"
+                            : "bg-white/10"
+                        }`}
+                      >
+                        👨
+                      </div>
+                      <p className="text-white text-sm font-semibold">Male</p>
+                      <p className="text-gray-500 text-xs">Orion</p>
+                      <span className="text-[10px] text-gray-600 font-medium bg-white/5 px-2 py-0.5 rounded-full">
+                        Coming soon
+                      </span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
             {/* CTA */}
             <motion.div
               className="flex flex-col items-center gap-3 pt-2"
