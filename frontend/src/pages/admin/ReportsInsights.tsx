@@ -67,31 +67,6 @@ const TableSkeleton = () => {
   );
 };
 
-// Deduplicates streaming transcript — takes last message per consecutive role turn
-function deduplicateTranscript(
-  transcript: Array<{ role: string; text: string; _id: string }>,
-) {
-  if (!transcript?.length) return [];
-
-  const turns: Array<{ role: string; text: string; _id: string }> = [];
-
-  for (let i = 0; i < transcript.length; i++) {
-    const current = transcript[i];
-    const next = transcript[i + 1];
-
-    // If next message is different role (or we're at the end), this is the final text for this turn
-    if (!next || next.role !== current.role) {
-      // Only add if text is non-empty and not just whitespace
-      if (current.text?.trim()) {
-        turns.push(current);
-      }
-    }
-    // Otherwise skip — it's an intermediate streaming chunk
-  }
-
-  return turns;
-}
-
 const ConversationView = ({
   transcript,
   candidateName,
@@ -99,7 +74,8 @@ const ConversationView = ({
   transcript: any[];
   candidateName: string;
 }) => {
-  const turns = deduplicateTranscript(transcript);
+  // ← was: const turns = deduplicateTranscript(transcript);
+  const turns = transcript?.filter((t) => t?.text?.trim()) ?? [];
 
   if (!turns.length) {
     return (
@@ -1462,34 +1438,35 @@ const ReportsInsights = () => {
                 </p>
               </div>
 
-              {/* conversation summary */}
-              {/* Interview Conversation */}
-              {selectedScore?.transcript?.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <MessageSquare className="h-4 w-4 text-blue-600" />
+              {selectedScore?.transcript &&
+                selectedScore.transcript.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <MessageSquare className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        Interview Conversation
+                      </h3>
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {
+                          selectedScore.transcript.filter((t: any) =>
+                            t?.text?.trim(),
+                          ).length
+                        }{" "}
+                        exchanges
+                      </span>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">
-                      Interview Conversation
-                    </h3>
-                    <span className="text-xs text-gray-400 ml-auto">
-                      {deduplicateTranscript(selectedScore.transcript).length}{" "}
-                      exchanges
-                    </span>
+                    <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                      <ConversationView
+                        transcript={selectedScore.transcript}
+                        candidateName={
+                          selectedScore.feedback?.candidateName || "Candidate"
+                        }
+                      />
+                    </div>
                   </div>
-                  <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
-                    <ConversationView
-                      transcript={selectedScore.transcript}
-                      candidateName={
-                        selectedScore.feedback?.candidateName ||
-                        selectedScore.userName ||
-                        "Candidate"
-                      }
-                    />
-                  </div>
-                </div>
-              )}
+                )}
               {/* Recommendations */}
               {selectedScore.feedback?.recommendations &&
                 selectedScore.feedback.recommendations.length > 0 && (
@@ -1776,33 +1753,35 @@ const ReportsInsights = () => {
 
               {/* conversation summary */}
               {/* Interview Conversation */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <MessageSquare className="h-4 w-4 text-blue-600" />
+              {selectedScore?.transcript &&
+                selectedScore?.transcript?.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <MessageSquare className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        Interview Conversation
+                      </h3>
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {
+                          selectedScore?.transcript?.filter((t: any) =>
+                            t?.text?.trim(),
+                          ).length
+                        }{" "}
+                        exchanges
+                      </span>
+                    </div>
+                    <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                      <ConversationView
+                        transcript={selectedScore.transcript}
+                        candidateName={
+                          selectedScore.feedback?.candidateName || "Candidate"
+                        }
+                      />
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">
-                    Interview Conversation
-                  </h3>
-                  <span className="text-xs text-gray-400 ml-auto">
-                    {
-                      deduplicateTranscript(selectedScore.transcript || [])
-                        .length
-                    }{" "}
-                    exchanges
-                  </span>
-                </div>
-                <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
-                  <ConversationView
-                    transcript={selectedScore.transcript || []}
-                    candidateName={
-                      selectedScore.feedback?.candidateName ||
-                      selectedScore.userName ||
-                      "Candidate"
-                    }
-                  />
-                </div>
-              </div>
+                )}
 
               {/* Verdict Summary */}
               <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
