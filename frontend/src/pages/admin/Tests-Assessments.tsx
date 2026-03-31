@@ -294,7 +294,7 @@ const TestsAssessments = () => {
   const manualCandidates = candidatesList.filter(
     (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
   );
-  console.log("sdhfdsf",manualCandidates)
+  // console.log("sdhfdsf",manualCandidates)
   const filteredCandidates = manualCandidates.filter((c: any) =>
     `${c.name} ${c.role || ""} ${c.email}`
       .toLowerCase()

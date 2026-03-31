@@ -1364,7 +1364,7 @@ export default function InterviewSetup() {
 
               {/* INFO BAR */}
               <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500">
-                <span>{manualCandidates.length} candidates available</span>
+                <span>{candidates.length} candidates available</span>
                 {selectedCandidates.length > 0 && (
                   <span className="text-indigo-600 font-medium">
                     {selectedCandidates.length} selected
@@ -1374,7 +1374,7 @@ export default function InterviewSetup() {
 
               {/* LIST */}
               <div className="max-h-72 overflow-y-auto">
-                {manualCandidates
+                {candidates
                   .filter((c: any) =>
                     `${c.name} ${c.role || ""} ${c.email}`
                       .toLowerCase()
@@ -1424,7 +1424,7 @@ export default function InterviewSetup() {
                     );
                   })}
 
-                {manualCandidates.length === 0 && (
+                {candidates.length === 0 && (
                   <div className="px-4 py-6 text-center text-sm text-gray-400">
                     No candidates available
                   </div>
