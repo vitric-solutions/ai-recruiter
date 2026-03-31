@@ -19,10 +19,11 @@ import Edit from "../../assets/admin/assessment/edit1.png";
 import ActiveInterviews from "../../components/admin/AI Interview/ActiveInterviews";
 import { userPath } from "../../routes/EncryptRoute";
 import { adminService } from "../../services/service/adminService";
-
+import AddCandidateModal from "../../components/Candidates/AddCandidate";
 export default function InterviewSetup() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [showAddCandidateModal, setShowAddCandidateModal] = useState(false);
   const [description, setDescription] = useState<string>("");
   const [secondaryJobDescription, setSecondaryJobDescription] =
     useState<string>("");
@@ -385,6 +386,10 @@ export default function InterviewSetup() {
     }
   };
 
+  useEffect(() => {
+    fetchCandidates();
+  }, [showAddCandidateModal]);
+
   // ================= SEARCH FILTER =================
 
   useEffect(() => {
@@ -611,48 +616,48 @@ export default function InterviewSetup() {
     }
   };
   const handleRemoveFile = () => {
-  // 🧹 File reset
-  setFile(null);
-  setFileName(null);
-  setExistingFilePath(null);
-  setJdAnalysis(null);
+    // 🧹 File reset
+    setFile(null);
+    setFileName(null);
+    setExistingFilePath(null);
+    setJdAnalysis(null);
 
-  // 🧹 Form reset
-  setPosition("");
-  setDescription("");
-  setSecondaryJobDescription("");
-  setSkills([]);
-  setInputValue("");
+    // 🧹 Form reset
+    setPosition("");
+    setDescription("");
+    setSecondaryJobDescription("");
+    setSkills([]);
+    setInputValue("");
 
-  setDuration("");
-  setPassingScore("");
-  setNumberOfQuestions("");
-  setDifficulty("");
+    setDuration("");
+    setPassingScore("");
+    setNumberOfQuestions("");
+    setDifficulty("");
 
-  // 🧹 Email + interview reset
-  setSubject("");
-  setMessageBody("");
-  setInterviewLink("");
+    // 🧹 Email + interview reset
+    setSubject("");
+    setMessageBody("");
+    setInterviewLink("");
 
-  setStartDate(null);
-  setEndDate(null);
+    setStartDate(null);
+    setEndDate(null);
 
-  // 🧹 Candidates reset
-  setSelectedCandidates([]);
-  setScoredCandidates([]);
-  setCandidates([]);
+    // 🧹 Candidates reset
+    setSelectedCandidates([]);
+    setScoredCandidates([]);
+    setCandidates([]);
 
-  // 🧹 UI states reset
-  setIsGenerated(false);
-  setCreatedJobId(null);
-  setEditMode(false);
-  setEditingId(null);
-  setUseTemplateMode(false);
+    // 🧹 UI states reset
+    setIsGenerated(false);
+    setCreatedJobId(null);
+    setEditMode(false);
+    setEditingId(null);
+    setUseTemplateMode(false);
 
-  // optional UX
-  setShowDropdown(false);
-  setSearchTerm("");
-};
+    // optional UX
+    setShowDropdown(false);
+    setSearchTerm("");
+  };
 
   return (
     <>
@@ -764,7 +769,6 @@ export default function InterviewSetup() {
                     <div
                       onDrop={handleFileDrop}
                       onDragOver={handleDragOver}
-                      
                       className="relative flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center transition-all duration-200 hover:border-indigo-400 hover:bg-indigo-50/30"
                     >
                       {/* Upload Icon */}
@@ -821,13 +825,10 @@ export default function InterviewSetup() {
                       {/* Remove */}
                       <button
                         type="button"
-                          onClick={handleRemoveFile}
-                      
+                        onClick={handleRemoveFile}
                         className="text-sm font-medium text-red-500 hover:text-red-600 transition"
                       >
-                
-                      <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                   
+                        <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
                       </button>
                     </div>
                   )}
@@ -1433,18 +1434,40 @@ export default function InterviewSetup() {
               {/* FOOTER */}
               <div className="flex justify-between items-center px-5 py-4 border-t border-gray-200 bg-gray-50">
                 <span className="text-xs text-gray-500">
-                  Click to select / deselect candidates
+                  Click on candidates to select/deselect
                 </span>
 
-                <button
-                  onClick={() => setShowCandidateModal(false)}
-                  className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                >
-                  Done
-                </button>
+                <div className="flex gap-3">
+                  {/* Add Candidate Button */}
+                  <button
+                    onClick={() => setShowAddCandidateModal(true)}
+                    className="px-5 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  >
+                    + Add Candidate
+                  </button>
+
+                  {/* Done Button */}
+                  <button
+                    onClick={() => setShowCandidateModal(false)}
+                    className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        )}
+
+        {showAddCandidateModal && (
+          <AddCandidateModal
+            isOpen={showAddCandidateModal}
+            onClose={() => setShowAddCandidateModal(false)}
+            onAdd={() => {
+              setShowAddCandidateModal(false);
+            }}
+            onUpdate={() => {}}
+          />
         )}
       </AdminLayout>
     </>
