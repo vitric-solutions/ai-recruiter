@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { X, Users } from "lucide-react";
+import { useTheme } from "../../../context/Themecontext";
 
 interface ViewAssignedCandidateProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ const ViewAssignedCandidate: React.FC<ViewAssignedCandidateProps> = ({
   onClose,
   assessmentData,
 }) => {
+  const { theme } = useTheme();
   if (!isOpen || !assessmentData) return null;
   console.log("assessmentData",assessmentData)
 
@@ -116,30 +118,30 @@ const ViewAssignedCandidate: React.FC<ViewAssignedCandidateProps> = ({
           </div>
 
           {/* ================= TABLE ================= */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className={`border-b ${theme === 'dark' ? 'bg-slate-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                 <tr>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     S.No
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Candidate Name
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Email
                   </th>
              
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Start Date
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     End Date
                   </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Status
                   </th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <th className="px-5 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Scorecard
                   </th>
                 </tr>
@@ -165,30 +167,30 @@ const ViewAssignedCandidate: React.FC<ViewAssignedCandidateProps> = ({
                     return (
                       <tr
                         key={candidate._id || index}
-                        className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                        className={`transition-colors ${theme === 'dark' ? 'border-b border-gray-700 hover:bg-slate-700/60' : 'border-b border-gray-200 hover:bg-gray-50'}`}
                       >
-                        <td className="px-5 py-4 text-sm text-gray-900">
+                        <td className={`px-5 py-4 text-sm ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
                           {globalIndex}
                         </td>
 
                         <td className="px-5 py-4">
-                          <div className="font-medium text-gray-900">
+                          <div className={`font-medium ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
                             {candidate.candidateId?.name || "N/A"}
                           </div>
                           {candidate.candidateId?.role && (
-                            <div className="text-xs text-gray-500">
+                            <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                               {candidate.candidateId.role}
                             </div>
                           )}
                         </td>
 
-                        <td className="px-5 py-4 text-sm text-gray-600">
+                        <td className={`px-5 py-4 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                           {candidate.candidateId?.email || "N/A"}
                         </td>
 
                    
 
-                        <td className="px-5 py-4 text-sm text-gray-600">
+                        <td className={`px-5 py-4 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                           {new Date(candidate.start_Date).toLocaleDateString(
                             "en-US",
                             {
@@ -199,7 +201,7 @@ const ViewAssignedCandidate: React.FC<ViewAssignedCandidateProps> = ({
                           )}
                         </td>
 
-                        <td className="px-5 py-4 text-sm text-gray-600">
+                        <td className={`px-5 py-4 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                           {new Date(candidate.end_Date).toLocaleDateString(
                             "en-US",
                             {
@@ -213,13 +215,21 @@ const ViewAssignedCandidate: React.FC<ViewAssignedCandidateProps> = ({
                         <td className="px-5 py-4">
                           <span
                             className={`px-2 py-1 text-xs rounded-full font-medium ${
-                              candidate.status === "completed"
-                                ? "bg-green-100 text-green-700"
-                                : candidate.status === "in_progress"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : candidate.status === "cancelled"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-yellow-100 text-yellow-700"
+                              theme === 'dark'
+                                ? candidate.status === "completed"
+                                  ? "bg-emerald-900/40 text-emerald-200 border border-emerald-700"
+                                  : candidate.status === "in_progress"
+                                    ? "bg-blue-900/40 text-blue-200 border border-blue-700"
+                                    : candidate.status === "cancelled"
+                                      ? "bg-rose-900/40 text-rose-200 border border-rose-700"
+                                      : "bg-amber-900/40 text-amber-200 border border-amber-700"
+                                : candidate.status === "completed"
+                                  ? "bg-green-100 text-green-700"
+                                  : candidate.status === "in_progress"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : candidate.status === "cancelled"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-yellow-100 text-yellow-700"
                             }`}
                           >
                             {candidate.status === "in_progress"

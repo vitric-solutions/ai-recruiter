@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import AdminLayout from "../../common/AdminLayout";
 import { useAdminSocket } from "../../hooks/useAdminSocket";
+import { useTheme } from "../../context/Themecontext";
 import {
   Search,
   Eye,
@@ -137,6 +138,7 @@ const ReportsInsights = () => {
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [aiCurrentPage, setAiCurrentPage] = useState(1);
+  const { theme } = useTheme();
   const aiItemsPerPage = 5;
   const [filters, setFilters] = useState({
     name: "",
@@ -423,12 +425,20 @@ const ReportsInsights = () => {
           return (
             <div
               key={i}
-              className="bg-white rounded-lg border border-gray-200 p-5"
+              className={`rounded-lg border p-5 ${
+                theme === 'dark'
+                  ? 'bg-slate-900 border-slate-700'
+                  : 'bg-white border-gray-200'
+              }`}
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className={`text-sm mb-1 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                  }`}>{stat.title}</p>
+                  <p className={`text-2xl font-bold ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {stat.value}
                   </p>
                 </div>
@@ -442,41 +452,52 @@ const ReportsInsights = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="inline-flex bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => setActiveTab("AI")}
-            className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${
-              activeTab === "AI"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            AI Interview Result
-          </button>
-
-          <button
-            onClick={() => setActiveTab("MCQ")}
-            className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${
-              activeTab === "MCQ"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            MCQ Test Result
-          </button>
-        </div>
-      </div>
+     <div className="flex items-center justify-between mb-6">
+  <div className={`inline-flex rounded-lg p-2 ${theme === 'dark' ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
+    <button
+      onClick={() => setActiveTab("AI")}
+      className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${
+        activeTab === "AI"
+          ? theme === 'dark'
+            ? 'bg-slate-800 text-white shadow-sm'
+            : 'bg-[#F4F7FE] text-gray-900 shadow-sm'
+          : theme === 'dark'
+            ? 'text-slate-300 hover:text-white'
+            : 'text-gray-600 hover:text-gray-900'
+      }`}
+    >
+      AI Interview Result
+    </button>
+    <button
+      onClick={() => setActiveTab("MCQ")}
+      className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${
+        activeTab === "MCQ"
+          ? theme === 'dark'
+            ? 'bg-slate-800 text-white shadow-sm'
+            : 'bg-[#F4F7FE] text-gray-900 shadow-sm'
+          : theme === 'dark'
+            ? 'text-slate-300 hover:text-white'
+            : 'text-gray-600 hover:text-gray-900'
+      }`}
+    >
+      MCQ Test Result
+    </button>
+  </div>
+</div>
 
       {/* AI Interview Tab */}
       {activeTab === "AI" && (
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className={`text-lg font-semibold ${
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>
               AI Interview Result
             </h2>
-            <div className="text-sm text-gray-500">
+            <div className={`text-sm ${
+              theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+            }`}>
               Showing{" "}
               {filteredAIScores.length === 0
                 ? "0"
@@ -486,7 +507,9 @@ const ReportsInsights = () => {
           </div>
 
           {/* Search and Filter */}
-          <div className="flex flex-wrap gap-3 bg-white p-2 rounded-sm">
+          <div className={`flex flex-wrap gap-3 p-2 rounded-sm ${
+            theme === 'dark' ? 'bg-slate-900' : 'bg-white'
+          }`}>
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -496,7 +519,11 @@ const ReportsInsights = () => {
                 onChange={(e) =>
                   setAiFilters((f) => ({ ...f, search: e.target.value }))
                 }
-                className="pl-9 pr-4 py-2 w-56 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-600"
+                className={`pl-9 pr-4 py-2 w-56 rounded-lg text-sm outline-none ${
+                  theme === 'dark'
+                    ? 'bg-slate-800 border border-slate-700 text-white placeholder-slate-500'
+                    : 'bg-white border border-gray-200 text-black'
+                }`}
               />
             </div>
 
@@ -506,7 +533,11 @@ const ReportsInsights = () => {
               onChange={(e) =>
                 setAiFilters((f) => ({ ...f, verdict: e.target.value }))
               }
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg"
+              className={`px-3 py-2 text-sm outline-none rounded-lg ${
+                theme === 'dark'
+                  ? 'bg-slate-800 border border-slate-700 text-white'
+                  : 'bg-white border border-gray-200 text-black'
+              }`}
             >
               <option value="">All Status</option>
               <option value="hire">Hire</option>
@@ -522,7 +553,11 @@ const ReportsInsights = () => {
               onChange={(e) =>
                 setAiFilters((f) => ({ ...f, minScore: e.target.value }))
               }
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg w-32"
+              className={`px-3 py-2 text-sm outline-none rounded-lg w-32 ${
+                theme === 'dark'
+                  ? 'bg-slate-800 border border-slate-700 text-white placeholder-slate-500'
+                  : 'bg-white border border-gray-200 text-black'
+              }`}
             />
 
             {/* Date Range */}
@@ -532,7 +567,11 @@ const ReportsInsights = () => {
               onChange={(e) =>
                 setAiFilters((f) => ({ ...f, startDate: e.target.value }))
               }
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg"
+              className={`px-3 py-2 text-sm outline-none rounded-lg ${
+                theme === 'dark'
+                  ? 'bg-slate-800 border border-slate-700 text-white'
+                  : 'bg-white border border-gray-200 text-black'
+              }`}
             />
 
             <input
@@ -541,7 +580,11 @@ const ReportsInsights = () => {
               onChange={(e) =>
                 setAiFilters((f) => ({ ...f, endDate: e.target.value }))
               }
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg"
+              className={`px-3 py-2 text-sm outline-none rounded-lg ${
+                theme === 'dark'
+                  ? 'bg-slate-800 border border-slate-700 text-white'
+                  : 'bg-white border border-gray-200 text-black'
+              }`}
             />
           </div>
 
@@ -569,11 +612,15 @@ const ReportsInsights = () => {
                 return (
                   <div
                     key={result._id}
-                    className={`bg-white rounded-xl border-2 ${
-                      isExpanded
-                        ? "border-indigo-200 shadow-md"
-                        : "border-gray-200 shadow-sm hover:border-gray-300"
-                    } transition-all`}
+                    className={`rounded-xl border-2 transition-all ${
+                      theme === 'dark'
+                        ? isExpanded
+                          ? 'bg-slate-800 border-indigo-400 shadow-md'
+                          : 'bg-slate-900 border-slate-700 shadow-sm hover:border-slate-600'
+                        : isExpanded
+                          ? 'bg-white border-indigo-200 shadow-md'
+                          : 'bg-white border-gray-200 shadow-sm hover:border-gray-300'
+                    }`}
                   >
                     {/* Clickable Header */}
                     <div
@@ -587,10 +634,14 @@ const ReportsInsights = () => {
                           {getInitials(feedback?.candidateName || "NA")}
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">
+                          <h3 className={`text-lg font-bold ${
+                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                          }`}>
                             {feedback?.candidateName || "Unknown Candidate"}
                           </h3>
-                          <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
+                          <div className={`flex items-center gap-2 text-sm mt-0.5 ${
+                            theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                          }`}>
                             <span>{feedback?.role || "N/A"}</span>
                             <span className="text-gray-300">·</span>
                             <span className="flex items-center gap-1">
@@ -618,19 +669,27 @@ const ReportsInsights = () => {
                           className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
                             feedback?.overallVerdict === "accept" ||
                             feedback?.overallVerdict === "hire"
-                              ? "bg-green-100 text-green-700"
+                              ? theme === "dark"
+                                ? "bg-emerald-900/40 text-emerald-200"
+                                : "bg-green-100 text-green-700"
                               : feedback?.overallVerdict === "reject"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-yellow-100 text-yellow-700"
+                                ? theme === "dark"
+                                  ? "bg-rose-900/40 text-rose-200"
+                                  : "bg-red-100 text-red-700"
+                                : theme === "dark"
+                                  ? "bg-amber-900/40 text-amber-200"
+                                  : "bg-yellow-100 text-yellow-700"
                           }`}
                         >
                           {feedback?.overallVerdict || "N/A"}
                         </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${theme === "dark" ? "bg-indigo-900/40 text-indigo-200" : "bg-indigo-100 text-indigo-700"}`}>
                           AI Score: {result.score || 0}%
                         </span>
                         <ChevronDown
-                          className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${
+                          className={`h-5 w-5 transition-transform duration-200 ${
+                            theme === 'dark' ? 'text-slate-500' : 'text-gray-400'
+                          } ${
                             isExpanded ? "rotate-180" : ""
                           }`}
                         />
@@ -639,27 +698,51 @@ const ReportsInsights = () => {
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="px-5 pb-5 border-t border-gray-100">
+                      <div className={`px-5 pb-5 border-t ${
+                        theme === 'dark' ? 'border-slate-700' : 'border-gray-100'
+                      }`}>
                         {/* Score Cards */}
                         <div className="grid grid-cols-4 gap-4 mt-4 mb-5">
-                          <div className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
-                            <p className="text-xs text-gray-600 mb-2 font-medium">
+                          <div className={`rounded-lg p-4 text-center border ${
+                            theme === 'dark'
+                              ? 'bg-slate-800 border-slate-700'
+                              : 'bg-gray-50 border-gray-100'
+                          }`}>
+                            <p className={`text-xs mb-2 font-medium ${
+                              theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                            }`}>
                               Technical Skills
                             </p>
-                            <p className="text-2xl font-bold text-gray-900">
+                            <p className={`text-2xl font-bold ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
                               {feedback?.technicalScore || 0}%
                             </p>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
-                            <p className="text-xs text-gray-600 mb-2 font-medium">
+                          <div className={`rounded-lg p-4 text-center border ${
+                            theme === 'dark'
+                              ? 'bg-slate-800 border-slate-700'
+                              : 'bg-gray-50 border-gray-100'
+                          }`}>
+                            <p className={`text-xs mb-2 font-medium ${
+                              theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                            }`}>
                               Communication
                             </p>
-                            <p className="text-2xl font-bold text-gray-900">
+                            <p className={`text-2xl font-bold ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
                               {feedback?.speechPatterns?.clarityScore || 0}%
                             </p>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
-                            <p className="text-xs text-gray-600 mb-2 font-medium">
+                          <div className={`rounded-lg p-4 text-center border ${
+                            theme === 'dark'
+                              ? 'bg-slate-800 border-slate-700'
+                              : 'bg-gray-50 border-gray-100'
+                          }`}>
+                            <p className={`text-xs mb-2 font-medium ${
+                              theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                            }`}>
                               Confidence
                             </p>
                             <p
@@ -678,22 +761,38 @@ const ReportsInsights = () => {
                               {feedback?.confidenceLabel || "N/A"}
                             </p>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
-                            <p className="text-xs text-gray-600 mb-2 font-medium">
+                          <div className={`rounded-lg p-4 text-center border ${
+                            theme === 'dark'
+                              ? 'bg-slate-800 border-slate-700'
+                              : 'bg-gray-50 border-gray-100'
+                          }`}>
+                            <p className={`text-xs mb-2 font-medium ${
+                              theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                            }`}>
                               Relevance
                             </p>
-                            <p className="text-2xl font-bold text-gray-900">
+                            <p className={`text-2xl font-bold ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
                               {feedback?.relevanceScore || 0}%
                             </p>
                           </div>
                         </div>
 
                         {/* Assessment Summary */}
-                        <div className="bg-blue-50 rounded-lg p-4 mb-5 border border-blue-100">
-                          <p className="text-xs text-gray-600 mb-2 font-semibold">
+                        <div className={`rounded-lg p-4 mb-5 border ${
+                          theme === 'dark'
+                            ? 'bg-slate-800 border-slate-700'
+                            : 'bg-blue-50 border-blue-100'
+                        }`}>
+                          <p className={`text-xs mb-2 font-semibold ${
+                            theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                          }`}>
                             Assessment summary
                           </p>
-                          <p className="text-sm text-gray-800 italic">
+                          <p className={`text-sm italic ${
+                            theme === 'dark' ? 'text-slate-200' : 'text-gray-800'
+                          }`}>
                             "{feedback?.verdictReason || "No summary available"}
                             "
                           </p>
@@ -1139,14 +1238,24 @@ const ReportsInsights = () => {
       {/* Detailed Scorecard Modal */}
       {showDetailedScorecard && selectedScore && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl">
+          <div className={`w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl ${
+            theme === 'dark' ? 'bg-slate-900' : 'bg-white'
+          }`}>
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between z-10">
+            <div className={`sticky top-0 border-b px-8 py-6 flex items-center justify-between z-10 ${
+              theme === 'dark'
+                ? 'bg-slate-900 border-slate-700'
+                : 'bg-white border-gray-200'
+            }`}>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className={`text-2xl font-bold ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
                   Detailed Scorecard
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className={`text-sm mt-1 ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                }`}>
                   {selectedScore.feedback?.candidateName || "Candidate"}{" "}
                   &middot;{" "}
                   {selectedScore.feedback?.role ||
@@ -1156,7 +1265,11 @@ const ReportsInsights = () => {
               </div>
               <button
                 onClick={() => setShowDetailedScorecard(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className={`transition-colors ${
+                  theme === 'dark'
+                    ? 'text-slate-500 hover:text-slate-300'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
               >
                 <X className="h-6 w-6" />
               </button>
@@ -1165,10 +1278,16 @@ const ReportsInsights = () => {
             {/* Modal Body */}
             <div className="p-8 space-y-6">
               {/* Overall Performance */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <div className={`rounded-xl p-6 border ${
+                theme === 'dark'
+                  ? 'bg-slate-800 border-indigo-600/40'
+                  : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    <h3 className={`text-lg font-bold mb-3 ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
                       Overall Performance
                     </h3>
                     <div className="flex items-center gap-4">
@@ -1176,8 +1295,12 @@ const ReportsInsights = () => {
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold ${
                           (selectedScore.score || 0) >=
                           (selectedScore.interview_id?.passingScore || 70)
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
+                            ? theme === "dark"
+                              ? "bg-emerald-900/40 text-emerald-200"
+                              : "bg-green-100 text-green-700"
+                            : theme === "dark"
+                              ? "bg-rose-900/40 text-rose-200"
+                              : "bg-red-100 text-red-700"
                         }`}
                       >
                         {(selectedScore.score || 0) >=
@@ -1196,11 +1319,17 @@ const ReportsInsights = () => {
                         className={`px-3 py-1 rounded-full text-sm font-semibold capitalize ${
                           selectedScore.feedback?.overallVerdict === "accept" ||
                           selectedScore.feedback?.overallVerdict === "hire"
-                            ? "bg-green-100 text-green-700"
+                            ? theme === "dark"
+                              ? "bg-emerald-900/40 text-emerald-200"
+                              : "bg-green-100 text-green-700"
                             : selectedScore.feedback?.overallVerdict ===
                                 "reject"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
+                              ? theme === "dark"
+                                ? "bg-rose-900/40 text-rose-200"
+                                : "bg-red-100 text-red-700"
+                              : theme === "dark"
+                                ? "bg-amber-900/40 text-amber-200"
+                                : "bg-yellow-100 text-yellow-700"
                         }`}
                       >
                         Verdict:{" "}
@@ -1209,11 +1338,17 @@ const ReportsInsights = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-4xl font-bold text-indigo-600">
+                    <div className={`text-4xl font-bold ${
+                      theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'
+                    }`}>
                       {selectedScore.score || 0}%
                     </div>
-                    <div className="text-sm text-gray-500">AI Score</div>
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className={`text-sm ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                    }`}>AI Score</div>
+                    <div className={`text-xs mt-1 ${
+                      theme === 'dark' ? 'text-slate-500' : 'text-gray-400'
+                    }`}>
                       Passing: {selectedScore.interview_id?.passingScore || 70}%
                     </div>
                   </div>
@@ -1222,27 +1357,59 @@ const ReportsInsights = () => {
 
               {/* Interview Details */}
               <div className="grid grid-cols-4 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
-                  <p className="text-xs text-gray-500 mb-1">Position</p>
-                  <p className="text-sm font-semibold text-gray-900">
+                <div className={`rounded-lg p-4 text-center border ${
+                  theme === 'dark'
+                    ? 'bg-slate-800 border-slate-700'
+                    : 'bg-gray-50 border-gray-100'
+                }`}>
+                  <p className={`text-xs mb-1 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                  }`}>Position</p>
+                  <p className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {selectedScore.interview_id?.position || "N/A"}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
-                  <p className="text-xs text-gray-500 mb-1">Difficulty</p>
-                  <p className="text-sm font-semibold text-gray-900">
+                <div className={`rounded-lg p-4 text-center border ${
+                  theme === 'dark'
+                    ? 'bg-slate-800 border-slate-700'
+                    : 'bg-gray-50 border-gray-100'
+                }`}>
+                  <p className={`text-xs mb-1 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                  }`}>Difficulty</p>
+                  <p className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {selectedScore.interview_id?.difficulty || "N/A"}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
-                  <p className="text-xs text-gray-500 mb-1">Duration</p>
-                  <p className="text-sm font-semibold text-gray-900">
+                <div className={`rounded-lg p-4 text-center border ${
+                  theme === 'dark'
+                    ? 'bg-slate-800 border-slate-700'
+                    : 'bg-gray-50 border-gray-100'
+                }`}>
+                  <p className={`text-xs mb-1 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                  }`}>Duration</p>
+                  <p className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {selectedScore.interview_id?.duration || "N/A"}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
-                  <p className="text-xs text-gray-500 mb-1">Questions</p>
-                  <p className="text-sm font-semibold text-gray-900">
+                <div className={`rounded-lg p-4 text-center border ${
+                  theme === 'dark'
+                    ? 'bg-slate-800 border-slate-700'
+                    : 'bg-gray-50 border-gray-100'
+                }`}>
+                  <p className={`text-xs mb-1 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                  }`}>Questions</p>
+                  <p className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {selectedScore.interview_id?.numberOfQuestions || "N/A"}
                   </p>
                 </div>
@@ -1251,7 +1418,9 @@ const ReportsInsights = () => {
               {/* Skills Tags */}
               {selectedScore.interview_id?.skills?.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                  <p className={`text-sm font-semibold mb-2 ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-700'
+                  }`}>
                     Skills Evaluated
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -1259,7 +1428,11 @@ const ReportsInsights = () => {
                       (skill: string, idx: number) => (
                         <span
                           key={idx}
-                          className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-full border border-indigo-200"
+                          className={`px-3 py-1 text-xs font-medium rounded-full border ${
+                            theme === 'dark'
+                              ? 'bg-indigo-900/40 text-indigo-300 border-indigo-600/40'
+                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                          }`}
                         >
                           {skill}
                         </span>
@@ -1274,10 +1447,18 @@ const ReportsInsights = () => {
                 {/* Technical Competency */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                      <FileText className="h-4 w-4 text-indigo-600" />
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      theme === 'dark'
+                        ? 'bg-indigo-900/40'
+                        : 'bg-indigo-100'
+                    }`}>
+                      <FileText className={`h-4 w-4 ${
+                        theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'
+                      }`} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">
+                    <h3 className={`text-lg font-bold ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
                       Technical Competency
                     </h3>
                   </div>
@@ -1288,27 +1469,41 @@ const ReportsInsights = () => {
                           key={idx}
                           className={`p-3 rounded-lg border ${
                             item.status === "good"
-                              ? "bg-green-50 border-green-200"
-                              : "bg-red-50 border-red-200"
+                              ? theme === 'dark'
+                                ? "bg-green-900/20 border-green-600/40"
+                                : "bg-green-50 border-green-200"
+                              : theme === 'dark'
+                                ? "bg-red-900/20 border-red-600/40"
+                                : "bg-red-50 border-red-200"
                           }`}
                         >
                           <div className="flex items-center gap-2 mb-1">
                             {item.status === "good" ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <CheckCircle className={`h-4 w-4 ${
+                                theme === 'dark' ? 'text-green-500' : 'text-green-600'
+                              }`} />
                             ) : (
-                              <XCircle className="h-4 w-4 text-red-500" />
+                              <XCircle className={`h-4 w-4 ${
+                                theme === 'dark' ? 'text-red-400' : 'text-red-500'
+                              }`} />
                             )}
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className={`text-sm font-semibold ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
                               {item.title}
                             </p>
                           </div>
-                          <p className="text-xs text-gray-600 ml-6">
+                          <p className={`text-xs ml-6 ${
+                            theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                          }`}>
                             {item.description}
                           </p>
                         </div>
                       ),
                     ) || (
-                      <p className="text-sm text-gray-500">No data available</p>
+                      <p className={`text-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                      }`}>No data available</p>
                     )}
                   </div>
                 </div>
@@ -1316,26 +1511,40 @@ const ReportsInsights = () => {
                 {/* Speech & Communication */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                      <MessageSquare className="h-4 w-4 text-green-600" />
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      theme === 'dark'
+                        ? 'bg-green-900/40'
+                        : 'bg-green-100'
+                    }`}>
+                      <MessageSquare className={`h-4 w-4 ${
+                        theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                      }`} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">
+                    <h3 className={`text-lg font-bold ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
                       Speech & Communication
                     </h3>
                   </div>
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-gray-700">
+                        <span className={`text-sm ${
+                          theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                        }`}>
                           Clarity Score
                         </span>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className={`text-sm font-semibold ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>
                           {selectedScore.feedback?.speechPatterns
                             ?.clarityScore || 0}
                           %
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className={`w-full h-2 rounded-full overflow-hidden ${
+                        theme === 'dark' ? 'bg-slate-700' : 'bg-gray-200'
+                      }`}>
                         <div
                           className="h-full bg-blue-500 rounded-full transition-all"
                           style={{
@@ -1346,16 +1555,22 @@ const ReportsInsights = () => {
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-gray-700">
+                        <span className={`text-sm ${
+                          theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                        }`}>
                           Confidence Level
                         </span>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className={`text-sm font-semibold ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>
                           {selectedScore.feedback?.speechPatterns
                             ?.confidenceLevel || 0}
                           %
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className={`w-full h-2 rounded-full overflow-hidden ${
+                        theme === 'dark' ? 'bg-slate-700' : 'bg-gray-200'
+                      }`}>
                         <div
                           className="h-full bg-purple-500 rounded-full transition-all"
                           style={{
@@ -1365,21 +1580,37 @@ const ReportsInsights = () => {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-2">
-                      <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-                        <p className="text-lg font-bold text-gray-900">
+                      <div className={`rounded-lg p-3 text-center border ${
+                        theme === 'dark'
+                          ? 'bg-slate-800 border-slate-700'
+                          : 'bg-gray-50 border-gray-100'
+                      }`}>
+                        <p className={`text-lg font-bold ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>
                           {selectedScore.feedback?.speechPatterns
                             ?.avgResponseTime || "N/A"}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className={`text-xs ${
+                          theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                        }`}>
                           Avg Response Time
                         </p>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-                        <p className="text-lg font-bold text-gray-900">
+                      <div className={`rounded-lg p-3 text-center border ${
+                        theme === 'dark'
+                          ? 'bg-slate-800 border-slate-700'
+                          : 'bg-gray-50 border-gray-100'
+                      }`}>
+                        <p className={`text-lg font-bold ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>
                           {selectedScore.feedback?.speechPatterns
                             ?.complexityScore || 0}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className={`text-xs ${
+                          theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                        }`}>
                           Complexity Score
                         </p>
                       </div>
@@ -1390,7 +1621,9 @@ const ReportsInsights = () => {
 
               {/* Behavioral Assessment */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                <h3 className={`text-lg font-bold mb-4 ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
                   Behavioral Assessment
                 </h3>
                 <div className="grid grid-cols-1 gap-3">
@@ -1400,37 +1633,59 @@ const ReportsInsights = () => {
                         key={idx}
                         className={`flex items-start gap-3 p-3 rounded-lg border ${
                           item.status === "good"
-                            ? "bg-green-50 border-green-200"
-                            : "bg-red-50 border-red-200"
+                            ? theme === 'dark'
+                              ? "bg-green-900/20 border-green-600/40"
+                              : "bg-green-50 border-green-200"
+                            : theme === 'dark'
+                              ? "bg-red-900/20 border-red-600/40"
+                              : "bg-red-50 border-red-200"
                         }`}
                       >
                         {item.status === "good" ? (
-                          <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
+                          <CheckCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                            theme === 'dark' ? 'text-green-500' : 'text-green-600'
+                          }`} />
                         ) : (
-                          <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-red-500" />
+                          <XCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                            theme === 'dark' ? 'text-red-400' : 'text-red-500'
+                          }`} />
                         )}
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">
+                          <p className={`text-sm font-semibold ${
+                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                          }`}>
                             {item.title}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className={`text-xs ${
+                            theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                          }`}>
                             {item.description}
                           </p>
                         </div>
                       </div>
                     ),
                   ) || (
-                    <p className="text-sm text-gray-500">No data available</p>
+                    <p className={`text-sm ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                    }`}>No data available</p>
                   )}
                 </div>
               </div>
 
               {/* Assessment Summary */}
-              <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              <div className={`rounded-xl p-6 border ${
+                theme === 'dark'
+                  ? 'bg-slate-800 border-slate-700'
+                  : 'bg-blue-50 border-blue-100'
+              }`}>
+                <h3 className={`text-sm font-semibold mb-2 ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                }`}>
                   Assessment Summary
                 </h3>
-                <p className="text-sm text-gray-800 italic">
+                <p className={`text-sm italic ${
+                  theme === 'dark' ? 'text-slate-200' : 'text-gray-800'
+                }`}>
                   "
                   {selectedScore.feedback?.verdictReason ||
                     "No summary available"}
@@ -1442,13 +1697,23 @@ const ReportsInsights = () => {
                 selectedScore.transcript.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <MessageSquare className="h-4 w-4 text-blue-600" />
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                        theme === 'dark'
+                          ? 'bg-blue-900/40'
+                          : 'bg-blue-100'
+                      }`}>
+                        <MessageSquare className={`h-4 w-4 ${
+                          theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                        }`} />
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900">
+                      <h3 className={`text-lg font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
                         Interview Conversation
                       </h3>
-                      <span className="text-xs text-gray-400 ml-auto">
+                      <span className={`text-xs ml-auto ${
+                        theme === 'dark' ? 'text-slate-500' : 'text-gray-400'
+                      }`}>
                         {
                           selectedScore.transcript.filter((t: any) =>
                             t?.text?.trim(),
@@ -1457,7 +1722,11 @@ const ReportsInsights = () => {
                         exchanges
                       </span>
                     </div>
-                    <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                    <div className={`border rounded-xl p-4 ${
+                      theme === 'dark'
+                        ? 'border-slate-700 bg-slate-800'
+                        : 'border-gray-200 bg-gray-50'
+                    }`}>
                       <ConversationView
                         transcript={selectedScore.transcript}
                         candidateName={
@@ -1470,8 +1739,14 @@ const ReportsInsights = () => {
               {/* Recommendations */}
               {selectedScore.feedback?.recommendations &&
                 selectedScore.feedback.recommendations.length > 0 && (
-                  <div className="bg-indigo-50 rounded-xl p-6 border border-indigo-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">
+                  <div className={`rounded-xl p-6 border ${
+                    theme === 'dark'
+                      ? 'bg-indigo-900/20 border-indigo-600/40'
+                      : 'bg-indigo-50 border-indigo-200'
+                  }`}>
+                    <h3 className={`text-lg font-bold mb-3 ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
                       Recommendations
                     </h3>
                     <ul className="space-y-2">
@@ -1479,9 +1754,13 @@ const ReportsInsights = () => {
                         (rec: string, idx: number) => (
                           <li
                             key={idx}
-                            className="flex items-start gap-2 text-sm text-gray-700"
+                            className={`flex items-start gap-2 text-sm ${
+                              theme === 'dark' ? 'text-slate-200' : 'text-gray-700'
+                            }`}
                           >
-                            <span className="text-indigo-600 mt-0.5 font-bold">
+                            <span className={`mt-0.5 font-bold ${
+                              theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'
+                            }`}>
                               •
                             </span>
                             <span>{rec}</span>
@@ -1514,14 +1793,24 @@ const ReportsInsights = () => {
       {/* AI Analysis Details Modal */}
       {showAIAnalysis && selectedScore && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl">
+          <div className={`w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl ${
+            theme === 'dark' ? 'bg-slate-900' : 'bg-white'
+          }`}>
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between z-10">
+            <div className={`sticky top-0 border-b px-8 py-6 flex items-center justify-between z-10 ${
+              theme === 'dark'
+                ? 'bg-slate-900 border-slate-700'
+                : 'bg-white border-gray-200'
+            }`}>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className={`text-2xl font-bold ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
                   AI Analysis Details
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className={`text-sm mt-1 ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                }`}>
                   {selectedScore.feedback?.candidateName || "Candidate"}{" "}
                   &middot;{" "}
                   {selectedScore.feedback?.role ||
@@ -1531,7 +1820,11 @@ const ReportsInsights = () => {
               </div>
               <button
                 onClick={() => setShowAIAnalysis(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className={`transition-colors ${
+                  theme === 'dark'
+                    ? 'text-slate-500 hover:text-slate-300'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
               >
                 <X className="h-6 w-6" />
               </button>
@@ -1540,25 +1833,33 @@ const ReportsInsights = () => {
             {/* Modal Body */}
             <div className="p-8 space-y-6">
               {/* AI Confidence Analysis */}
-              <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+              <div className={`rounded-xl p-6 border ${
+                theme === 'dark'
+                  ? 'bg-slate-800 border-purple-600/40'
+                  : 'bg-purple-50 border-purple-200'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <h3 className={`text-lg font-bold ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
                     AI Confidence Analysis
                   </h3>
                   <span
                     className={`px-4 py-1.5 text-sm font-bold rounded-full ${
                       (selectedScore.feedback?.confidenceScore || 0) >= 70
-                        ? "bg-green-200 text-green-800"
+                        ? (theme === "dark" ? "bg-emerald-900/40 text-emerald-200" : "bg-green-200 text-green-800")
                         : (selectedScore.feedback?.confidenceScore || 0) >= 40
-                          ? "bg-yellow-200 text-yellow-800"
-                          : "bg-red-200 text-red-800"
+                          ? (theme === "dark" ? "bg-amber-900/40 text-amber-200" : "bg-yellow-200 text-yellow-800")
+                          : (theme === "dark" ? "bg-rose-900/40 text-rose-200" : "bg-red-200 text-red-800")
                     }`}
                   >
                     {selectedScore.feedback?.confidenceLabel || "N/A"}:{" "}
                     {selectedScore.feedback?.confidenceScore || 0}%
                   </span>
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">
+                <p className={`text-sm leading-relaxed ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                }`}>
                   Our AI model analyzed speech patterns, response timing,
                   technical accuracy, and communication clarity to generate this
                   assessment.
@@ -1570,10 +1871,18 @@ const ReportsInsights = () => {
                 {/* Behavioral Insights */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                      <TrendingUp className="h-4 w-4 text-green-600" />
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      theme === 'dark'
+                        ? 'bg-green-900/40'
+                        : 'bg-green-100'
+                    }`}>
+                      <TrendingUp className={`h-4 w-4 ${
+                        theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                      }`} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">
+                    <h3 className={`text-lg font-bold ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
                       Behavioral Insights
                     </h3>
                   </div>
@@ -1584,27 +1893,41 @@ const ReportsInsights = () => {
                           key={idx}
                           className={`flex items-start gap-3 p-3 rounded-lg border ${
                             insight.status === "good"
-                              ? "bg-green-50 border-green-200"
-                              : "bg-red-50 border-red-200"
+                              ? theme === 'dark'
+                                ? "bg-green-900/20 border-green-600/40"
+                                : "bg-green-50 border-green-200"
+                              : theme === 'dark'
+                                ? "bg-red-900/20 border-red-600/40"
+                                : "bg-red-50 border-red-200"
                           }`}
                         >
                           {insight.status === "good" ? (
-                            <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
+                            <CheckCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                              theme === 'dark' ? 'text-green-500' : 'text-green-600'
+                            }`} />
                           ) : (
-                            <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-red-500" />
+                            <XCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                              theme === 'dark' ? 'text-red-400' : 'text-red-500'
+                            }`} />
                           )}
                           <div>
-                            <p className="font-semibold text-sm text-gray-900">
+                            <p className={`font-semibold text-sm ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
                               {insight.title}
                             </p>
-                            <p className="text-xs text-gray-600">
+                            <p className={`text-xs ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                            }`}>
                               {insight.description}
                             </p>
                           </div>
                         </div>
                       ),
                     ) || (
-                      <p className="text-sm text-gray-500">
+                      <p className={`text-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                      }`}>
                         No behavioral data available
                       </p>
                     )}
@@ -1614,10 +1937,18 @@ const ReportsInsights = () => {
                 {/* Technical Competency */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                      <FileText className="h-4 w-4 text-indigo-600" />
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      theme === 'dark'
+                        ? 'bg-indigo-900/40'
+                        : 'bg-indigo-100'
+                    }`}>
+                      <FileText className={`h-4 w-4 ${
+                        theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'
+                      }`} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">
+                    <h3 className={`text-lg font-bold ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
                       Technical Competency
                     </h3>
                   </div>
@@ -1628,27 +1959,41 @@ const ReportsInsights = () => {
                           key={idx}
                           className={`flex items-start gap-3 p-3 rounded-lg border ${
                             comp.status === "good"
-                              ? "bg-green-50 border-green-200"
-                              : "bg-red-50 border-red-200"
+                              ? theme === 'dark'
+                                ? "bg-green-900/20 border-green-600/40"
+                                : "bg-green-50 border-green-200"
+                              : theme === 'dark'
+                                ? "bg-red-900/20 border-red-600/40"
+                                : "bg-red-50 border-red-200"
                           }`}
                         >
                           {comp.status === "good" ? (
-                            <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
+                            <CheckCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                              theme === 'dark' ? 'text-green-500' : 'text-green-600'
+                            }`} />
                           ) : (
-                            <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-red-500" />
+                            <XCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                              theme === 'dark' ? 'text-red-400' : 'text-red-500'
+                            }`} />
                           )}
                           <div>
-                            <p className="font-semibold text-sm text-gray-900">
+                            <p className={`font-semibold text-sm ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
                               {comp.title}
                             </p>
-                            <p className="text-xs text-gray-600">
+                            <p className={`text-xs ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                            }`}>
                               {comp.description}
                             </p>
                           </div>
                         </div>
                       ),
                     ) || (
-                      <p className="text-sm text-gray-500">
+                      <p className={`text-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                      }`}>
                         No technical data available
                       </p>
                     )}
@@ -1658,45 +2003,79 @@ const ReportsInsights = () => {
 
               {/* Speech Pattern Analysis */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                <h3 className={`text-lg font-bold mb-4 ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
                   Speech Pattern Analysis
                 </h3>
                 <div className="grid grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <div className="text-3xl font-bold text-blue-600">
+                  <div className={`text-center p-4 rounded-xl border ${
+                    theme === 'dark'
+                      ? 'bg-blue-900/20 border-blue-600/40'
+                      : 'bg-blue-50 border-blue-200'
+                  }`}>
+                    <div className={`text-3xl font-bold ${
+                      theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                    }`}>
                       {selectedScore.feedback?.speechPatterns?.clarityScore ||
                         0}
                       %
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className={`text-xs mt-1 ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                    }`}>
                       Clarity Score
                     </div>
                   </div>
-                  <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
-                    <div className="text-3xl font-bold text-green-600">
+                  <div className={`text-center p-4 rounded-xl border ${
+                    theme === 'dark'
+                      ? 'bg-green-900/20 border-green-600/40'
+                      : 'bg-green-50 border-green-200'
+                  }`}>
+                    <div className={`text-3xl font-bold ${
+                      theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                    }`}>
                       {selectedScore.feedback?.speechPatterns
                         ?.avgResponseTime || "N/A"}
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className={`text-xs mt-1 ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                    }`}>
                       Avg Response Time
                     </div>
                   </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-200">
-                    <div className="text-3xl font-bold text-purple-600">
+                  <div className={`text-center p-4 rounded-xl border ${
+                    theme === 'dark'
+                      ? 'bg-purple-900/20 border-purple-600/40'
+                      : 'bg-purple-50 border-purple-200'
+                  }`}>
+                    <div className={`text-3xl font-bold ${
+                      theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                    }`}>
                       {selectedScore.feedback?.speechPatterns
                         ?.confidenceLevel || 0}
                       %
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className={`text-xs mt-1 ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                    }`}>
                       Confidence Level
                     </div>
                   </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-xl border border-orange-200">
-                    <div className="text-3xl font-bold text-orange-600">
+                  <div className={`text-center p-4 rounded-xl border ${
+                    theme === 'dark'
+                      ? 'bg-orange-900/20 border-orange-600/40'
+                      : 'bg-orange-50 border-orange-200'
+                  }`}>
+                    <div className={`text-3xl font-bold ${
+                      theme === 'dark' ? 'text-orange-400' : 'text-orange-600'
+                    }`}>
                       {selectedScore.feedback?.speechPatterns
                         ?.complexityScore || 0}
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className={`text-xs mt-1 ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                    }`}>
                       Complexity Score
                     </div>
                   </div>
@@ -1705,40 +2084,76 @@ const ReportsInsights = () => {
 
               {/* Behavior Report */}
               {selectedScore.behaviorReport && (
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                <div className={`rounded-xl p-6 border ${
+                  theme === 'dark'
+                    ? 'bg-slate-800 border-slate-700'
+                    : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <h3 className={`text-lg font-bold mb-3 ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
                     Behavior Report
                   </h3>
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-3 bg-white rounded-lg border border-gray-100">
-                      <p className="text-2xl font-bold text-gray-900">
+                    <div className={`text-center p-3 rounded-lg border ${
+                      theme === 'dark'
+                        ? 'bg-slate-900 border-slate-600'
+                        : 'bg-white border-gray-100'
+                    }`}>
+                      <p className={`text-2xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
                         {selectedScore.behaviorReport.totalEvents || 0}
                       </p>
-                      <p className="text-xs text-gray-500">Total Events</p>
+                      <p className={`text-xs ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                      }`}>Total Events</p>
                     </div>
-                    <div className="text-center p-3 bg-white rounded-lg border border-gray-100">
-                      <p className="text-2xl font-bold text-gray-900">
+                    <div className={`text-center p-3 rounded-lg border ${
+                      theme === 'dark'
+                        ? 'bg-slate-900 border-slate-600'
+                        : 'bg-white border-gray-100'
+                    }`}>
+                      <p className={`text-2xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
                         {selectedScore.behaviorReport.noFaceCount || 0}
                       </p>
-                      <p className="text-xs text-gray-500">No Face Detected</p>
+                      <p className={`text-xs ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                      }`}>No Face Detected</p>
                     </div>
-                    <div className="text-center p-3 bg-white rounded-lg border border-gray-100">
-                      <p className="text-2xl font-bold text-gray-900">
+                    <div className={`text-center p-3 rounded-lg border ${
+                      theme === 'dark'
+                        ? 'bg-slate-900 border-slate-600'
+                        : 'bg-white border-gray-100'
+                    }`}>
+                      <p className={`text-2xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
                         {selectedScore.behaviorReport.multipleFacesCount || 0}
                       </p>
-                      <p className="text-xs text-gray-500">Multiple Faces</p>
+                      <p className={`text-xs ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                      }`}>Multiple Faces</p>
                     </div>
                   </div>
                   {selectedScore.behaviorReport.events?.length > 0 && (
                     <div className="mt-4 space-y-2">
-                      <p className="text-sm font-semibold text-gray-700">
+                      <p className={`text-sm font-semibold ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                      }`}>
                         Events:
                       </p>
                       {selectedScore.behaviorReport.events.map(
                         (event: any, idx: number) => (
                           <div
                             key={idx}
-                            className="text-sm text-gray-600 bg-white p-2 rounded border border-gray-100"
+                            className={`text-sm p-2 rounded border ${
+                              theme === 'dark'
+                                ? 'bg-slate-900 border-slate-600 text-slate-200'
+                                : 'bg-white border-gray-100 text-gray-600'
+                            }`}
                           >
                             {event.type ||
                               event.description ||
@@ -1772,7 +2187,11 @@ const ReportsInsights = () => {
                         exchanges
                       </span>
                     </div>
-                    <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                    <div className={`border rounded-xl p-4 ${
+                      theme === 'dark'
+                        ? 'border-slate-700 bg-slate-800'
+                        : 'border-gray-200 bg-gray-50'
+                    }`}>
                       <ConversationView
                         transcript={selectedScore.transcript}
                         candidateName={
@@ -1784,11 +2203,19 @@ const ReportsInsights = () => {
                 )}
 
               {/* Verdict Summary */}
-              <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              <div className={`rounded-xl p-6 border ${
+                theme === 'dark'
+                  ? 'bg-slate-800 border-slate-700'
+                  : 'bg-blue-50 border-blue-100'
+              }`}>
+                <h3 className={`text-sm font-semibold mb-2 ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                }`}>
                   Verdict Summary
                 </h3>
-                <p className="text-sm text-gray-800 italic">
+                <p className={`text-sm italic ${
+                  theme === 'dark' ? 'text-slate-200' : 'text-gray-800'
+                }`}>
                   "
                   {selectedScore.feedback?.verdictReason ||
                     "No summary available"}

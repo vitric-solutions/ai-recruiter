@@ -234,6 +234,7 @@ const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
                 </label>
                 <input
                   type={type}
+                  placeholder={label}
                   {...register(key, { required: `${label} is required` })}
                   className={`w-full border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
                     errors[key] ? "border-red-400" : "border-gray-200"
@@ -254,6 +255,7 @@ const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
               </label>
               <textarea
                 rows={4}
+                placeholder="Professional Summary"
                 {...register("description")}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition"
               />
@@ -265,7 +267,7 @@ const AddCandidateModal: React.FC<AddCandidateModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700"
             >
               Cancel
             </button>

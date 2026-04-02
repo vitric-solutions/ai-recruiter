@@ -1,29 +1,27 @@
-import React, {type ReactNode, useState } from "react";
+import React, { type ReactNode, useState } from "react";
 import Sidebar from "./AdminSidebar";
 import Header from "./AdminHeader";
+import { useTheme } from "../context/Themecontext";
 
 interface AdminLayoutProps {
   children: ReactNode;
   heading?: string;
   subheading?: string;
   showSearch?: boolean;
-  userName?: string;
-  userInitial?: string;
   activeMenuItem?: string;
   onMenuItemClick?: (item: string) => void;
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({
   children,
-  heading = "Hi, John",
+  heading,
   subheading,
-  userName = "John",
-  userInitial = "A",
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { theme } = useTheme();
 
   return (
-    <div className="flex min-h-screen w-full bg-[#F4F7FE]">
+    <div className={`flex min-h-screen w-full ${theme === 'dark' ? 'bg-[#02040a] text-slate-100' : 'bg-[#F4F7FE] text-slate-900'}`}>
       <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
 
       {/* Shift content using CSS transition — no framer-motion */}
@@ -34,8 +32,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         <Header
           heading={heading}
           subheading={subheading}
-          userName={userName}
-          userInitial={userInitial}
         />
 
         <main className="flex-1 overflow-auto px-8 py-6">

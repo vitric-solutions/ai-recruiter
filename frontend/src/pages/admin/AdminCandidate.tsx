@@ -11,6 +11,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import { useTheme } from "../../context/Themecontext";
 import BulkUpload from "../../components/Candidates/BulkUpload";
 import toast from "react-hot-toast";
 import { socket } from "../../utils/socket";
@@ -243,7 +244,7 @@ const CandidateFormModal = ({
                 type={type}
                 value={form[key]}
                 onChange={set(key)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none  transition"
               />
             </div>
           ))}
@@ -256,7 +257,7 @@ const CandidateFormModal = ({
               rows={4}
               value={form.description}
               onChange={set("description")}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none  resize-none transition"
             />
           </div>
         </div>
@@ -291,6 +292,7 @@ const CandidateFormModal = ({
    Skills Cell — click "+N more" to open fixed popup
 ───────────────────────────────────────────── */
 const SkillsCell = ({ skillsStr }: { skillsStr: string }) => {
+  const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const badgeRef = useRef<HTMLSpanElement>(null);
 
@@ -309,7 +311,7 @@ const SkillsCell = ({ skillsStr }: { skillsStr: string }) => {
       {visible.map((skill, i) => (
         <span
           key={i}
-          className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-md"
+          className={`px-2 py-1 text-xs rounded-md ${theme === 'dark' ? 'bg-slate-800 text-slate-100' : 'bg-gray-100 text-gray-700'}`}
         >
           {skill}
         </span>
@@ -322,7 +324,7 @@ const SkillsCell = ({ skillsStr }: { skillsStr: string }) => {
             ref={badgeRef}
             onMouseEnter={() => setOpen(true)}
             onMouseLeave={() => setOpen(false)}
-            className="px-2 py-1 text-xs bg-indigo-100 text-indigo-600 rounded-md cursor-pointer hover:bg-indigo-200 select-none"
+            className={`px-2 py-1 text-xs rounded-md cursor-pointer select-none ${theme === 'dark' ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'}`}
           >
             +{remaining} more
           </span>
@@ -332,7 +334,7 @@ const SkillsCell = ({ skillsStr }: { skillsStr: string }) => {
             <div
               onMouseEnter={() => setOpen(true)}
               onMouseLeave={() => setOpen(false)}
-              className="fixed top-2/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-auto bg-white text-black text-sm rounded-lg p-6 shadow-2xl"
+              className={`fixed top-2/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-auto text-sm rounded-lg p-6 shadow-2xl ${theme === 'dark' ? 'bg-slate-900 text-slate-100 border border-slate-700' : 'bg-white text-black'}`}
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="font-semibold">All Skills</span>
@@ -377,6 +379,7 @@ const ActionMenu = ({
   onReport: () => void;
   onStatusChange: (s: "active" | "inactive") => void;
 }) => {
+  const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -417,14 +420,14 @@ const ActionMenu = ({
         <div
           ref={menuRef}
           style={{ position: "fixed", top: pos.top, left: pos.left }}
-          className="z-[9999] w-52 bg-white rounded-xl shadow-2xl border border-gray-200 py-2"
+          className={`z-[9999] w-52 rounded-xl shadow-2xl py-2 ${theme === 'dark' ? 'bg-slate-900 border border-slate-700 text-slate-100' : 'bg-white border border-gray-200 text-gray-800'}`}
         >
           <button
             onClick={() => {
               setOpen(false);
               onView();
             }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+            className={`w-full text-left px-4 py-2 text-sm transition ${theme === 'dark' ? 'text-slate-100 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-100'}`}
           >
             View
           </button>
@@ -433,7 +436,7 @@ const ActionMenu = ({
               setOpen(false);
               onEdit();
             }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+            className={`w-full text-left px-4 py-2 text-sm transition ${theme === 'dark' ? 'text-slate-100 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-100'}`}
           >
             Edit
           </button>
@@ -442,7 +445,7 @@ const ActionMenu = ({
               setOpen(false);
               onReport();
             }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+            className={`w-full text-left px-4 py-2 text-sm transition ${theme === 'dark' ? 'text-slate-100 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-100'}`}
           >
             Report
           </button>
@@ -452,7 +455,7 @@ const ActionMenu = ({
                 setOpen(false);
                 onStatusChange("inactive");
               }}
-              className="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 transition"
+              className={`w-full text-left px-4 py-2 text-sm transition ${theme === 'dark' ? 'text-orange-300 hover:bg-orange-800' : 'text-orange-600 hover:bg-orange-50'}`}
             >
               Mark as Inactive
             </button>
@@ -462,7 +465,7 @@ const ActionMenu = ({
                 setOpen(false);
                 onStatusChange("active");
               }}
-              className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition"
+              className={`w-full text-left px-4 py-2 text-sm transition ${theme === 'dark' ? 'text-emerald-300 hover:bg-emerald-800' : 'text-green-600 hover:bg-green-50'}`}
             >
               Mark as Active
             </button>
@@ -478,6 +481,7 @@ const ActionMenu = ({
 ───────────────────────────────────────────── */
 const Candidates = () => {
   const location = useLocation();
+  const { theme } = useTheme();
 
   const [activeTab, setActiveTab] = useState(location.state?.tab || "list");
   const [activeMenuItem, setActiveMenuItem] = useState("Dashboard");
@@ -727,16 +731,16 @@ const Candidates = () => {
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="inline-flex bg-white rounded-lg p-2">
+        <div className={`inline-flex rounded-lg p-2 ${theme === 'dark' ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
           <button
             onClick={() => setActiveTab("list")}
-            className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "list" ? "bg-[#F4F7FE] text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+            className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "list" ? (theme === 'dark' ? 'bg-slate-800 text-white shadow-sm' : 'bg-[#F4F7FE] text-gray-900 shadow-sm') : (theme === 'dark' ? 'text-slate-300 hover:text-white' : 'text-gray-600 hover:text-gray-900')}`}
           >
             Candidates List
           </button>
           <button
             onClick={() => setActiveTab("bulk")}
-            className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "bulk" ? "bg-[#F4F7FE] text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+            className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "bulk" ? (theme === 'dark' ? 'bg-slate-800 text-white shadow-sm' : 'bg-[#F4F7FE] text-gray-900 shadow-sm') : (theme === 'dark' ? 'text-slate-300 hover:text-white' : 'text-gray-600 hover:text-gray-900')}`}
           >
             Bulk Add
           </button>
@@ -750,7 +754,7 @@ const Candidates = () => {
               setSelectedCandidate(null);
               setFormModal({ open: true, mode: "add" });
             }}
-            className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-[#00000033] rounded-lg hover:bg-gray-50 transition-colors"
+            className={`flex cursor-pointer items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${theme === 'dark' ? 'text-slate-200 bg-slate-800 border border-slate-700 hover:bg-slate-700' : 'text-gray-700 bg-white border border-[#00000033] hover:bg-gray-50'}`}
           >
             <Plus className="h-4 w-4" /> Add Candidates
           </button>
@@ -771,15 +775,15 @@ const Candidates = () => {
 
       {/* Filter Bar */}
       {activeTab === "list" && (
-        <div className="bg-white border border-[#00000033] rounded-lg p-3 mb-4 flex flex-wrap items-center gap-3">
+        <div className={`rounded-lg p-3 mb-4 flex flex-wrap items-center gap-3 border ${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-[#00000033]'}`}>
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`} />
             <input
               type="text"
               placeholder="Search name, email, mobile…"
               value={search}
               onChange={(e) => debounced("search", e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+              className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none ${theme === 'dark' ? 'border border-slate-700 bg-slate-900 text-white placeholder-slate-400' : 'border border-gray-200 bg-white text-black placeholder-gray-400'}`}
             />
           </div>
           <select
@@ -789,7 +793,7 @@ const Candidates = () => {
               setPage(1);
               fetchCandidates(1, { role: e.target.value });
             }}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 min-w-[140px]"
+            className={`text-sm rounded-lg px-3 py-2 outline-none min-w-[140px] ${theme === 'dark' ? 'border border-slate-700 bg-slate-900 text-white' : 'border border-gray-200 bg-white text-black'}`}
           >
             <option value="">All Roles</option>
             {roleOptions.map((r) => (
@@ -805,7 +809,7 @@ const Candidates = () => {
               setPage(1);
               fetchCandidates(1, { experience: e.target.value });
             }}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 min-w-[140px]"
+            className={`text-sm rounded-lg px-3 py-2 outline-none min-w-[140px] ${theme === 'dark' ? 'border border-slate-700 bg-slate-900 text-white' : 'border border-gray-200 bg-white text-black'}`}
           >
             <option value="">All Experience</option>
             {expOptions.map((exp) => (
@@ -821,7 +825,7 @@ const Candidates = () => {
               placeholder="Skills (React, Node…)"
               value={skillsFilter}
               onChange={(e) => debounced("skills", e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none"
             />
           </div>
           <div
@@ -847,11 +851,11 @@ const Candidates = () => {
 
       {/* Table */}
       {activeTab === "list" && (
-        <div className="bg-white rounded-lg border border-[#00000033]">
+        <div className={`rounded-lg border ${theme === 'dark' ? 'bg-slate-950 border-slate-700' : 'bg-white border-[#00000033]'}`}>
           {loading ? (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className={`border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
                   <tr>
                     {[
                       "Sr. No",
@@ -865,14 +869,14 @@ const Candidates = () => {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-slate-300' : 'text-gray-500'}`}
                       >
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
+                <tbody className={`divide-y ${theme === 'dark' ? 'bg-slate-950 divide-slate-700' : 'bg-white divide-gray-100'}`}>
                   {[...Array(rowsPerPage)].map((_, i) => (
                     <SkeletonRow key={i} />
                   ))}
@@ -881,7 +885,7 @@ const Candidates = () => {
             </div>
           ) : data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="text-gray-400 mb-2">No candidates found</div>
+              <div className={`mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-400'}`}>No candidates found</div>
               {/* <button
                 onClick={() => setFormModal({ open: true, mode: "add" })}
                 className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
@@ -893,7 +897,7 @@ const Candidates = () => {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-[#00000033]">
+                  <thead className={`border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-[#00000033]'}`}>
                     <tr>
                       {[
                         "Sr. No",
@@ -907,20 +911,20 @@ const Candidates = () => {
                       ].map((h) => (
                         <th
                           key={h}
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-slate-300' : 'text-gray-500'}`}
                         >
                           {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className={`divide-y ${theme === 'dark' ? 'bg-slate-950 divide-slate-700' : 'bg-white divide-gray-200'}`}>
                     {data.map((row, index) => (
                       <tr
                         key={row._id}
-                        className="hover:bg-gray-50 transition-colors"
+                        className={`transition-colors ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-200' : 'hover:bg-gray-50 text-gray-900'}`}
                       >
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className={`px-6 py-4 text-sm ${theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
                           {(page - 1) * rowsPerPage + index + 1}
                         </td>
 
@@ -935,23 +939,23 @@ const Candidates = () => {
                                 .slice(0, 2)}
                             </div>
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
                                 {row.name}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                                 {row.email}
                               </div>
                             </div>
                           </div>
                         </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className={`px-6 py-4 text-sm ${theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
                           {row.role}
                         </td>
 
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${row.candidate_status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${row.candidate_status === "active" ? (theme === 'dark' ? "bg-emerald-900 text-emerald-200" : "bg-green-100 text-green-700") : (theme === 'dark' ? "bg-red-900 text-red-200" : "bg-red-100 text-red-700")}`}
                           >
                             {row.candidate_status === "active"
                               ? "Active"
@@ -959,7 +963,7 @@ const Candidates = () => {
                           </span>
                         </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className={`px-6 py-4 text-sm ${theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
                           {row.year_of_experience} years
                         </td>
 
@@ -967,7 +971,7 @@ const Candidates = () => {
                           <SkillsCell skillsStr={row.key_Skills} />
                         </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className={`px-6 py-4 text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
                           {row.mobile}
                         </td>
 

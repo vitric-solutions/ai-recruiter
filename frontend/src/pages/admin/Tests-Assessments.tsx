@@ -11,6 +11,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { useTheme } from "../../context/Themecontext";
 import { adminService } from "../../services/service/adminService";
 import { useAdminSocket } from "../../hooks/useAdminSocket";
 import ViewAssignedCandidate from "../../components/admin/TestAssessgnment/ViewAssignedCandidate";
@@ -37,8 +38,6 @@ const scoreCandidatesWithGroq = async (
   candidates: any[],
   jdAnalysis: any,
 ): Promise<any[]> => {
-  //console.log(candidates);
-  //console.log(jdAnalysis);
   if (
     !import.meta.env.VITE_GROQ_API_KEY ||
     !jdAnalysis ||
@@ -47,11 +46,9 @@ const scoreCandidatesWithGroq = async (
     return candidates;
 
   const jobTitle = jdAnalysis.jobTitle || "";
-  // const experienceYears = jdAnalysis.experienceYears || "";
   const requiredSkills: string[] = jdAnalysis.requiredSkills || [];
   const niceToHaveSkills: string[] = jdAnalysis.niceToHaveSkills || [];
 
-  // Build a compact candidate list for the prompt
   const candidateSummaries = candidates.map((c, i) => ({
     index: i,
     name: c.name,
@@ -62,13 +59,11 @@ const scoreCandidatesWithGroq = async (
       c.yearsOfExperience ||
       c.year_of_experience ||
       "",
-
     skills: Array.isArray(c.skills)
       ? c.skills.join(", ")
       : Array.isArray(c.key_Skills)
         ? c.key_Skills.join(", ")
         : c.skills || c.key_Skills || c.primarySkill || c.secondarySkill || "",
-
     email: c.email,
   }));
 
@@ -115,16 +110,11 @@ Return ONLY JSON array.`;
         }),
       },
     );
-    //console.log("response", response);
     const data = await response.json();
-    //console.log("data", data);
     const raw = data.choices?.[0]?.message?.content?.trim() || "[]";
-
-    // Strip any accidental markdown fences
     const clean = raw.replace(/```json|```/g, "").trim();
     const scores: any[] = JSON.parse(clean);
 
-    // Merge scores back into candidates, then drop anyone below 50%
     return candidates
       .map((c, i) => {
         const scored = scores.find((s) => s.index === i);
@@ -163,6 +153,7 @@ const matchStyles: Record<string, { badge: string; card: string }> = {
     card: "",
   },
 };
+
 type FormErrors = {
   candidates?: string;
   startDate?: string;
@@ -190,8 +181,6 @@ type Candidate = {
   key_Skills?: string[] | string;
   primarySkill?: string;
   secondarySkill?: string;
-
-  // AI scoring
   matchScore?: number;
   matchLabel?: string;
   matchReason?: string;
@@ -224,13 +213,16 @@ type FormDataType = {
 };
 
 const TestsAssessments = () => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   const [activeTab, setActiveTab] = useState("create");
   const [showAddCandidateModal, setShowAddCandidateModal] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState("Dashboard");
   const [formData, setFormData] = useState<FormDataType>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [candidatesList, setCandidatesList] = useState([]);
-  const [scoredCandidates, setScoredCandidates] = useState<any[]>([]); // Groq-scored list
+  const [scoredCandidates, setScoredCandidates] = useState<any[]>([]);
   const [groqLoading, setGroqLoading] = useState(false);
   const [showCandidateDropdown, setShowCandidateDropdown] = useState(false);
   const [candidateSearch, setCandidateSearch] = useState("");
@@ -250,8 +242,9 @@ const TestsAssessments = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [reDirect, setReDirect] = useState(false);
   console.log("selectedAssessment", assessments);
+
   const candidateDropdownRef = useRef<HTMLDivElement | null>(null);
-  // const skills = jdAnalysis?.requiredSkills ?? [];
+
   useEffect(() => {
     const handler = (e: any) => {
       if (
@@ -272,7 +265,6 @@ const TestsAssessments = () => {
     if (activeTab === "templates") fetchAssessments();
   }, [activeTab]);
 
-  // When jdAnalysis arrives AND we have candidates, run Groq scoring
   useEffect(() => {
     if (jdAnalysis && candidatesList.length > 0) {
       runGroqScoring(candidatesList, jdAnalysis);
@@ -286,23 +278,19 @@ const TestsAssessments = () => {
       fetchAssessments();
     },
   });
-  // AI matched candidates
-  const aiCandidates = scoredCandidates || [];
 
-  // Manual candidates (ONLY remove AI ones)
-  // ✅ keep selected candidates for highlight
+  const aiCandidates = scoredCandidates || [];
   const manualCandidates = candidatesList.filter(
     (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
   );
-  // console.log("sdhfdsf",manualCandidates)
   const filteredCandidates = manualCandidates.filter((c: any) =>
     `${c.name} ${c.role || ""} ${c.email}`
       .toLowerCase()
       .includes(candidateSearch.toLowerCase()),
   );
+
   const runGroqScoring = async (candidates: any[], analysis: any) => {
     setGroqLoading(true);
-
     try {
       const extractKeywords = (skills: string[]) =>
         skills.flatMap((skill) =>
@@ -312,35 +300,22 @@ const TestsAssessments = () => {
             .split(" ")
             .filter((word) => word.length > 3),
         );
-
       const requiredSkills = analysis?.requiredSkills || [];
       const keywords = extractKeywords(requiredSkills);
-
       const filtered = candidates.filter((c) => {
         const candidateSkills = (
-          c.skills ||
-          c.key_Skills ||
-          c.primarySkill ||
-          ""
+          c.skills || c.key_Skills || c.primarySkill || ""
         ).toLowerCase();
-
         return keywords.some((word) => candidateSkills.includes(word));
       });
-
-      // ✅ if no match → fallback to ALL candidates
       const baseCandidates = filtered.length > 0 ? filtered : candidates;
-
       const scored = await scoreCandidatesWithGroq(baseCandidates, analysis);
-
       const sorted = [...scored].sort(
         (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0),
       );
-
       setScoredCandidates(sorted);
     } catch (err) {
       console.error("Groq scoring failed:", err);
-
-      // ✅ fallback to ALL candidates (not breaking UI)
       setScoredCandidates(candidates);
     } finally {
       setGroqLoading(false);
@@ -352,7 +327,7 @@ const TestsAssessments = () => {
       const response = await adminService.getAllCandidate(1, 100, "all");
       const list = response.data?.data || response.data || [];
       setCandidatesList(list);
-      setScoredCandidates(list); // default: unscored
+      setScoredCandidates(list);
     } catch (err) {
       console.error("Error fetching candidates:", err);
     } finally {
@@ -374,7 +349,6 @@ const TestsAssessments = () => {
   };
 
   const handleUseTemplate = (item: any) => {
-    //console.log(item)
     const toLocalDatetime = (input: any) => {
       if (!input) return "";
       const d = new Date(input);
@@ -385,7 +359,6 @@ const TestsAssessments = () => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-
     setFormData({
       ...EMPTY_FORM,
       testTitle: item.test_title,
@@ -419,7 +392,6 @@ const TestsAssessments = () => {
       const data = Array.isArray(res.data)
         ? res.data.find((item: any) => item._id === item._id)
         : res.data || res;
-
       if (!data) {
         showToast("error", "Assessment data not found");
         return;
@@ -434,7 +406,6 @@ const TestsAssessments = () => {
       const today = new Date();
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-
       setFormData({
         ...EMPTY_FORM,
         testTitle: data.test_title || "",
@@ -474,56 +445,15 @@ const TestsAssessments = () => {
     setErrors({});
     setJdAnalysis(null);
     setJdError(null);
-    setScoredCandidates(candidatesList); // reset to unscored
+    setScoredCandidates(candidatesList);
   };
 
   const handleInputChange = (field: keyof FormDataType, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-
     if (field in errors) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
-
-  // const mapExperienceToLevel = (level?: string, years?: string) => {
-  //   if (!level && !years) return "";
-  //   const lvl = level?.toLowerCase();
-  //   if (lvl?.includes("entry") || lvl?.includes("junior")) return "Easy";
-  //   if (lvl?.includes("mid")) return "Intermediate";
-  //   if (lvl?.includes("senior") || lvl?.includes("lead")) return "Advanced";
-  //   const y = Number(years);
-  //   if (!isNaN(y)) {
-  //     if (y <= 1) return "Easy";
-  //     if (y <= 4) return "Intermediate";
-  //     return "Advanced";
-  //   }
-  //   return "";
-  // };
-
-  // const getDefaultQuestionsByLevel = (level: string) => {
-  //   switch (level) {
-  //     case "Easy":
-  //       return "20";
-  //     case "Intermediate":
-  //       return "30";
-  //     case "Advanced":
-  //       return "40";
-  //     default:
-  //       return "";
-  //   }
-  // };
-
-  // const getDefaultDuration = (questions: string) => {
-  //   const q = Number(questions);
-  //   if (!q) return "";
-  //   if (q <= 20) return "30 min";
-  //   if (q <= 30) return "60 min";
-  //   if (q <= 40) return "90 min";
-  //   return "120 min";
-  // };
 
   const handleFileUpload = async (e: any) => {
     const file = e.target.files[0];
@@ -551,14 +481,6 @@ const TestsAssessments = () => {
       const analysis = response.analysis;
       if (analysis) {
         setJdAnalysis(analysis);
-        // const difficulty =
-        //   mapExperienceToLevel(
-        //     analysis?.experienceLevel,
-        //     analysis?.experienceYears,
-        //   ) || "";
-        // const defaultQuestions = getDefaultQuestionsByLevel(difficulty);
-        //console.log(defaultQuestions);
-        // const defaultDuration = getDefaultDuration(defaultQuestions);
         setFormData((prev) => ({
           ...prev,
           jobDescriptionText: analysis?.fullJobDescription || "",
@@ -585,11 +507,13 @@ const TestsAssessments = () => {
       setJdLoading(false);
     }
   };
+
   const getMinDateTime = () => {
     const now: any = new Date();
     const tzOffset = now.getTimezoneOffset() * 60000;
     return new Date(now - tzOffset).toISOString().slice(0, 16);
   };
+
   useEffect(() => {
     if (
       formData.startDate &&
@@ -599,6 +523,7 @@ const TestsAssessments = () => {
       handleInputChange("endDate", "");
     }
   }, [formData.startDate]);
+
   const removeFile = () => {
     setFormData((prev) => ({
       ...prev,
@@ -608,14 +533,9 @@ const TestsAssessments = () => {
       primarySkill: "",
       secondarySkill: "",
     }));
-
     setJdAnalysis(null);
     setJdError(null);
-
-    // reset AI scoring
     setScoredCandidates(candidatesList);
-
-    // clear file input
     const el = document.getElementById("jd-upload") as HTMLInputElement;
     if (el) el.value = "";
   };
@@ -647,29 +567,21 @@ const TestsAssessments = () => {
 
   const validateStep = (step: number) => {
     const newErrors: any = {};
-
     if (step === 1) {
       if (!formData.testTitle?.trim())
         newErrors.testTitle = "Test title is required";
-
       if (!formData.primarySkill?.trim())
         newErrors.primarySkill = "Primary skill is required";
     }
-
     if (step === 2) {
       if (!formData.noOfQuestions)
         newErrors.noOfQuestions = "Number of questions required";
       if (!formData.examLevel) newErrors.examLevel = "Exam level is required";
-
       if (!formData.passingScore)
         newErrors.passingScore = "Passing score required";
-
       if (!formData.duration) newErrors.duration = "Duration required";
-
       if (!formData.startDate) newErrors.startDate = "Start date required";
-
       if (!formData.endDate) newErrors.endDate = "End date required";
-
       if (
         formData.startDate &&
         formData.endDate &&
@@ -678,10 +590,10 @@ const TestsAssessments = () => {
         newErrors.endDate = "End date must be after start date";
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   const validateForm = (requireCandidates = false) => {
     const newErrors: any = {};
     if (!formData.testTitle?.trim())
@@ -729,7 +641,6 @@ const TestsAssessments = () => {
     if (formData.jobDescriptionText) {
       fd.append("jobDescriptionText", formData.jobDescriptionText);
     }
-    // if (formData.jobDescription instanceof File) {
     if (formData.jobDescription) {
       fd.append("jobDescription", formData.jobDescription);
     }
@@ -830,90 +741,54 @@ const TestsAssessments = () => {
 
   const handleInviteOnly = async () => {
     const newErrors: any = {};
-
     if (formData.candidates.length === 0)
       newErrors.candidates = "Please select at least one candidate";
-
     if (!formData.startDate) newErrors.startDate = "Start date is required";
-
     if (!formData.endDate) newErrors.endDate = "End date is required";
-
     if (
       formData.startDate &&
       formData.endDate &&
       new Date(formData.endDate) < new Date(formData.startDate)
     )
       newErrors.endDate = "End date must be on or after start date";
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showToast(
-        "error",
-        "Please select at least one candidate to send invites",
-      );
+      showToast("error", "Please select at least one candidate to send invites");
       return;
     }
-
     setLoading(true);
-
     try {
       const res = await adminService.sendInvites(id, {
         candidateIds: formData.candidates.map((c) => c._id),
         start_date: formData.startDate,
         end_date: formData.endDate,
       });
-
-      //console.log("FULL RESPONSE:", res);
-
       const data = res.data;
-
-      // ✅ CORRECT DATA
       const invited = res.invitedEmails || [];
       const skipped = res.skippedEmails || [];
-
-      //console.log("invited:", invited);
-      //console.log("skipped:", skipped);
-
-      // 🔥 CASE 1: ONLY SKIPPED
       if (res.isPartial && invited.length === 0 && skipped.length > 0) {
         showToast(
           "error",
           `All selected candidates are already invited: ${skipped.join(", ")}`,
         );
-      }
-
-      // 🔥 CASE 2: PARTIAL (both)
-      else if (data.isPartial) {
+      } else if (data.isPartial) {
         if (invited.length > 0) {
           showToast("success", `Invited: ${invited.join(", ")}`);
         }
-
         if (skipped.length > 0) {
           setTimeout(() => {
             showToast("error", `Already invited: ${skipped.join(", ")}`);
           }, 300);
         }
+      } else {
+        showToast("success", `Invitations sent to ${invited.length} candidate(s)!`);
       }
-
-      // ✅ CASE 3: FULL SUCCESS
-      else {
-        showToast(
-          "success",
-          `Invitations sent to ${invited.length} candidate(s)!`,
-        );
-      }
-
       setTimeout(() => {
         setFormData(EMPTY_FORM);
         setMode("create");
       }, 2000);
     } catch (err: any) {
-      //console.log("ERROR:", err);
-
-      showToast(
-        "error",
-        err.response?.data?.message || "Failed to send invites",
-      );
+      showToast("error", err.response?.data?.message || "Failed to send invites");
     } finally {
       setActiveTab("templates");
       setLoading(false);
@@ -930,10 +805,22 @@ const TestsAssessments = () => {
     setSelectedAssessment(null);
   };
 
-  // ─── Helpers for candidate dropdown rendering ────────────────────────────
-  const hasGroqScores = scoredCandidates.some(
-    (c) => c.matchScore !== undefined,
-  );
+  const hasGroqScores = scoredCandidates.some((c) => c.matchScore !== undefined);
+
+  // ─── Shared input classes ─────────────────────────────────────────────────
+  const inputCls = `w-full px-4 py-2.5 border rounded-lg outline-none ${
+    isDark
+      ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+      : "border-gray-300 text-gray-900"
+  }`;
+
+  const selectCls = `w-full px-4 py-2.5 border rounded-lg outline-none ${
+    isDark
+      ? "bg-slate-700 border-slate-600 text-white"
+      : "border-gray-300 text-gray-900"
+  }`;
+
+  const labelCls = `block text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`;
 
   return (
     <AdminLayout
@@ -944,12 +831,7 @@ const TestsAssessments = () => {
       onMenuItemClick={setActiveMenuItem}
     >
       {/* ── Full-page loader overlay ── */}
-      {(loading ||
-        jdLoading ||
-        candidatesLoading ||
-        !!editLoading ||
-        groqLoading ||
-        reDirect) && (
+      {(loading || jdLoading || candidatesLoading || !!editLoading || groqLoading || reDirect) && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-40 flex flex-col items-center justify-center gap-4">
           <div className="relative flex items-center justify-center">
             <div className="h-16 w-16 rounded-full border-4 border-indigo-100" />
@@ -986,9 +868,7 @@ const TestsAssessments = () => {
           )}
           <span
             className={`text-sm font-medium ${
-              submitStatus.type === "success"
-                ? "text-green-800"
-                : "text-red-800"
+              submitStatus.type === "success" ? "text-green-800" : "text-red-800"
             }`}
           >
             {submitStatus.message}
@@ -996,17 +876,15 @@ const TestsAssessments = () => {
         </div>
       )}
 
+      {/* ── Tabs ── */}
       <div className="flex items-center justify-between mb-6">
-        <div className="inline-flex bg-white rounded-lg p-2">
+        <div className={`inline-flex rounded-lg p-2 ${isDark ? "bg-slate-900 border border-slate-700" : "bg-white"}`}>
           <button
-            onClick={() => {
-              setActiveTab("create");
-              handleResetMode();
-            }}
+            onClick={() => { setActiveTab("create"); handleResetMode(); }}
             className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === "create"
-                ? "bg-[#F4F7FE] text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
+                ? isDark ? "bg-slate-800 text-white shadow-sm" : "bg-[#F4F7FE] text-gray-900 shadow-sm"
+                : isDark ? "text-slate-300 hover:text-white" : "text-gray-600 hover:text-gray-900"
             }`}
           >
             Create Assessments
@@ -1015,8 +893,8 @@ const TestsAssessments = () => {
             onClick={() => setActiveTab("templates")}
             className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === "templates"
-                ? "bg-[#F4F7FE] text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
+                ? isDark ? "bg-slate-800 text-white shadow-sm" : "bg-[#F4F7FE] text-gray-900 shadow-sm"
+                : isDark ? "text-slate-300 hover:text-white" : "text-gray-600 hover:text-gray-900"
             }`}
           >
             Tests Templates
@@ -1024,23 +902,17 @@ const TestsAssessments = () => {
         </div>
       </div>
 
+      {/* ── Create Tab ── */}
       {activeTab === "create" && (
-        <div className="rounded-lg p-5 bg-white">
+        <div className={`rounded-lg p-5 ${isDark ? "bg-slate-800" : "bg-white"}`}>
+
           {/* STEP INDICATOR */}
           <div className="relative mb-10">
-            {/* 🔵 PROGRESS LINE (BACKGROUND) */}
-            <div className="absolute top-5 left-0 w-full h-[3px] bg-gray-200 rounded-full" />
-
-            {/* 🟣 ACTIVE PROGRESS LINE */}
+            <div className={`absolute top-5 left-0 w-full h-[3px] rounded-full ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
             <div
               className="absolute top-5 left-0 h-[3px] bg-indigo-600 rounded-full transition-all duration-500"
-              style={{
-                width:
-                  currentStep === 1 ? "0%" : currentStep === 2 ? "50%" : "100%",
-              }}
+              style={{ width: currentStep === 1 ? "0%" : currentStep === 2 ? "50%" : "100%" }}
             />
-
-            {/* 🧩 STEPS */}
             <div className="relative flex justify-between">
               {[
                 { id: 1, label: "Job Details" },
@@ -1048,27 +920,26 @@ const TestsAssessments = () => {
                 { id: 3, label: "Select Candidates" },
               ].map((step) => (
                 <div key={step.id} className="flex flex-col items-center">
-                  {/* 🔘 CIRCLE */}
                   <div
                     className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-semibold z-10 transition-all duration-300 ${
                       currentStep === step.id
                         ? "bg-indigo-600 text-white scale-110 shadow-lg"
                         : currentStep > step.id
                           ? "bg-green-500 text-white"
-                          : "bg-white border-2 border-gray-300 text-gray-500"
+                          : isDark
+                            ? "bg-slate-700 border-2 border-slate-600 text-slate-400"
+                            : "bg-white border-2 border-gray-300 text-gray-500"
                     }`}
                   >
                     {currentStep > step.id ? "✓" : step.id}
                   </div>
-
-                  {/* 🏷 LABEL */}
                   <span
                     className={`mt-3 text-sm font-medium ${
                       currentStep === step.id
                         ? "text-indigo-600"
                         : currentStep > step.id
                           ? "text-green-600"
-                          : "text-gray-400"
+                          : isDark ? "text-slate-500" : "text-gray-400"
                     }`}
                   >
                     {step.label}
@@ -1081,70 +952,59 @@ const TestsAssessments = () => {
           {/* ================= STEP 1 ================= */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              {/* SECTION TITLE */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
                   Job Description Setup
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                   Upload JD or manually enter details
                 </p>
               </div>
 
               {/* JD Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload Job Description
-                </label>
-
+                <label className={labelCls}>Upload Job Description</label>
                 {!formData.jobDescription ? (
                   <>
                     <label
                       htmlFor="jd-upload"
-                      className="flex flex-col items-center justify-center w-full px-6 py-8 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition"
+                      className={`flex flex-col items-center justify-center w-full px-6 py-8 border-2 border-dashed rounded-xl cursor-pointer transition ${
+                        isDark
+                          ? "border-slate-600 bg-slate-700 hover:border-indigo-500 hover:bg-slate-600"
+                          : "border-gray-300 bg-white hover:border-indigo-500 hover:bg-indigo-50"
+                      }`}
                     >
-                      <Upload className="h-7 w-7 text-gray-400 mb-2" />
-                      <span className="text-sm font-medium text-gray-700">
+                      <Upload className={`h-7 w-7 mb-2 ${isDark ? "text-slate-400" : "text-gray-400"}`} />
+                      <span className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-700"}`}>
                         Upload JD
                       </span>
-                      <span className="text-xs text-gray-400 mt-1">
+                      <span className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-gray-400"}`}>
                         PDF, DOC, DOCX (Max 5MB)
                       </span>
                     </label>
-
-                    <input
-                      id="jd-upload"
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
+                    <input id="jd-upload" type="file" accept=".pdf,.doc,.docx" onChange={handleFileUpload} className="hidden" />
                   </>
                 ) : (
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition">
-                    {/* LEFT */}
+                  <div className={`flex items-center justify-between p-4 border rounded-xl shadow-sm hover:shadow-md transition ${isDark ? "border-slate-600 bg-slate-700" : "border-gray-200 bg-white"}`}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="p-2 bg-indigo-100 rounded-lg">
                         <FileText className="h-5 w-5 text-indigo-600" />
                       </div>
-
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">
-                          {formData.jobDescription instanceof File
+                        <p className={`text-sm font-medium truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>
+                          {(formData.jobDescription instanceof File
                             ? formData.jobDescription.name
-                            : formData.jobDescription}
+                            : typeof formData.jobDescription === "string"
+                              ? formData.jobDescription.split("/").pop() || formData.jobDescription
+                              : "")}
                         </p>
-                        <p className="text-xs text-gray-400">
+
+                        <p className={`text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>
                           Uploaded successfully
                         </p>
                       </div>
                     </div>
-
-                    {/* RIGHT */}
-                    <button
-                      onClick={removeFile}
-                      className="p-2 rounded-md hover:bg-red-50 transition"
-                    >
+                    <button onClick={removeFile} className="p-2 rounded-md hover:bg-red-50 transition">
                       <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
                     </button>
                   </div>
@@ -1153,69 +1013,47 @@ const TestsAssessments = () => {
 
               {/* INPUT GRID */}
               <div className="grid grid-cols-2 gap-6">
-                {/* Test Title */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Test Title
-                  </label>
+                  <label className={labelCls}>Test Title</label>
                   <input
                     value={formData.testTitle}
-                    onChange={(e) =>
-                      handleInputChange("testTitle", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("testTitle", e.target.value)}
                     disabled={mode === "prefill"}
                     placeholder="e.g. Frontend Developer Test"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                    className={inputCls}
                   />
                 </div>
-
-                {/* Primary Skill */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Primary Skill
-                  </label>
+                  <label className={labelCls}>Primary Skill</label>
                   <input
                     value={formData.primarySkill}
-                    onChange={(e) =>
-                      handleInputChange("primarySkill", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("primarySkill", e.target.value)}
                     disabled={mode === "prefill"}
                     placeholder="e.g. React.js"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                    className={inputCls}
                   />
                 </div>
-
-                {/* Secondary Skill */}
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Secondary Skill (Optional)
-                  </label>
+                  <label className={labelCls}>Secondary Skill (Optional)</label>
                   <input
                     value={formData.secondarySkill}
-                    onChange={(e) =>
-                      handleInputChange("secondarySkill", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("secondarySkill", e.target.value)}
                     disabled={mode === "prefill"}
                     placeholder="e.g. TypeScript"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                    className={inputCls}
                   />
                 </div>
               </div>
 
-              {/* JD TEXT */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Description
-                </label>
+                <label className={labelCls}>Job Description</label>
                 <textarea
                   rows={4}
                   value={formData.jobDescriptionText}
                   disabled={mode === "prefill"}
-                  onChange={(e) =>
-                    handleInputChange("jobDescriptionText", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("jobDescriptionText", e.target.value)}
                   placeholder="Paste or edit job description..."
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                  className={inputCls}
                 />
               </div>
             </div>
@@ -1224,29 +1062,23 @@ const TestsAssessments = () => {
           {/* ================= STEP 2 ================= */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              {/* SECTION TITLE */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
                   Assessment Configuration
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                   Configure test settings (auto-filled from JD if available)
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
-                {/* Exam Level */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Exam Level
-                  </label>
+                  <label className={labelCls}>Exam Level</label>
                   <select
                     value={formData.examLevel}
-                    onChange={(e) =>
-                      handleInputChange("examLevel", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("examLevel", e.target.value)}
                     disabled={mode === "prefill"}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none"
+                    className={selectCls}
                   >
                     <option value="">Select level</option>
                     <option>Easy</option>
@@ -1254,19 +1086,13 @@ const TestsAssessments = () => {
                     <option>Advanced</option>
                   </select>
                 </div>
-
-                {/* Questions */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    No. of Questions
-                  </label>
+                  <label className={labelCls}>No. of Questions</label>
                   <select
                     value={formData.noOfQuestions}
-                    onChange={(e) =>
-                      handleInputChange("noOfQuestions", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("noOfQuestions", e.target.value)}
                     disabled={mode === "prefill"}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                    className={selectCls}
                   >
                     <option value="">Select</option>
                     {[10, 20, 30, 40].map((n) => (
@@ -1274,35 +1100,23 @@ const TestsAssessments = () => {
                     ))}
                   </select>
                 </div>
-
-                {/* Passing Score */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Passing Score (%)
-                  </label>
+                  <label className={labelCls}>Passing Score (%)</label>
                   <input
                     type="number"
                     value={formData.passingScore}
-                    onChange={(e) =>
-                      handleInputChange("passingScore", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("passingScore", e.target.value)}
                     disabled={mode === "prefill"}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                    className={inputCls}
                   />
                 </div>
-
-                {/* Duration */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Duration
-                  </label>
+                  <label className={labelCls}>Duration</label>
                   <select
                     value={formData.duration}
-                    onChange={(e) =>
-                      handleInputChange("duration", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("duration", e.target.value)}
                     disabled={mode === "prefill"}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                    className={selectCls}
                   >
                     <option value="">Select</option>
                     <option>30 min</option>
@@ -1310,38 +1124,26 @@ const TestsAssessments = () => {
                     <option>90 min</option>
                   </select>
                 </div>
-
-                {/* Start Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date
-                  </label>
+                  <label className={labelCls}>Start Date</label>
                   <input
                     type="datetime-local"
                     value={formData.startDate}
                     min={getMinDateTime()}
-                    onChange={(e) =>
-                      handleInputChange("startDate", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("startDate", e.target.value)}
                     disabled={mode === "prefill"}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                    className={inputCls}
                   />
                 </div>
-
-                {/* End Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date
-                  </label>
+                  <label className={labelCls}>End Date</label>
                   <input
                     type="datetime-local"
                     value={formData.endDate}
                     min={getMinDateTime()}
-                    onChange={(e) =>
-                      handleInputChange("endDate", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("endDate", e.target.value)}
                     disabled={mode === "prefill"}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"
+                    className={inputCls}
                   />
                 </div>
               </div>
@@ -1352,13 +1154,13 @@ const TestsAssessments = () => {
           {currentStep === 3 && (
             <div className="grid grid-cols-1">
               <div className="relative" ref={candidateDropdownRef}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
                   Add Candidates
-                  <span className="ml-2 text-xs text-gray-500">
+                  <span className={`ml-2 text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                     {mode === "prefill" ? "(Required)" : "(Optional)"}
                   </span>
                   {formData.candidates.length > 0 && (
-                    <span className="ml-2 text-xs text-indigo-600">
+                    <span className="ml-2 text-xs text-indigo-500">
                       {formData.candidates.length} Selected
                     </span>
                   )}
@@ -1374,14 +1176,14 @@ const TestsAssessments = () => {
                   className={`w-full min-h-[42px] px-3 py-2 border rounded-lg cursor-pointer transition-all ${
                     errors.candidates
                       ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : "border-gray-300 hover:border-gray-400"
+                      : isDark
+                        ? "border-slate-600 hover:border-slate-500 bg-slate-700"
+                        : "border-gray-300 hover:border-gray-400"
                   }`}
-                  onClick={() =>
-                    setShowCandidateDropdown(!showCandidateDropdown)
-                  }
+                  onClick={() => setShowCandidateDropdown(!showCandidateDropdown)}
                 >
                   {formData.candidates.length === 0 ? (
-                    <span className="text-gray-400 text-sm">
+                    <span className={`text-sm ${isDark ? "text-slate-400" : "text-gray-400"}`}>
                       {hasGroqScores
                         ? "Candidates ranked by JD match — select to invite"
                         : "Select Candidates to invite"}
@@ -1396,10 +1198,7 @@ const TestsAssessments = () => {
                           {c.name}
                           <X
                             className="h-3 w-3 cursor-pointer hover:text-indigo-900"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeCandidateChip(c._id);
-                            }}
+                            onClick={(e) => { e.stopPropagation(); removeCandidateChip(c._id); }}
                           />
                         </span>
                       ))}
@@ -1410,124 +1209,122 @@ const TestsAssessments = () => {
                 {errors.candidates && (
                   <div className="flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      {errors.candidates}
-                    </span>
+                    <span className="text-xs text-red-600">{errors.candidates}</span>
                   </div>
                 )}
 
+                {/* ── Candidate Dropdown ── */}
                 {showCandidateDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-72 overflow-hidden">
-                    <div className="p-2 border-b border-gray-200">
+                  <div className={`absolute z-10 w-full mt-1 border rounded-lg shadow-lg max-h-72 overflow-hidden ${
+                    isDark ? "bg-slate-800 border-slate-600" : "bg-white border-gray-300"
+                  }`}>
+                    {/* Search */}
+                    <div className={`p-2 border-b ${isDark ? "border-slate-700" : "border-gray-200"}`}>
                       <input
                         type="text"
                         placeholder="Search by name or role..."
                         value={candidateSearch}
                         onChange={(e) => setCandidateSearch(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className={`w-full px-3 py-2 text-sm border rounded-md focus:outline-none ${
+                          isDark
+                            ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                            : "border-gray-300 text-gray-900"
+                        }`}
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
 
+                    {/* AI banner */}
                     {hasGroqScores && (
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 border-b border-violet-100">
-                        <Sparkles className="h-3 w-3 text-violet-600 shrink-0" />
-                        <span className="text-xs text-violet-700 font-medium">
+                      <div className={`flex items-center gap-2 px-3 py-1.5 border-b ${
+                        isDark ? "bg-violet-900/30 border-violet-800" : "bg-violet-50 border-violet-100"
+                      }`}>
+                        <Sparkles className="h-3 w-3 text-violet-500 shrink-0" />
+                        <span className={`text-xs font-medium ${isDark ? "text-violet-300" : "text-violet-700"}`}>
                           Sorted by AI match score based on uploaded JD
                         </span>
                       </div>
                     )}
 
+                    {/* List */}
                     <div className="max-h-52 overflow-y-auto">
                       {candidatesLoading ? (
                         <div className="flex items-center justify-center gap-2 px-4 py-4">
                           <div className="h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                          <span className="text-sm text-gray-500">
+                          <span className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                             Loading candidates...
                           </span>
                         </div>
                       ) : filteredCandidates?.length === 0 ? (
-                        <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        <div className={`px-4 py-3 text-sm text-center ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                           No candidates found
                         </div>
                       ) : (
                         filteredCandidates?.map((candidate) => {
-                          const isSelected = formData.candidates.some(
-                            (c: any) => c._id === candidate._id,
-                          );
+                          const isSelected = formData.candidates.some((c: any) => c._id === candidate._id);
                           const label = candidate.matchLabel;
-                          const style =
-                            matchStyles[label] || matchStyles["Low Match"];
+                          const style = matchStyles[label] || matchStyles["Low Match"];
                           const score = candidate.matchScore;
-                          const isLowMatch =
-                            label === "Low Match" || score === undefined;
+                          const isLowMatch = label === "Low Match" || score === undefined;
 
                           return (
                             <div
                               key={candidate._id}
                               className={`px-4 py-2.5 cursor-pointer transition-colors ${
                                 isSelected
-                                  ? "bg-indigo-50 hover:bg-indigo-100"
+                                  ? isDark
+                                    ? "bg-indigo-900/40 hover:bg-indigo-900/60"
+                                    : "bg-indigo-50 hover:bg-indigo-100"
                                   : isLowMatch && hasGroqScores
-                                    ? "opacity-50 hover:opacity-75 hover:bg-gray-50"
-                                    : "hover:bg-gray-50"
+                                    ? isDark
+                                      ? "opacity-50 hover:opacity-75 hover:bg-slate-700"
+                                      : "opacity-50 hover:opacity-75 hover:bg-gray-50"
+                                    : isDark
+                                      ? "hover:bg-slate-700"
+                                      : "hover:bg-gray-50"
                               }`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleCandidateSelection(candidate);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); toggleCandidateSelection(candidate); }}
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-sm font-medium text-gray-900">
+                                    <span className={`text-sm font-medium ${isDark ? "text-slate-100" : "text-gray-900"}`}>
                                       {candidate.name}
                                     </span>
                                     {candidate.role && (
-                                      <span className="text-xs text-gray-400 font-normal">
+                                      <span className={`text-xs font-normal ${isDark ? "text-slate-400" : "text-gray-400"}`}>
                                         — {candidate.role}
                                       </span>
                                     )}
-
                                     {label && (
-                                      <span
-                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${style.badge}`}
-                                      >
-                                        {label === "Strong Match" && (
-                                          <Star className="h-2.5 w-2.5 fill-current" />
-                                        )}
+                                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${style.badge}`}>
+                                        {label === "Strong Match" && <Star className="h-2.5 w-2.5 fill-current" />}
                                         {label}
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-xs text-gray-500 mt-0.5">
+                                  <div className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                                     {candidate.email}
                                   </div>
-
                                   {candidate.matchReason && (
-                                    <div className="text-xs text-gray-400 mt-0.5 italic truncate">
+                                    <div className={`text-xs mt-0.5 italic truncate ${isDark ? "text-slate-500" : "text-gray-400"}`}>
                                       {candidate.matchReason}
                                     </div>
                                   )}
                                 </div>
-
                                 <div className="flex items-center gap-2 shrink-0">
                                   {score !== undefined && (
-                                    <span
-                                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                                        score >= 70
-                                          ? "bg-emerald-100 text-emerald-700"
-                                          : score >= 40
-                                            ? "bg-amber-100 text-amber-700"
-                                            : "bg-gray-100 text-gray-500"
-                                      }`}
-                                    >
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                      score >= 70
+                                        ? isDark ? "bg-emerald-900/40 text-emerald-400" : "bg-emerald-100 text-emerald-700"
+                                        : score >= 40
+                                          ? isDark ? "bg-amber-900/40 text-amber-400" : "bg-amber-100 text-amber-700"
+                                          : isDark ? "bg-slate-700 text-slate-400" : "bg-gray-100 text-gray-500"
+                                    }`}>
                                       {score}%
                                     </span>
                                   )}
-                                  {isSelected && (
-                                    <CheckCircle2 className="h-4 w-4 text-indigo-600" />
-                                  )}
+                                  {isSelected && <CheckCircle2 className="h-4 w-4 text-indigo-500" />}
                                 </div>
                               </div>
                             </div>
@@ -1538,6 +1335,7 @@ const TestsAssessments = () => {
                   </div>
                 )}
               </div>
+
               <div className="flex justify-end mt-2">
                 <button
                   onClick={() => setShowCandidateModal(true)}
@@ -1549,50 +1347,46 @@ const TestsAssessments = () => {
             </div>
           )}
 
-          {/* ================= NAVIGATION ================= */}
+          {/* ── Navigation ── */}
           <div className="flex justify-between mt-6 mb-3">
             {currentStep > 1 ? (
               <button
                 onClick={() => setCurrentStep((prev) => prev - 1)}
-                className="px-5 py-2 border rounded-lg"
+                className={`px-5 py-2 border rounded-lg ${isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
               >
                 Back
               </button>
             ) : (
               <div />
             )}
-
             {currentStep < 3 && (
               <button
                 onClick={() => {
-                  if (!validateStep(currentStep)) {
-                    showToast("error", "Fill required fields");
-                    return;
-                  }
+                  if (!validateStep(currentStep)) { showToast("error", "Fill required fields"); return; }
                   setCurrentStep((prev) => prev + 1);
                 }}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
               >
                 Next
               </button>
             )}
           </div>
 
-          {/* ================= FINAL BUTTONS ================= */}
+          {/* ── Final Buttons ── */}
           {currentStep === 3 && (
-            <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+            <div className={`flex justify-end gap-4 pt-6 border-t ${isDark ? "border-slate-700" : "border-gray-200"}`}>
               {mode === "create" && (
                 <>
                   <button
                     onClick={handleGenerateAndSave}
                     disabled={loading}
-                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`flex items-center gap-2 px-6 py-2.5 text-sm font-medium border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      isDark
+                        ? "text-slate-300 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                        : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                    }`}
                   >
-                    {loading ? (
-                      <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <FileText className="h-4 w-4" />
-                    )}
+                    {loading ? <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FileText className="h-4 w-4" />}
                     {loading ? "Saving..." : "Generate & Save as template"}
                   </button>
                   <button
@@ -1600,66 +1394,28 @@ const TestsAssessments = () => {
                     disabled={loading}
                     className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? (
-                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 10V3L4 14h7v7l9-11h-7z"
-                        />
-                      </svg>
-                    )}
+                    {loading ? <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
                     {loading ? "Sending..." : "Generate & Send Invites"}
                   </button>
                 </>
               )}
-
               {mode === "prefill" && (
                 <button
                   onClick={handleInviteOnly}
                   disabled={loading}
                   className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? (
-                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                  )}
+                  {loading ? <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
                   {loading ? "Sending..." : "Send Invite"}
                 </button>
               )}
-
               {mode === "edit" && (
                 <button
                   onClick={handleUpdateAssessment}
                   disabled={loading}
                   className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? (
-                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
+                  {loading ? <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FileText className="h-4 w-4" />}
                   {loading ? "Updating..." : "Update Assessment"}
                 </button>
               )}
@@ -1667,171 +1423,123 @@ const TestsAssessments = () => {
           )}
         </div>
       )}
+
       {/* ── Templates Tab ── */}
       {activeTab === "templates" && (
         <div>
           {templatesLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse"
-                >
+                <div key={i} className={`rounded-lg border p-6 animate-pulse ${isDark ? "bg-slate-900 border-slate-700" : "bg-white border-gray-200"}`}>
                   <div className="flex justify-between items-center mb-4">
-                    <div className="h-5 w-12 bg-gray-200 rounded-full" />
-                    <div className="h-5 w-20 bg-gray-200 rounded-full" />
+                    <div className={`h-5 w-12 rounded-full ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                    <div className={`h-5 w-20 rounded-full ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
                   </div>
                   <div className="mb-4 space-y-2">
-                    <div className="h-5 w-3/4 bg-gray-200 rounded" />
-                    <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                    <div className={`h-5 w-3/4 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                    <div className={`h-4 w-1/2 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
                   </div>
                   <div className="space-y-2 mb-4">
-                    <div className="h-4 w-full bg-gray-200 rounded" />
-                    <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                    <div className={`h-4 w-full rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                    <div className={`h-4 w-2/3 rounded ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
                   </div>
                   <div className="flex gap-3 pt-4">
-                    <div className="flex-1 h-9 bg-gray-200 rounded-lg" />
-                    <div className="h-9 w-10 bg-gray-200 rounded-lg" />
-                    <div className="h-9 w-10 bg-gray-200 rounded-lg" />
+                    <div className={`flex-1 h-9 rounded-lg ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                    <div className={`h-9 w-10 rounded-lg ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
+                    <div className={`h-9 w-10 rounded-lg ${isDark ? "bg-slate-700" : "bg-gray-200"}`} />
                   </div>
                 </div>
               ))}
             </div>
           ) : assessments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <FileText className="h-10 w-10 text-gray-300 mb-3" />
-              <p className="text-gray-500 font-medium">No templates yet</p>
-              <p className="text-gray-400 text-sm mt-1">
+              <FileText className={`h-10 w-10 mb-3 ${isDark ? "text-slate-600" : "text-gray-300"}`} />
+              <p className={`font-medium ${isDark ? "text-slate-300" : "text-gray-500"}`}>No templates yet</p>
+              <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-400"}`}>
                 Create an assessment and save it as a template
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {assessments?.map((item: any) => {
-                const primarySkills = item.primary_skill
-                  ? item.primary_skill
-                      .split(",")
-                      .map((s: string) => s.trim())
-                      .filter(Boolean)
-                  : [];
-                const secondarySkills = item.secondary_skill
-                  ? item.secondary_skill
-                      .split(",")
-                      .map((s: string) => s.trim())
-                      .filter(Boolean)
-                  : [];
+                const primarySkills = item.primary_skill ? item.primary_skill.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+                const secondarySkills = item.secondary_skill ? item.secondary_skill.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
                 const allSkills = [...primarySkills, ...secondarySkills];
                 const MAX_VISIBLE = 6;
                 const visibleSkills = allSkills.slice(0, MAX_VISIBLE);
                 const remainingCount = allSkills.length - MAX_VISIBLE;
-
                 const difficultyStyles: Record<string, string> = {
                   Advanced: "bg-orange-50 text-orange-600 border-orange-200",
                   Easy: "bg-emerald-50 text-emerald-600 border-emerald-200",
                   Medium: "bg-sky-50 text-sky-600 border-sky-200",
                 };
-                const diffStyle =
-                  difficultyStyles[item.difficulty] ??
-                  difficultyStyles["Medium"];
+                const diffStyle = difficultyStyles[item.difficulty] ?? difficultyStyles["Medium"];
 
                 return (
                   <div
                     key={item._id}
-                    className="bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-200 flex flex-col h-full"
+                    className={`rounded-xl border flex flex-col h-full transition-all duration-200 ${isDark ? "bg-slate-900 border-slate-700 hover:border-indigo-500 hover:shadow-lg" : "bg-white border-gray-200 hover:border-indigo-300 hover:shadow-lg"}`}
                   >
-                    <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                    <div className={`px-5 pt-5 pb-4 border-b ${isDark ? "border-slate-700" : "border-gray-100"}`}>
                       <div className="flex items-center justify-between mb-3">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                           {item.examType ?? "MCQ"}
                         </span>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border ${diffStyle}`}
-                        >
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border ${diffStyle}`}>
                           {item.difficulty}
                         </span>
                       </div>
-                      <h3 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2 mb-3">
+                      <h3 className={`text-base font-semibold leading-snug line-clamp-2 mb-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}>
                         {item.test_title}
                       </h3>
-                      <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                        <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
-                          <Clock className="h-3 w-3 text-gray-400" />
-                          {item.duration}
-                        </span>
-                        <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
-                          <FileText className="h-3 w-3 text-gray-400" />
-                          {item.no_of_questions} Questions
-                        </span>
-                        <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
-                          <CheckCircle2 className="h-3 w-3 text-gray-400" />
-                          Pass: {item.passing_score}%
-                        </span>
+                      <div className={`flex flex-wrap gap-2 text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                        {[
+                          { icon: <Clock className={`h-3 w-3 ${isDark ? "text-slate-400" : "text-gray-400"}`} />, text: item.duration },
+                          { icon: <FileText className={`h-3 w-3 ${isDark ? "text-slate-400" : "text-gray-400"}`} />, text: `${item.no_of_questions} Questions` },
+                          { icon: <CheckCircle2 className={`h-3 w-3 ${isDark ? "text-slate-400" : "text-gray-400"}`} />, text: `Pass: ${item.passing_score}%` },
+                        ].map((badge, i) => (
+                          <span key={i} className={`flex items-center gap-1 px-2.5 py-1 rounded-full border ${isDark ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
+                            {badge.icon}{badge.text}
+                          </span>
+                        ))}
                       </div>
                     </div>
 
                     <div className="px-5 py-4 flex-1">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2.5">
-                        Skills
-                      </p>
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-2.5 ${isDark ? "text-slate-400" : "text-gray-400"}`}>Skills</p>
                       <div className="flex flex-wrap gap-1.5">
                         {visibleSkills.map((skill: string, i: number) => (
-                          <span
-                            key={i}
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                              i < primarySkills.length
-                                ? "bg-violet-50 text-violet-700 border-violet-200"
-                                : "bg-slate-50 text-slate-600 border-slate-200"
-                            }`}
-                          >
+                          <span key={i} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                            i < primarySkills.length
+                              ? isDark ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-violet-50 text-violet-700 border-violet-200"
+                              : isDark ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-600 border-slate-200"
+                          }`}>
                             {skill}
                           </span>
                         ))}
                         {remainingCount > 0 && (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${isDark ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
                             +{remainingCount} more
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="px-5 pb-5 pt-3 border-t border-gray-100">
+                    <div className={`px-5 pb-5 pt-3 border-t ${isDark ? "border-slate-700" : "border-gray-100"}`}>
                       {item.createdAt && (
-                        <p className="text-xs text-gray-400 mb-3">
-                          Created{" "}
-                          {new Date(item.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            },
-                          )}
+                        <p className={`text-xs mb-3 ${isDark ? "text-slate-400" : "text-gray-400"}`}>
+                          Created {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </p>
                       )}
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => handleUseTemplate(item)}
-                          className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 active:scale-95 transition-all duration-150"
-                        >
+                        <button onClick={() => handleUseTemplate(item)} className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 active:scale-95 transition-all duration-150">
                           Use Template
                         </button>
-                        <button
-                          onClick={() => handleViewCandidates(item)}
-                          className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-150"
-                          title="View Candidates"
-                        >
+                        <button onClick={() => handleViewCandidates(item)} className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${isDark ? "text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700" : "text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300"}`} title="View Candidates">
                           <Users className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => handleEditTemplate(item)}
-                          disabled={editLoading === item._id}
-                          className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[42px]"
-                        >
-                          {editLoading === item._id ? (
-                            <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <FileText className="h-4 w-4" />
-                          )}
+                        <button onClick={() => handleEditTemplate(item)} disabled={editLoading === item._id} className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[42px] ${isDark ? "text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700" : "text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300"}`}>
+                          {editLoading === item._id ? <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FileText className="h-4 w-4" />}
                         </button>
                       </div>
                     </div>
@@ -1843,43 +1551,43 @@ const TestsAssessments = () => {
         </div>
       )}
 
+      {/* ── Add Candidates Modal ── */}
       {showCandidateModal && !selectedAssessment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden">
+          <div className={`w-full max-w-2xl rounded-xl shadow-xl overflow-hidden ${isDark ? "bg-slate-800" : "bg-white"}`}>
             {/* HEADER */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+            <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-slate-700" : "border-gray-200"}`}>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Add Candidates
-                </h3>
-                <p className="text-xs text-gray-500">
+                <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>Add Candidates</h3>
+                <p className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                   Select additional candidates for this assessment
                 </p>
               </div>
-
               <button onClick={() => setShowCandidateModal(false)}>
-                <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+                <X className={`h-5 w-5 ${isDark ? "text-slate-400 hover:text-slate-200" : "text-gray-500 hover:text-gray-700"}`} />
               </button>
             </div>
 
             {/* SEARCH */}
-            <div className="p-3 border-b border-gray-200">
+            <div className={`p-3 border-b ${isDark ? "border-slate-700" : "border-gray-200"}`}>
               <input
                 type="text"
                 placeholder="Search by name or role..."
                 value={candidateSearch}
                 onChange={(e) => setCandidateSearch(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className={`w-full px-3 py-2 text-sm border rounded-md focus:outline-none ${
+                  isDark
+                    ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                    : "border-gray-300 text-gray-900"
+                }`}
               />
             </div>
 
             {/* INFO BAR */}
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+            <div className={`flex items-center justify-between px-4 py-2 border-b text-xs ${isDark ? "bg-slate-900 border-slate-700 text-slate-400" : "bg-gray-50 border-gray-100 text-gray-500"}`}>
               <span>{candidatesList.length} candidates available</span>
               {formData.candidates.length > 0 && (
-                <span className="text-indigo-600 font-medium">
-                  {formData.candidates.length} selected
-                </span>
+                <span className="text-indigo-500 font-medium">{formData.candidates.length} selected</span>
               )}
             </div>
 
@@ -1887,84 +1595,62 @@ const TestsAssessments = () => {
             <div className="max-h-72 overflow-y-auto">
               {candidatesList
                 .filter((c: any) =>
-                  `${c.name} ${c.role || ""} ${c.email}`
-                    .toLowerCase()
-                    .includes(candidateSearch.toLowerCase()),
+                  `${c.name} ${c.role || ""} ${c.email}`.toLowerCase().includes(candidateSearch.toLowerCase()),
                 )
                 .map((candidate: any) => {
-                  const isSelected = formData.candidates.some(
-                    (c: any) => c._id === candidate._id,
-                  );
-
+                  const isSelected = formData.candidates.some((c: any) => c._id === candidate._id);
                   return (
                     <div
                       key={candidate._id}
                       onClick={() => toggleCandidateSelection(candidate)}
                       className={`px-4 py-3 cursor-pointer transition ${
                         isSelected
-                          ? "bg-indigo-50 hover:bg-indigo-100"
-                          : "hover:bg-gray-50"
+                          ? isDark
+                            ? "bg-indigo-900/40 hover:bg-indigo-900/60 border-l-4 border-indigo-500"
+                            : "bg-indigo-50 hover:bg-indigo-100 border-l-4 border-indigo-500"
+                          : isDark
+                            ? "hover:bg-slate-700"
+                            : "hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        {/* LEFT */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className={`text-sm font-medium ${isDark ? "text-slate-100" : "text-gray-900"}`}>
                               {candidate.name}
                             </span>
-
                             {candidate.role && (
-                              <span className="text-xs text-gray-400">
+                              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>
                                 — {candidate.role}
                               </span>
                             )}
                           </div>
-
-                          <div className="text-xs text-gray-500 mt-0.5">
+                          <div className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                             {candidate.email}
                           </div>
                         </div>
-
-                        {/* RIGHT */}
-                        <div className="flex items-center gap-2">
-                          {/* CHECK ICON */}
-                          {isSelected && (
-                            <CheckCircle2 className="h-5 w-5 text-indigo-600" />
-                          )}
-                        </div>
+                        {isSelected && <CheckCircle2 className="h-5 w-5 text-indigo-500" />}
                       </div>
                     </div>
                   );
                 })}
-
               {candidatesList.length === 0 && (
-                <div className="px-4 py-6 text-center text-sm text-gray-400">
+                <div className={`px-4 py-6 text-center text-sm ${isDark ? "text-slate-400" : "text-gray-400"}`}>
                   No candidates available
                 </div>
               )}
             </div>
 
             {/* FOOTER */}
-            <div className="flex justify-between items-center px-5 py-4 border-t border-gray-200 bg-gray-50">
-              <span className="text-xs text-gray-500">
+            <div className={`flex justify-between items-center px-5 py-4 border-t ${isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-gray-50"}`}>
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                 Click on candidates to select/deselect
               </span>
-
               <div className="flex gap-3">
-                {/* Add Candidate Button */}
-                <button
-                  onClick={() => setShowAddCandidateModal(true)}
-                  className="px-5 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
+                <button onClick={() => setShowAddCandidateModal(true)} className="px-5 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                   + Add Candidate
                 </button>
-
-                {/* Done Button */}
-                <button
-                  onClick={() => setShowCandidateModal(false)}
-                  className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                >
+                <button onClick={() => setShowCandidateModal(false)} className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                   Done
                 </button>
               </div>
@@ -1973,7 +1659,7 @@ const TestsAssessments = () => {
         </div>
       )}
 
-      {/* Candidate Details Modal */}
+      {/* ── View Assigned Candidates Modal ── */}
       {showCandidateModal && selectedAssessment && (
         <ViewAssignedCandidate
           isOpen={showCandidateModal}
@@ -1982,17 +1668,14 @@ const TestsAssessments = () => {
         />
       )}
 
-{showAddCandidateModal && (
-  <AddCandidateModal
-    isOpen={showAddCandidateModal}
-    onClose={() => setShowAddCandidateModal(false)}
-    onAdd={() => {
-
-      setShowAddCandidateModal(false);
-    }}
-    onUpdate={() => {}}
-  />
-)}
+      {showAddCandidateModal && (
+        <AddCandidateModal
+          isOpen={showAddCandidateModal}
+          onClose={() => setShowAddCandidateModal(false)}
+          onAdd={() => { setShowAddCandidateModal(false); }}
+          onUpdate={() => {}}
+        />
+      )}
     </AdminLayout>
   );
 };

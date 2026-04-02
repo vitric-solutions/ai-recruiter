@@ -3,6 +3,143 @@
 
 @import "tailwindcss";
 
+
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+* {
+  @apply transition-colors duration-200;
+}
+
+html.dark {
+  background-color: #000000;
+  color: #e2e8f0;
+}
+
+html.dark body {
+  background-color: #000000;
+  color: #e2e8f0;
+}
+
+html.light {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+html.dark .bg-white {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-gray-50 {
+  background-color: #1f2937 !important;
+}
+
+html.dark .bg-indigo-50 {
+  background-color: #1e293b !important;
+}
+
+html.dark .bg-slate-100,
+html.dark .bg-gray-100,
+html.dark .bg-stone-100 {
+  background-color: #1e293b !important;
+}
+
+html.dark .text-gray-900,
+html.dark .text-slate-900,
+html.dark .text-black,
+html.dark .text-indigo-900 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-slate-500,
+html.dark .text-gray-600 {
+  color: #94a3b8 !important;
+}
+
+html.dark .border-gray-200,
+html.dark .border-gray-300,
+html.dark .border-slate-200 {
+  border-color: #334155 !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea,
+html.dark .input,
+html.dark .input-professional {
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder,
+html.dark .input::placeholder,
+html.dark .input-professional::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.dark table,
+html.dark th,
+html.dark td {
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark .table-responsive,
+html.dark .table-wrapper {
+  background-color: #0f172a !important;
+}
+
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
+  color: #f8fafc !important;
+}
+
+html.dark p,
+html.dark span,
+html.dark a,
+html.dark label {
+  color: #cbd5e1 !important;
+}
+
+html.dark .bg-gray-100,
+html.dark .bg-gray-200,
+html.dark .bg-slate-100,
+html.dark .bg-slate-200,
+html.dark .bg-slate-50 {
+  background-color: #0b1120 !important;
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-slate-100,
+html.dark .border-slate-200 {
+  border-color: #334155 !important;
+}
+
+html.dark .text-gray-900,
+html.dark .text-slate-900,
+html.dark .text-black {
+  color: #f8fafc !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .bg-gray-50,
+html.dark .bg-gray-100 {
+  background-color: #0f172a !important;
+}
+
 html,
 body {
     margin: 0;
@@ -68,3 +205,4 @@ body {
   border-color: #6366f1;
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
+

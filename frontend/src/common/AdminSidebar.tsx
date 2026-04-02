@@ -12,6 +12,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/context";
+import { useTheme } from "../context/Themecontext";
 import { adminPath } from "../routes/EncryptRoute";
 
 const navItems = [
@@ -35,15 +36,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onToggle }) => {
   const navigate   = useNavigate();
   const location   = useLocation();
   const { logout } = useAuth();
+  const { theme }  = useTheme();
 
   return (
     <motion.aside
       animate={{ width: open ? SIDEBAR_OPEN : SIDEBAR_CLOSED }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 h-screen bg-white border-r border-gray-200 z-40 flex flex-col overflow-hidden"
+      className={`fixed left-0 top-0 h-screen z-40 flex flex-col overflow-hidden ${theme === 'dark' ? 'bg-slate-950 border-r border-slate-700 text-slate-300' : 'bg-white border-r border-gray-200 text-gray-700'}`}
     >
       {/* ── Logo + Toggle ── */}
-      <div className="flex items-center justify-between px-4 pt-6 pb-6 border-b border-gray-100">
+      <div className={`flex items-center justify-between px-4 pt-6 pb-6 ${theme === 'dark' ? 'border-b border-slate-700' : 'border-b border-gray-100'}`}>
         <AnimatePresence initial={false}>
           {open && (
             <motion.h1
@@ -64,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onToggle }) => {
           onClick={onToggle}
           animate={{ marginLeft: open ? 0 : "auto", marginRight: open ? 0 : "auto" }}
           transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-          className="w-7 h-7 rounded-full border border-gray-200 bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-colors flex-shrink-0"
+          className={`w-7 h-7 rounded-full shadow-sm flex items-center justify-center transition-colors ${theme === 'dark' ? 'border border-slate-700 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-500 hover:bg-slate-800' : 'border border-gray-200 bg-white text-gray-500 hover:text-indigo-600 hover:border-indigo-300 hover:bg-white'}`}          
           title={open ? "Collapse sidebar" : "Expand sidebar"}
         >
           <motion.div
@@ -90,8 +92,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onToggle }) => {
               className={`relative w-full flex items-center gap-3 py-2.5 font-medium transition-colors group
                 ${open ? "px-5" : "px-0 justify-center"}
                 ${isActive
-                  ? "text-indigo-600"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                  ? theme === 'dark'
+                    ? "text-indigo-300"
+                    : "text-indigo-600"
+                  : theme === 'dark'
+                    ? "text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
                 }`}
             >
               {/* Active left bar */}
@@ -114,8 +120,15 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onToggle }) => {
 
               {/* Icon */}
               <Icon
-                className={`flex-shrink-0 h-[18px] w-[18px] transition-colors
-                  ${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"}`}
+                className={`h-[18px] w-[18px] transition-colors
+                  ${isActive
+                    ? theme === 'dark'
+                      ? "text-indigo-300"
+                      : "text-indigo-600"
+                    : theme === 'dark'
+                      ? "text-slate-400 group-hover:text-slate-100"
+                      : "text-gray-400 group-hover:text-gray-600"
+                  }`}
               />
 
               {/* Label */}
@@ -154,9 +167,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onToggle }) => {
         <button
           onClick={async () => { await logout(); navigate(`/admin${adminPath("login")}`); }}
           title={!open ? "Logout" : undefined}
-          className={`relative w-full flex items-center gap-3 py-2.5 font-medium
-            text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors group
-            ${open ? "px-5" : "px-0 justify-center"}`}
+          className={`relative w-full flex items-center gap-3 py-2.5 font-medium transition-colors group ${open ? "px-5" : "px-0 justify-center"} ${theme === 'dark' ? 'text-red-400 hover:text-red-300 hover:bg-slate-800' : 'text-red-500 hover:text-red-600 hover:bg-red-50'}`}
         >
           <LogOut className="flex-shrink-0 h-[18px] w-[18px]" />
 

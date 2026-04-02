@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { X } from "lucide-react";
+import { useTheme } from "../../context/Themecontext";
 
 interface ViewCandidateReportModalProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
   onClose,
   candidateData,
 }) => {
+  const { theme } = useTheme();
+
   if (!isOpen || !candidateData) return null;
 
   const { interviews } = candidateData;
@@ -115,16 +118,16 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
           </div>
 
           {/* ================= TABLE ================= */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className={`border-b ${theme === 'dark' ? 'bg-slate-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                 <tr>
-                  <th className="px-5 py-3 text-left">Title</th>
-                  <th className="px-5 py-3 text-left">Type</th>
-                  <th className="px-5 py-3 text-left">Status</th>
-                  <th className="px-5 py-3 text-left">Score</th>
-                  <th className="px-5 py-3 text-left">Result</th>
-                  <th className="px-5 py-3 text-left">Scorecard</th>
+                  <th className="px-5 py-3 text-left text-gray-700 dark:text-gray-300">Title</th>
+                  <th className="px-5 py-3 text-left text-gray-700 dark:text-gray-300">Type</th>
+                  <th className="px-5 py-3 text-left text-gray-700 dark:text-gray-300">Status</th>
+                  <th className="px-5 py-3 text-left text-gray-700 dark:text-gray-300">Score</th>
+                  <th className="px-5 py-3 text-left text-gray-700 dark:text-gray-300">Result</th>
+                  <th className="px-5 py-3 text-left text-gray-700 dark:text-gray-300">Scorecard</th>
                 </tr>
               </thead>
 
@@ -142,14 +145,18 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
                     return (
                       <tr
                         key={interview.interviewId}
-                        className="border-b border-gray-200 hover:bg-gray-50"
+                        className={`border-b ${theme === 'dark' ? 'border-gray-700 dark:hover:bg-slate-700 hover:bg-slate-700' : 'border-gray-200 hover:bg-gray-50'}`}
                       >
                         <td className="px-5 py-4 font-medium">
                           {interview.title}
                         </td>
 
                         <td className="px-5 py-4">
-                          <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-600 rounded-full">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            theme === 'dark'
+                              ? 'bg-indigo-800 text-indigo-100'
+                              : 'bg-indigo-100 text-indigo-600'
+                          }`}>
                             {interview.examType}
                           </span>
                         </td>
@@ -166,17 +173,23 @@ const ViewCandidateReportModal: React.FC<ViewCandidateReportModalProps> = ({
                           <span
                             className={`px-2 py-1 text-xs rounded-full ${
                               passed
-                                ? "bg-green-100 text-green-600"
-                                : interview.status === "scheduled"
-                                  ? ""
-                                  : "bg-red-100 text-red-600"
+                                ? theme === 'dark'
+                                  ? 'bg-emerald-900/40 text-emerald-200'
+                                  : 'bg-green-100 text-green-600'
+                                : interview.status === 'scheduled'
+                                  ? theme === 'dark'
+                                    ? 'bg-slate-700 text-slate-200'
+                                    : 'bg-gray-100 text-gray-600'
+                                  : theme === 'dark'
+                                    ? 'bg-rose-900/40 text-rose-200'
+                                    : 'bg-red-100 text-red-600'
                             }`}
                           >
                             {passed
-                              ? "Passed"
-                              : interview.status === "scheduled"
-                                ? "Scheduled"
-                                : "Failed"}
+                              ? 'Passed'
+                              : interview.status === 'scheduled'
+                                ? 'Scheduled'
+                                : 'Failed'}
                           </span>
                         </td>
 

@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { AxiosError } from "axios";
 import { adminService } from "../../services/service/adminService";
 import { useAuth } from "../../context/context";
+import { useTheme } from "../../context/Themecontext";
 import SignIN_BG_Image from "../../assets/sign_in_bg.png";
 import { adminPath } from "../../routes/EncryptRoute";
 
@@ -16,6 +17,7 @@ interface LoginFormData {
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
+  const { theme } = useTheme();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -73,22 +75,36 @@ const LoginPage: React.FC = () => {
         setError("Something went wrong. Please try again.");
       }
 
-      console.error("Login error:", err);
+      // console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center py-8 relative">
-      <div className="relative w-[95%] h-[99%] mr-20">
+    <div
+      className="h-screen w-full flex items-center justify-center py-8 relative"
+      style={{ backgroundColor: theme === 'dark' ? 'white' : 'white' }}
+    >
+      <div
+        className="relative w-[95%] h-[99%] mr-20"
+        style={{ backgroundColor: theme === 'dark' ? 'white' : 'white' }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: theme === 'dark' ? 'white' : 'white', zIndex: 0 }}
+        />
         <img
           src={SignIN_BG_Image}
           className="sticky w-full h-full"
           alt="Background"
+         
         />
 
-        <div className="absolute w-[90%] top-0 left-1/2 -translate-x-1/2 flex items-center justify-between px-8 py-12 md:py-24">
+        <div
+          className="absolute w-[90%] top-0 left-1/2 -translate-x-1/2 flex items-center justify-between px-8 py-12 md:py-24"
+          style={{ zIndex: 2 }}
+        >
           
           {/* Left Branding */}
           <div className="text-white">
@@ -99,7 +115,7 @@ const LoginPage: React.FC = () => {
           </div>
 
           {/* Login Card */}
-          <div className="w-[36%] rounded-xl py-10 px-10 bg-white shadow-xl">
+          <div className="w-[36%] rounded-xl py-10 px-10 bg-white shadow-xl" style={{ backgroundColor: "white" }}>
             <h2 className="text-2xl font-bold text-gray-900 mb-1 text-center">
               Welcome Back
             </h2>
@@ -127,6 +143,15 @@ const LoginPage: React.FC = () => {
                   }`}
                   {...register("email", {
                     required: "Email is required",
+                    pattern: {
+                      value: /^[a-z0-9._%-]+@[a-z0-9.-]+\.[a-z]{2,}$/i,
+                      message: "Invalid email format",
+                    },
+                    validate: {
+                      noCapitals: (value) =>
+                        value === value.toLowerCase() ||
+                        "Email must be in lowercase only",
+                    },
                   })}
                 />
                 {errors.email && (

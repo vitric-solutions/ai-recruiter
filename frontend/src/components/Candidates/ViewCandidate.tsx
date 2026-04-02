@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Layers,
 } from "lucide-react";
+import { useTheme } from "../../context/Themecontext";
 
 interface ViewCandidateModalProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ const ViewCandidateModal: React.FC<ViewCandidateModalProps> = ({
   onClose,
   candidateData,
 }) => {
+  const { theme } = useTheme();
+
   if (!isOpen || !candidateData) return null;
 
   const { candidate, summary, interviews } = candidateData;
@@ -221,10 +224,10 @@ const ViewCandidateModal: React.FC<ViewCandidateModalProps> = ({
             {/* Table */}
             <div className="rounded-xl border border-gray-200 overflow-hidden">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    {["Title", "Type", "Status", "Score", "Result", "Scorecard"].map((h) => (
-                      <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <thead className={`border-b ${theme === 'dark' ? 'bg-slate-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                  <tr>
+                    {['Title', 'Type', 'Status', 'Score', 'Result', 'Scorecard'].map((h) => (
+                      <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
                         {h}
                       </th>
                     ))}
@@ -250,19 +253,20 @@ const ViewCandidateModal: React.FC<ViewCandidateModalProps> = ({
                       return (
                         <tr
                           key={interview.interviewId}
-                          className="hover:bg-gray-50/70 transition-colors"
+                          className={`transition-colors ${theme === 'dark' ? 'border-b border-gray-700 hover:bg-slate-700/60' : 'hover:bg-gray-50/70'}`}
                         >
                           {/* Title */}
                           <td className="px-5 py-4">
-                            <span className="font-medium text-gray-800">{interview.title}</span>
+                            <span className={`font-medium ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>{interview.title}</span>
                           </td>
 
                           {/* Type */}
                           <td className="px-5 py-4">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                              ${interview.examType === "AI"
-                                ? "bg-violet-50 text-violet-700 border border-violet-100"
-                                : "bg-blue-50 text-blue-700 border border-blue-100"}`}>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${theme === 'dark'
+                              ? 'bg-indigo-950/60 text-indigo-100 border border-indigo-700'
+                              : interview.examType === 'AI'
+                                ? 'bg-violet-50 text-violet-700 border border-violet-100'
+                                : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
                               {interview.examType}
                             </span>
                           </td>
@@ -289,10 +293,15 @@ const ViewCandidateModal: React.FC<ViewCandidateModalProps> = ({
 
                           {/* Result */}
                           <td className="px-5 py-4">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
-                              ${passed
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                                : "bg-red-50 text-red-700 border border-red-100"}`}>
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              passed
+                                ? theme === 'dark'
+                                  ? 'bg-emerald-900/40 text-emerald-200 border border-emerald-700'
+                                  : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                : theme === 'dark'
+                                  ? 'bg-rose-900/40 text-rose-200 border border-rose-700'
+                                  : 'bg-red-50 text-red-700 border border-red-100'
+                            }`}>
                               {passed
                                 ? <><CheckCircle2 size={11} /> Passed</>
                                 : <><XCircle size={11} /> Failed</>}

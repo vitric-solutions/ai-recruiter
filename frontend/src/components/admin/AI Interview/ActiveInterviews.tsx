@@ -2,6 +2,7 @@ import { Button } from "../../../ui/button";
 import { useEffect, useState, useMemo } from "react";
 import { FileText, Clock, X, CheckCircle2, Users } from "lucide-react";
 import { adminService } from "../../../services/service/adminService";
+import { useTheme } from "../../../context/Themecontext";
 
 interface ActiveInterviewsProps {
   onNavigateToInterviewSetup: (assessment: any) => void;
@@ -25,6 +26,7 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
   const [statusFilter, setStatusFilter] = useState("all");
   const [nameSearch, setNameSearch] = useState("");
   const [page, setPage] = useState(1);
+  const { theme } = useTheme();
 
   const handleViewCandidates = async (assessment: any) => {
     const res = await adminService.getDraft(assessment._id);
@@ -120,7 +122,8 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
   // };
 
   return (
-    <div className=" flex  ">
+    <div className={`flex ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+
       <div className="w-full">
         <div className="pt-12">
           {templatesLoading ? (
@@ -128,7 +131,11 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse"
+                  className={`rounded-lg border p-6 animate-pulse ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 border-slate-700'
+                      : 'bg-white border-gray-200'
+                  }`}
                 >
                   <div className="flex justify-between items-center mb-4">
                     <div className="h-5 w-12 bg-gray-200 rounded-full" />
@@ -150,10 +157,12 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
               ))}
             </div>
           ) : assessments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center w-full">
-              <FileText className="h-10 w-10 text-gray-300 mb-3" />
-              <p className="text-gray-500 font-medium">No templates yet</p>
-              <p className="text-gray-400 text-sm mt-1">
+            <div className={`flex flex-col items-center justify-center py-20 text-center w-full ${
+              theme === 'dark' ? 'bg-slate-950 text-slate-200' : ''
+            }`}>
+              <FileText className={theme === 'dark' ? 'h-10 w-10 text-slate-500 mb-3' : 'h-10 w-10 text-gray-300 mb-3'} />
+              <p className={theme === 'dark' ? 'text-slate-200 font-medium' : 'text-gray-500 font-medium'}>No templates yet</p>
+              <p className={theme === 'dark' ? 'text-slate-400 text-sm mt-1' : 'text-gray-400 text-sm mt-1'}>
                 Create an assessment and save it as a template
               </p>
             </div>
@@ -191,11 +200,17 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                 return (
                   <div
                     key={assessment._id}
-                    className="bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-200 flex flex-col"
+                    className={`rounded-xl border hover:shadow-xl transition-all duration-200 flex flex-col ${
+                      theme === 'dark'
+                        ? 'bg-slate-900 border-slate-700 hover:border-indigo-300/70'
+                        : 'bg-white border-gray-200 hover:border-indigo-300'
+                    }`}
                     style={{ minHeight: "320px" }}
                   >
                     {/* Card Header */}
-                    <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                    <div className={`px-5 pt-5 pb-4 ${
+                      theme === 'dark' ? 'border-b border-slate-700' : 'border-b border-gray-100'
+                    }`}>
                       <div className="flex items-start justify-between gap-2 mb-3">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 shrink-0">
                           {assessment.examType ?? "AI"}
@@ -210,11 +225,15 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                         </span>
                       </div>
 
-                      <h3 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
+                      <h3 className={`text-base font-semibold leading-snug line-clamp-2 ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
                         {assessment.test_title || assessment.position}
                       </h3>
 
-                      <div className="flex items-center gap-4 mt-2.5 text-xs text-gray-500">
+                      <div className={`flex items-center gap-4 mt-2.5 text-xs ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                      }`}>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5 text-gray-400" />
                           {assessment.duration}
@@ -236,7 +255,9 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
 
                     {/* Skills Section — flex-1 fills remaining space so all cards are equal height */}
                     <div className="px-5 py-4 flex-1">
-                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2.5">
+                      <p className={`text-xs font-medium uppercase tracking-wider mb-2.5 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-400'
+                      }`}>
                         Skills
                       </p>
                       {skills.length === 0 ? (
@@ -263,7 +284,9 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="px-5 pb-5 pt-3 border-t border-gray-100">
+                    <div className={`px-5 pb-5 pt-3 ${
+                      theme === 'dark' ? 'border-t border-slate-700' : 'border-t border-gray-100'
+                    }`}>
                       {assessment.createdAt && (
                         <p className="text-xs text-gray-400 mb-3">
                           Created{" "}
@@ -282,14 +305,22 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                         </button>
                         <button
                           onClick={() => handleViewCandidates(assessment)}
-                          className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-150"
+                          className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
+                            theme === 'dark'
+                              ? 'text-slate-200 bg-slate-800 border border-slate-700 hover:bg-slate-700 hover:border-slate-600'
+                              : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                          }`}
                           title="View Candidates"
                         >
                           <Users className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => onEditInterview(assessment)}
-                          className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-150"
+                          className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
+                            theme === 'dark'
+                              ? 'text-slate-200 bg-slate-800 border border-slate-700 hover:bg-slate-700 hover:border-slate-600'
+                              : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                          }`}
                           title="Edit"
                         >
                           <FileText className="h-4 w-4" />
@@ -311,20 +342,32 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
           onClick={handleCloseModal}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+            className={`rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden ${
+              theme === 'dark' ? 'bg-slate-900 border border-slate-700' : 'bg-white'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className={`flex items-center justify-between px-6 py-4 ${
+              theme === 'dark' ? 'border-b border-slate-700' : 'border-b border-gray-200'
+            }`}>
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className={`text-xl font-semibold ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
                   {selectedInterview?.position}
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">Candidate Details</p>
+                <p className={`text-sm mt-1 ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                }`}>Candidate Details</p>
               </div>
 
               <button
                 onClick={handleCloseModal}
-                className="text-gray-400 hover:text-gray-600"
+                className={`${
+                  theme === 'dark'
+                    ? 'text-slate-400 hover:text-slate-200'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
               >
                 <X className="h-6 w-6" />
               </button>
@@ -342,7 +385,11 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                     setNameSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-64"
+                  className={`rounded-lg px-4 py-2 text-sm w-64 ${
+                    theme === 'dark'
+                      ? 'bg-slate-800 border border-slate-700 text-white placeholder-slate-500'
+                      : 'border border-gray-200 text-slate-700'
+                  }`}
                 />
 
                 {/* Status Filter */}
@@ -352,7 +399,11 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                     setStatusFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="border border-gray-200 rounded-lg px-4 py-2 text-sm"
+                  className={`rounded-lg px-4 py-2 text-sm ${
+                    theme === 'dark'
+                      ? 'bg-slate-800 border border-slate-700 text-white'
+                      : 'border border-gray-200 text-slate-700'
+                  }`}
                 >
                   <option value="all">All Status</option>
                   <option value="scheduled">Scheduled</option>
@@ -374,34 +425,54 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
               </div>
 
               {/* ================= TABLE ================= */}
-              <div className="overflow-x-auto border border-gray-200 rounded-xl overflow-hidden">
+              <div className={`overflow-x-auto rounded-xl overflow-hidden ${
+                theme === 'dark' ? 'border border-slate-700' : 'border border-gray-200'
+              }`}>
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    <tr className={`${
+                      theme === 'dark' ? 'border-b border-slate-700 bg-slate-900' : 'border-b border-gray-200 bg-gray-50'
+                    }`}>
+                      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                      }`}>
                         S.No
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                      }`}>
                         UserName
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                      }`}>
                         Email
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                      }`}>
                         Start Date
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                      }`}>
                         End Date
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                      }`}>
                         Status
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                      <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+                      }`}>
                         Scorecard
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className={`${
+                    theme === 'dark' ? 'bg-slate-900 divide-slate-700' : 'bg-white divide-gray-200'
+                  }`}>
                     {paginatedCandidates.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="text-center py-12">
@@ -422,18 +493,30 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                           return (
                             <tr
                               key={candidate._id || index}
-                              className="hover:bg-gray-50"
+                              className={`${
+                                theme === 'dark'
+                                  ? 'hover:bg-slate-800'
+                                  : 'hover:bg-gray-50'
+                              }`}
                             >
-                              <td className="px-4 py-3 text-sm text-gray-900">
+                              <td className={`px-4 py-3 text-sm ${
+                                theme === 'dark' ? 'text-slate-200' : 'text-gray-900'
+                              }`}>
                                 {globalIndex}
                               </td>
-                              <td className="px-4 py-3 text-sm text-gray-600 font-medium">
+                              <td className={`px-4 py-3 text-sm font-medium ${
+                                theme === 'dark' ? 'text-slate-200' : 'text-gray-600'
+                              }`}>
                                 {candidate.candidateId.name}
                               </td>
-                              <td className="px-4 py-3 text-sm text-gray-600 font-medium">
+                              <td className={`px-4 py-3 text-sm font-medium ${
+                                theme === 'dark' ? 'text-slate-200' : 'text-gray-600'
+                              }`}>
                                 {candidate.candidateId.email}
                               </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">
+                              <td className={`px-4 py-3 text-sm ${
+                                theme === 'dark' ? 'text-slate-200' : 'text-gray-600'
+                              }`}>
                                 {new Date(
                                   candidate.scheduledStartDate,
                                 ).toLocaleDateString("en-US", {
@@ -442,7 +525,9 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                                   year: "numeric",
                                 })}
                               </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">
+                              <td className={`px-4 py-3 text-sm ${
+                                theme === 'dark' ? 'text-slate-200' : 'text-gray-600'
+                              }`}>
                                 {new Date(
                                   candidate.scheduledEndDate,
                                 ).toLocaleDateString("en-US", {
@@ -451,16 +536,25 @@ const ActiveInterviews: React.FC<ActiveInterviewsProps> = ({
                                   year: "numeric",
                                 })}
                               </td>
-                              <td className="px-4 py-3 text-sm">
-                                <span
+                              <td className={`px-4 py-3 text-sm ${
+                                theme === 'dark' ? 'text-slate-200' : ''
+                              }`}>                                <span
                                   className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                    candidate.status === "completed"
-                                      ? "bg-green-100 text-green-700"
-                                      : candidate.status === "in_progress"
-                                        ? "bg-blue-100 text-blue-700"
-                                        : candidate.status === "cancelled"
-                                          ? "bg-red-100 text-red-700"
-                                          : "bg-yellow-100 text-yellow-700"
+                                    theme === 'dark'
+                                      ? candidate.status === "completed"
+                                        ? "bg-green-900/30 text-green-300"
+                                        : candidate.status === "in_progress"
+                                          ? "bg-blue-900/30 text-blue-300"
+                                          : candidate.status === "cancelled"
+                                            ? "bg-red-900/30 text-red-300"
+                                            : "bg-yellow-900/30 text-yellow-300"
+                                      : candidate.status === "completed"
+                                        ? "bg-green-100 text-green-700"
+                                        : candidate.status === "in_progress"
+                                          ? "bg-blue-100 text-blue-700"
+                                          : candidate.status === "cancelled"
+                                            ? "bg-red-100 text-red-700"
+                                            : "bg-yellow-100 text-yellow-700"
                                   }`}
                                 >
                                   {candidate.status === "in_progress"

@@ -20,6 +20,7 @@ import ActiveInterviews from "../../components/admin/AI Interview/ActiveIntervie
 import { userPath } from "../../routes/EncryptRoute";
 import { adminService } from "../../services/service/adminService";
 import AddCandidateModal from "../../components/Candidates/AddCandidate";
+import { useTheme } from "../../context/Themecontext";
 export default function InterviewSetup() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -68,6 +69,8 @@ export default function InterviewSetup() {
   const [reDirect, setReDirect] = useState(false);
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [candidateSearch, setCandidateSearch] = useState("");
+
+  const { theme } = useTheme();
   const handleFileDrop = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
@@ -132,7 +135,7 @@ export default function InterviewSetup() {
       const combinedSkills = [
         ...(analysis?.requiredSkills || []),
         ...(analysis?.niceToHaveSkills || []),
-      ];
+      ]; 
 
       if (combinedSkills.length > 0) {
         setSkills((prev) => {
@@ -209,30 +212,26 @@ export default function InterviewSetup() {
       setSelectedCandidates((prev) => [...prev, candidate]);
     }
   };
-  useEffect(() => {
-    const runAI = async () => {
-      try {
-        if (jdAnalysis && candidates.length > 0) {
-          setGroqLoading(true);
 
-          const filtered = await scoreCandidatesWithGroq(
-            candidates,
-            jdAnalysis,
-          );
-
-          setScoredCandidates(filtered);
-        } else {
-          setScoredCandidates(candidates);
-        }
-      } catch (error) {
-        console.error("AI filtering error:", error);
-      } finally {
-        setGroqLoading(false);
-      }
-    };
-
-    runAI();
-  }, [jdAnalysis, candidates]);
+ useEffect(() => {
+  if (!jdAnalysis) {
+    setScoredCandidates(candidates); // ← seed when no JD uploaded
+    return;
+  }
+  const runAI = async () => {
+    try {
+      setGroqLoading(true);
+      const filtered = await scoreCandidatesWithGroq(candidates, jdAnalysis);
+      setScoredCandidates(filtered);
+    } catch (error) {
+      console.error("AI filtering error:", error);
+      setScoredCandidates(candidates);
+    } finally {
+      setGroqLoading(false);
+    }
+  };
+  runAI();
+}, [jdAnalysis, candidates]);
   const handleGenerateAndSendInvites = async () => {
     try {
       if (!file) {
@@ -370,41 +369,35 @@ export default function InterviewSetup() {
     }
   };
 
-  // ================= FETCH CANDIDATES =================
-
   const fetchCandidates = async () => {
-    try {
-      setCandidatesLoading(true);
-
-      const res: any = await adminService.getAllCandidate(1, 100, "all");
-      setCandidates(res.data);
-      setFilteredCandidates(res.data);
-    } catch (error) {
-      console.error("Failed to fetch candidates", error);
-    } finally {
-      setCandidatesLoading(false);
-    }
-  };
+  try {
+    setCandidatesLoading(true);
+    const res: any = await adminService.getAllCandidate(1, 100, "all");
+    const list = res.data || [];
+    setCandidates(list);
+    if (!jdAnalysis) setScoredCandidates(list); // ← ADD THIS
+  } catch (error) {
+    console.error("Failed to fetch candidates", error);
+  } finally {
+    setCandidatesLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchCandidates();
   }, [showAddCandidateModal]);
 
-  // ================= SEARCH FILTER =================
-
   useEffect(() => {
-    if (!searchTerm) {
-      setFilteredCandidates(scoredCandidates);
-      return;
-    }
-
-    const filtered = scoredCandidates.filter((c: any) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-
-    setFilteredCandidates(filtered);
-  }, [searchTerm, scoredCandidates]);
-  // ================= SEND INVITATIONS =================
+  const base = scoredCandidates.length > 0 ? scoredCandidates : candidates;
+  if (!searchTerm.trim()) {
+    setFilteredCandidates(base); // ← populates on first open too
+    return;
+  }
+  const filtered = base.filter((c: any) =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  setFilteredCandidates(filtered);
+}, [searchTerm, scoredCandidates, candidates]); // ← add candidates as dep
 
   const handleSendInvitations = async () => {
     try {
@@ -703,29 +696,28 @@ export default function InterviewSetup() {
           {/* Tabs */}
           <div className="flex items-center justify-between mb-6">
             {/* Tabs */}
-            <div className="inline-flex bg-white rounded-lg p-1">
-              <button
-                onClick={() => setActiveTab("setup")}
-                className={`px-6 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === "setup"
-                    ? "bg-[#F4F7FE] text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Interview Setup
-              </button>
-
-              <button
-                onClick={() => setActiveTab("template")}
-                className={`px-6 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === "template"
-                    ? "bg-[#F4F7FE] text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                AI Interview Template
-              </button>
-            </div>
+            <div className={`inline-flex rounded-lg p-2 ${theme === 'dark' ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
+  <button
+    onClick={() => setActiveTab("setup")}
+    className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${
+      activeTab === "setup"
+        ? theme === 'dark' ? 'bg-slate-800 text-white shadow-sm' : 'bg-[#F4F7FE] text-gray-900 shadow-sm'
+        : theme === 'dark' ? 'text-slate-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+    }`}
+  >
+    Interview Setup
+  </button>
+  <button
+    onClick={() => setActiveTab("template")}
+    className={`px-6 py-2 text-sm font-medium rounded-md transition-colors ${
+      activeTab === "template"
+        ? theme === 'dark' ? 'bg-slate-800 text-white shadow-sm' : 'bg-[#F4F7FE] text-gray-900 shadow-sm'
+        : theme === 'dark' ? 'text-slate-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+    }`}
+  >
+    AI Interview Template
+  </button>
+</div>
           </div>
           {/* Right Side Controls */}
           {activeTab === "template" && (
@@ -1076,7 +1068,7 @@ export default function InterviewSetup() {
                         )}
                       </label>
 
-                      {/* Candidate Dropdown */}
+                      {/* Candidate Dropdown Trigger */}
                       <div
                         className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-all"
                         onClick={() => {
@@ -1116,16 +1108,16 @@ export default function InterviewSetup() {
                       {/* Dropdown */}
                       {showDropdown && (
                         <>
-                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                          <div className={`absolute z-50 w-full mt-1 border rounded-lg shadow-lg max-h-60 overflow-hidden ${theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-white border-gray-300'}`}>
                             {/* Search */}
-                            <div className="p-2 border-b border-gray-200">
+                            <div className={`p-2 border-b ${theme === 'dark' ? 'border-slate-600' : 'border-gray-200'}`}>
                               <input
                                 type="text"
                                 placeholder="Search by name or role..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+                                className={`w-full px-3 py-2 text-sm border rounded-md outline-none ${theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' : 'border-gray-300'}`}
                               />
                             </div>
 
@@ -1139,7 +1131,7 @@ export default function InterviewSetup() {
                                   </div>
                                 </div>
                               ) : filteredCandidates.length === 0 ? (
-                                <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                                <div className={`px-4 py-3 text-sm text-center ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                                   No candidates found
                                 </div>
                               ) : (
@@ -1153,8 +1145,12 @@ export default function InterviewSetup() {
                                       key={candidate._id}
                                       className={`px-4 py-2 cursor-pointer transition-colors ${
                                         isSelected
-                                          ? "bg-indigo-50 hover:bg-indigo-100"
-                                          : "hover:bg-gray-50"
+                                          ? theme === 'dark'
+                                            ? "bg-indigo-900/40 hover:bg-indigo-900/60"
+                                            : "bg-indigo-50 hover:bg-indigo-100"
+                                          : theme === 'dark'
+                                            ? "hover:bg-slate-700"
+                                            : "hover:bg-gray-50"
                                       }`}
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1175,15 +1171,15 @@ export default function InterviewSetup() {
                                     >
                                       <div className="flex items-center justify-between">
                                         <div>
-                                          <div className="text-sm font-medium text-gray-900">
+                                          <div className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
                                             {candidate.name}
                                             {candidate.role && (
-                                              <span className="ml-1 text-xs text-gray-400 font-normal">
+                                              <span className={`ml-1 text-xs font-normal ${theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`}>
                                                 — {candidate.role}
                                               </span>
                                             )}
                                           </div>
-                                          <div className="text-xs text-gray-500">
+                                          <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                                             {candidate.email}
                                           </div>
                                         </div>
@@ -1219,30 +1215,6 @@ export default function InterviewSetup() {
                         />
                       </div>
 
-                      {/* ================= Interview Link Section ================= */}
-                      {/* <div className="mb-5 mt-2">
-                        <label className="block text-xs sm:text-sm text-gray-600 mb-1">
-                          Interview Link
-                        </label>
-
-                        <div className="w-full  flex gap-4">
-                          <input
-                            type="text"
-                            value={interviewLink}
-                            readOnly
-                            className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-700 focus:outline-none"
-                          />
-
-                          <button
-                            type="button"
-                            onClick={handleCopyLink}
-                            className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition"
-                          >
-                            Copy
-                          </button>
-                        </div>
-                      </div> */}
-
                       <div className="w-full mt-4 flex gap-4">
                         {/* Start Date */}
                         <div className="w-1/2">
@@ -1269,7 +1241,7 @@ export default function InterviewSetup() {
                                   setEndDate(null);
                                 }
                               }}
-                              className="calender w-full border border-gray-300 rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4318FF]"
+                              className="calender w-full border border-gray-300 rounded-md px-4 py-2 text-sm outline-none"
                             />
 
                             <img
@@ -1303,7 +1275,7 @@ export default function InterviewSetup() {
                                 const value = e.target.value;
                                 setEndDate(value ? new Date(value) : null);
                               }}
-                              className="calender w-full border border-gray-300 rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4318FF]"
+                              className="calender w-full border border-gray-300 rounded-md px-4 py-2 text-sm outline-none"
                             />
 
                             <img
@@ -1334,44 +1306,52 @@ export default function InterviewSetup() {
         </div>
         {showCandidateModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden">
+            <div className={`w-full max-w-2xl rounded-xl shadow-xl overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'}`}>
+              
               {/* HEADER */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <div className={`flex items-center justify-between px-5 py-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                     Add Candidates
                   </h3>
-                  <p className="text-xs text-gray-500">
+                  <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                     Select additional candidates for this assessment
                   </p>
                 </div>
-
                 <button onClick={() => setShowCandidateModal(false)}>
-                  <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+                  <X className={`h-5 w-5 ${theme === 'dark' ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700'}`} />
                 </button>
               </div>
-
+ 
               {/* SEARCH */}
-              <div className="p-3 border-b border-gray-200">
+              <div className={`p-3 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
                 <input
                   type="text"
                   placeholder="Search by name or role..."
                   value={candidateSearch}
                   onChange={(e) => setCandidateSearch(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className={`w-full px-3 py-2 text-sm border rounded-md focus:outline-none ${
+                    theme === 'dark'
+                      ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                      : 'border-gray-200 text-gray-900'
+                  }`}
                 />
               </div>
-
+ 
               {/* INFO BAR */}
-              <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500">
+              <div className={`flex items-center justify-between px-4 py-2 border-b text-xs ${
+                theme === 'dark'
+                  ? 'bg-slate-900 border-slate-700 text-slate-400'
+                  : 'bg-gray-50 border-gray-200 text-gray-500'
+              }`}>
                 <span>{candidates.length} candidates available</span>
                 {selectedCandidates.length > 0 && (
-                  <span className="text-indigo-600 font-medium">
+                  <span className="text-indigo-500 font-medium">
                     {selectedCandidates.length} selected
                   </span>
                 )}
               </div>
-
+ 
               {/* LIST */}
               <div className="max-h-72 overflow-y-auto">
                 {candidates
@@ -1384,69 +1364,71 @@ export default function InterviewSetup() {
                     const isSelected = selectedCandidates.some(
                       (c: any) => c._id === candidate._id,
                     );
-
+ 
                     return (
                       <div
                         key={candidate._id}
                         onClick={() => toggleCandidateSelection(candidate)}
                         className={`px-4 py-3 cursor-pointer transition ${
                           isSelected
-                            ? "bg-indigo-50 hover:bg-indigo-100 border-l-4 border-indigo-500"
-                            : "hover:bg-gray-50"
+                            ? theme === 'dark'
+                              ? 'bg-indigo-900/40 hover:bg-indigo-900/60 border-l-4 border-indigo-500'
+                              : 'bg-indigo-50 hover:bg-indigo-100 border-l-4 border-indigo-500'
+                            : theme === 'dark'
+                              ? 'hover:bg-slate-700'
+                              : 'hover:bg-gray-50'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           {/* LEFT */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-medium text-gray-900">
+                              <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
                                 {candidate.name}
                               </span>
-
                               {candidate.role && (
-                                <span className="text-xs text-gray-400">
+                                <span className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`}>
                                   — {candidate.role}
                                 </span>
                               )}
                             </div>
-
-                            <div className="text-xs text-gray-500 mt-0.5">
+                            <div className={`text-xs mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                               {candidate.email}
                             </div>
                           </div>
-
+ 
                           {/* RIGHT */}
                           {isSelected && (
-                            <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                            <CheckCircle2 className="h-5 w-5 text-indigo-500" />
                           )}
                         </div>
                       </div>
                     );
                   })}
-
+ 
                 {candidates.length === 0 && (
-                  <div className="px-4 py-6 text-center text-sm text-gray-400">
+                  <div className={`px-4 py-6 text-center text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`}>
                     No candidates available
                   </div>
                 )}
               </div>
-
+ 
               {/* FOOTER */}
-              <div className="flex justify-between items-center px-5 py-4 border-t border-gray-200 bg-gray-50">
-                <span className="text-xs text-gray-500">
+              <div className={`flex justify-between items-center px-5 py-4 border-t ${
+                theme === 'dark'
+                  ? 'border-slate-700 bg-slate-900'
+                  : 'border-gray-200 bg-gray-50'
+              }`}>
+                <span className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                   Click on candidates to select/deselect
                 </span>
-
                 <div className="flex gap-3">
-                  {/* Add Candidate Button */}
                   <button
                     onClick={() => setShowAddCandidateModal(true)}
                     className="px-5 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                   >
                     + Add Candidate
                   </button>
-
-                  {/* Done Button */}
                   <button
                     onClick={() => setShowCandidateModal(false)}
                     className="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
@@ -1455,6 +1437,7 @@ export default function InterviewSetup() {
                   </button>
                 </div>
               </div>
+ 
             </div>
           </div>
         )}
