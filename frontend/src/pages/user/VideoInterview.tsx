@@ -155,7 +155,7 @@
 // //         ref={vidRef}
 // //         muted playsInline
 // //         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${camOn && streamReady ? "opacity-100" : "opacity-0"}`}
-// //         style={{ transform: "scaleX(-1)" }} // mirror like a selfie
+// //         style={{ transform: "scaleX(-1)" }} // mirror like a real camera
 // //       />
 // //       {(!camOn || !streamReady) && (
 // //         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#1a2a5e] to-[#060c25]">
@@ -9042,7 +9042,8 @@ const VideoInterview: React.FC = () => {
 
   // ── Vapi ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const inst = new Vapi("6736f532-acfb-41f4-a5ac-0fe67cbc7be7");
+    // const inst = new Vapi("6736f532-acfb-41f4-a5ac-0fe67cbc7be7");
+    const inst = new Vapi("aa7ce731-2288-4878-870d-68f9d0335519");
     setVapi(inst);
 
     inst.on("speech-start", () => {

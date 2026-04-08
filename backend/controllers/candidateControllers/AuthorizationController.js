@@ -267,8 +267,9 @@ export const getCandidateProfile = async (req, res) => {
     // ------------------ MCQ ------------------
     mcqInterviews.forEach((interview) => {
       const candidateData = interview.candidates.find(
-        (c) => c.candidateId === id
+        (c) => c.candidateId.toString() === id
       );
+      console.log("Candidate Data:", candidateData);
 
       const scoreData = scores.find(
         (s) =>
@@ -312,7 +313,7 @@ export const getCandidateProfile = async (req, res) => {
         title: interview.position,
         examType: "AI",
         difficulty: interview.difficulty,
-        status: "completed",
+        status: candidateData?.status || "pending",
 
         score: scoreData?.totalScore ?? 0,
         passingScore: interview.passingScore,
