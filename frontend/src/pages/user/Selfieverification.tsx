@@ -32,7 +32,7 @@ const loadFaceModels = async () => {
 // ─── Face validation ──────────────────────────────────────────────────────────
 
 /**
- * Uses TinyFaceDetector + 68-point landmarks to validate the selfie:
+ * Uses TinyFaceDetector + 68-point landmarks to validate the photo:
  *   1. Exactly ONE face with confidence ≥ 0.55
  *   2. Both eye landmark groups present (proxy for eyes open/visible)
  *   3. Face roughly front-facing (nose tip near jaw midpoint, offset < 28 %)
@@ -354,7 +354,7 @@ const interviewId :any = sessionStorage.getItem("interviewId");
               <p
                 className={`text-xs sm:text-sm font-semibold ${step2Status === "completed" ? "text-green-400" : "text-[#2D55FB]"}`}
               >
-                Selfie Capture
+            Photo Capture
               </p>
               <p className="text-gray-500 text-xs">
                 {step2Status === "completed" ? "Completed" : "In Progress"}
@@ -372,10 +372,10 @@ const interviewId :any = sessionStorage.getItem("interviewId");
           >
             <div className="text-center mb-6">
               <h1 className="text-white text-2xl sm:text-3xl font-bold mb-2">
-                Selfie Verification
+            Photo Verification
               </h1>
               <p className="text-gray-400 text-sm sm:text-base">
-                Take a clear selfie to verify your identity and ensure secure
+                Take a clear photo to verify your identity and ensure secure
                 assessment access
               </p>
             </div>
@@ -478,7 +478,7 @@ const interviewId :any = sessionStorage.getItem("interviewId");
                   capturedImage && (
                     <motion.img
                       src={capturedImage}
-                      alt="Captured selfie"
+                      alt="Captured photo"
                       className="w-full object-cover rounded-xl"
                       style={{ maxHeight: "280px", minHeight: "260px" }}
                       initial={{ opacity: 0 }}
@@ -598,7 +598,7 @@ const interviewId :any = sessionStorage.getItem("interviewId");
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="h-4 w-4 text-[#2D55FB]" />
                 <h3 className="text-[#2D55FB] font-semibold text-sm">
-                  Selfie Guidelines
+                  Photo Guidelines
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-4">

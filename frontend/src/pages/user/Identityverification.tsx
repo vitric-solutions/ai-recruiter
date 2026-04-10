@@ -100,7 +100,7 @@
 // // ─── Face validation (face-api.js) ───────────────────────────────────────────
 
 // /**
-//  * Uses TinyFaceDetector + 68-point landmarks to validate the captured selfie:
+//  * Uses TinyFaceDetector + 68-point landmarks to validate the captured photo:
 //  *   1. Exactly ONE face detected with confidence ≥ 0.55
 //  *   2. Both eye landmark groups present (proxy for eyes open/visible)
 //  *   3. Face roughly front-facing (nose tip near jaw midpoint, offset < 28 %)
@@ -843,7 +843,7 @@ const IdentityVerification: React.FC = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── selfie camera state ──────────────────────────────────────────────────────
+  // ── photo camera state ──────────────────────────────────────────────────────
   const [cameraStatus, _] = useState<CameraStatus>("idle");
  
   const [____, setCountdown] = useState<number | null>(null);
@@ -856,7 +856,7 @@ const IdentityVerification: React.FC = () => {
   const [cardScanLinePos, setCardScanLinePos] = useState(0);
   const [cardFrozenFrame, setCardFrozenFrame] = useState<string | null>(null);
 
-  // ── refs: selfie ─────────────────────────────────────────────────────────────
+  // ── refs: photo camera ─────────────────────────────────────────────────────────────
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const liveCanvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);

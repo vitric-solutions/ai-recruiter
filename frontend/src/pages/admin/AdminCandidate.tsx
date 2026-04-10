@@ -447,7 +447,7 @@ const ActionMenu = ({
             }}
             className={`w-full text-left px-4 py-2 text-sm transition ${theme === 'dark' ? 'text-slate-100 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-100'}`}
           >
-            Report
+            Reports
           </button>
           {row.candidate_status === "active" ? (
             <button
@@ -574,6 +574,8 @@ const Candidates = () => {
     fetchCandidates(page);
   }, [page, statusFilter, showOnlyActive]); // eslint-disable-line
 
+  console.log("candidates", data);
+
   useEffect(() => {
     socket.on("candidate-added", () => fetchCandidates(page));
     socket.on("candidate-updated", () => fetchCandidates(page));
@@ -639,6 +641,7 @@ const Candidates = () => {
       setLoading(true);
       const res = await adminService.getCandidateProfile(candidate._id);
       if (res.status === 200) {
+        console.log("Candidate profile:", res);
         setSelectedCandidate(res);
         setIsViewReportModalOpen(true);
       }
