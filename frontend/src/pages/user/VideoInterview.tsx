@@ -7543,7 +7543,7 @@ const POST_CLOSE_LOCK_MS = 6000;
 // Natural conversation: wait 5s after user goes silent before AI responds
 const USER_PAUSE_GRACE_MS = 5000;
 // If user pauses for 2s+ during speech, it's a mid-answer pause — don't interrupt
-const MID_ANSWER_PAUSE_MS = 2000;
+// const MID_ANSWER_PAUSE_MS = 2000;
 
 const MIN_ANSWER_LENGTH = 15;
 

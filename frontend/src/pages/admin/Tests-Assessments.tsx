@@ -1260,7 +1260,7 @@ const TestsAssessments = () => {
                           No candidates found
                         </div>
                       ) : (
-                        filteredCandidates?.map((candidate) => {
+                        filteredCandidates?.map((candidate: any) => {
                           const isSelected = formData.candidates.some((c: any) => c._id === candidate._id);
                           const label = candidate.matchLabel;
                           const style = matchStyles[label] || matchStyles["Low Match"];

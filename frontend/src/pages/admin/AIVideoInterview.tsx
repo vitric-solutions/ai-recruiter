@@ -195,12 +195,12 @@ export default function InterviewSetup() {
   };
 
   // AI candidates (dropdown)
-  const aiCandidates = scoredCandidates || [];
+  // const aiCandidates = scoredCandidates || [];
 
   // Manual candidates (modal)
-  const manualCandidates = candidates.filter(
-    (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
-  );
+  // const manualCandidates = candidates.filter(
+  //   (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
+  // );
   const toggleCandidateSelection = (candidate: any) => {
     const exists = selectedCandidates.some((c) => c._id === candidate._id);
 
