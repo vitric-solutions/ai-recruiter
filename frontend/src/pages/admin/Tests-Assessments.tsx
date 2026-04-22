@@ -1101,7 +1101,7 @@ const TestsAssessments = () => {
                       handleInputChange("primarySkill", e.target.value)
                     }
                     disabled={mode === "prefill"}
-                    placeholder="e.g. React.js"
+                    placeholder="e.g. React.js, Node.js"
                     className={inputCls}
                   />
                 </div>
@@ -1270,42 +1270,46 @@ const TestsAssessments = () => {
 
                 <div
                   className={`w-full min-h-[42px] px-3 py-2 border rounded-lg cursor-pointer transition-all ${
-                    errors.candidates
-                      ? "border-red-300 bg-red-50 ring-2 ring-red-100"
-                      : isDark
-                        ? "border-slate-600 hover:border-slate-500 bg-slate-700"
-                        : "border-gray-300 hover:border-gray-400"
+                  errors.candidates
+                  ? "border-red-300 bg-red-50 ring-2 ring-red-100"
+                  : isDark
+                  ? "border-indigo-500 hover:border-indigo-400 bg-slate-700"
+                  : "border-indigo-300 hover:border-indigo-400 bg-indigo-50"
                   }`}
                   onClick={() =>
-                    setShowCandidateDropdown(!showCandidateDropdown)
+                  setShowCandidateDropdown(!showCandidateDropdown)
                   }
                 >
                   {formData.candidates.length === 0 ? (
-                    <span
-                      className={`text-sm ${isDark ? "text-slate-400" : "text-gray-400"}`}
-                    >
-                      {hasGroqScores
-                        ? "Candidates ranked by JD match — select to invite"
-                        : "Select Candidates to invite"}
-                    </span>
+                  <span
+                  className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                  >
+                  {hasGroqScores
+                  ? "Candidates ranked by JD match — select to invite"
+                  : "Select Candidates to invite"}
+                  </span>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.candidates.map((c: any) => (
-                        <span
-                          key={c._id}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-md"
-                        >
-                          {c.name}
-                          <X
-                            className="h-3 w-3 cursor-pointer hover:text-indigo-900"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeCandidateChip(c._id);
-                            }}
-                          />
-                        </span>
-                      ))}
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                  {formData.candidates.map((c: any) => (
+                  <span
+                    key={c._id}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    isDark
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "bg-indigo-500 text-white hover:bg-indigo-600"
+                    }`}
+                  >
+                    {c.name}
+                    <X
+                    className="h-3.5 w-3.5 cursor-pointer hover:opacity-75"
+                    onClick={(e) => {
+                    e.stopPropagation();
+                    removeCandidateChip(c._id);
+                    }}
+                    />
+                  </span>
+                  ))}
+                  </div>
                   )}
                 </div>
 
@@ -1467,7 +1471,7 @@ const TestsAssessments = () => {
                           No candidates found
                         </div>
                       ) : (
-                        candidatesList?.map((candidate) => {
+                        candidatesList?.map((candidate:any) => {
                           const isSelected = formData.candidates.some(
                             (c: any) => c._id === candidate._id,
                           );

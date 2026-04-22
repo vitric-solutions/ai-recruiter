@@ -574,7 +574,7 @@ const Candidates = () => {
     fetchCandidates(page);
   }, [page, statusFilter, showOnlyActive]); // eslint-disable-line
 
-  console.log("candidates", data);
+  // console.log("candidates", data);
 
   useEffect(() => {
     socket.on("candidate-added", () => fetchCandidates(page));

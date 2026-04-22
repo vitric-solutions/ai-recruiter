@@ -9,6 +9,7 @@ import LoginPage from "../pages/admin/AdminLogin";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import PageNotFound from "../common/PageNotFound";
 import ToastProvider from "../common/ToastProvider";
+import Settings from "../pages/admin/Settings";
 import { ENCRYPTED_ADMIN_ROUTES as R } from "./EncryptRoute";
 
 function AdminRoutes() {
@@ -26,6 +27,7 @@ function AdminRoutes() {
           <Route path={R.tests}      element={<TestsAssessments />} />
           <Route path={R.video}      element={<AIVideoInterview />} />
           <Route path={R.reports}    element={<Reports />} />
+          <Route path={R.settings}   element={<Settings />} />
         </Route>
 
         {/* 404 Route (Always Last) */}

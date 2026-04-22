@@ -770,7 +770,7 @@ const InterviewInstructions: React.FC = () => {
               className="bg-[#0d1535]/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10"
               {...fadeUp(0.3)}
             >
-              <div className="grid grid-cols-2 divide-x divide-white/10">
+              <div className="grid grid-cols-1 divide-x divide-white/10">
                 <div className="flex flex-col items-center gap-1 pr-4">
                   {isMCQ ? (
                     <>
@@ -792,13 +792,13 @@ const InterviewInstructions: React.FC = () => {
                     </>
                   )}
                 </div>
-                <div className="flex flex-col items-center gap-1 pl-4">
+                {/* <div className="flex flex-col items-center gap-1 pl-4">
                   <AlertTriangle className="h-6 w-6 text-[#2D55FB] mb-1" />
                   <p className="text-white text-lg font-bold">
                     {interview?.difficulty ?? "—"}
                   </p>
                   <p className="text-gray-500 text-xs">Difficulty Level</p>
-                </div>
+                </div> */}
               </div>
             </motion.div>
 

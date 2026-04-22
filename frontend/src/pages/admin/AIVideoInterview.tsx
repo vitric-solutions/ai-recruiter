@@ -2423,24 +2423,25 @@ export default function InterviewSetup() {
                             Select Candidates to invite
                           </span>
                         ) : (
-                          <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2">
                             {selectedCandidates.map((c: any) => (
                               <span
-                                key={c._id}
-                                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-md"
+                              key={c._id}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-600 text-white text-xs rounded-md"
                               >
-                                {c.name}
-                                <X
-                                  className="h-3 w-3 cursor-pointer hover:text-indigo-900"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedCandidates((prev) =>
-                                      prev.filter((item) => item._id !== c._id),
-                                    );
-                                  }}
-                                />
+                              {c.name}
+                              <X
+                                className="h-3 w-3 cursor-pointer hover:text-gray-200"
+                                onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCandidates((prev) =>
+                                  prev.filter((item) => item._id !== c._id),
+                                );
+                                }}
+                              />
                               </span>
                             ))}
+                             
                           </div>
                         )}
                       </div>
