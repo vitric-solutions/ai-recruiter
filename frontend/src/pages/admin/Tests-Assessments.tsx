@@ -279,15 +279,15 @@ const TestsAssessments = () => {
     },
   });
 
-  const aiCandidates = scoredCandidates || [];
-  const manualCandidates = candidatesList.filter(
-    (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
-  );
-  const filteredCandidates = manualCandidates.filter((c: any) =>
-    `${c.name} ${c.role || ""} ${c.email}`
-      .toLowerCase()
-      .includes(candidateSearch.toLowerCase()),
-  );
+  // const aiCandidates = scoredCandidates || [];
+  // const manualCandidates = candidatesList.filter(
+  //   (c: any) => !aiCandidates.some((ai: any) => ai._id === c._id),
+  // );
+  // const filteredCandidates = manualCandidates.filter((c: any) =>
+  //   `${c.name} ${c.role || ""} ${c.email}`
+  //     .toLowerCase()
+  //     .includes(candidateSearch.toLowerCase()),
+  // );
 
   const runGroqScoring = async (candidates: any[], analysis: any) => {
     setGroqLoading(true);
@@ -1467,7 +1467,7 @@ const TestsAssessments = () => {
                           No candidates found
                         </div>
                       ) : (
-                        candidatesList?.map((candidate) => {
+                        candidatesList?.map((candidate:any) => {
                           const isSelected = formData.candidates.some(
                             (c: any) => c._id === candidate._id,
                           );
