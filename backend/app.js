@@ -61,6 +61,7 @@ app.use(express.urlencoded({ extended: true }));
 // Static file serving for uploads and scorecards
 app.use("/uploads", express.static("uploads"));
 app.use("/scorecards", express.static("scorecards"));
+app.use("/screen-recordings", express.static("public/screen-recordings"));
 
 // Routes
 app.use("/api/admin", adminRoutes);

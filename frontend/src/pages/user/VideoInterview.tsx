@@ -1,9 +1,8 @@
-
-
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Vapi from "@vapi-ai/web";
 import { Base_Url } from "../../utils/constants";
+import { useScreenRecorder } from "../../hooks/interviewRecorder";
 import {
   Mic,
   MicOff,
@@ -27,6 +26,8 @@ import { userService } from "../../services/service/userService";
 import * as faceapi from "@vladmandic/face-api";
 import { userPath } from "../../routes/EncryptRoute";
 
+
+
 // ─── FACE-API MODEL LOADING ────────────────────────────────────────────────
 const FACE_MODEL_URL =
   "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
@@ -44,9 +45,9 @@ async function loadFaceModels() {
 // ElevenLabs voice IDs — Indian accent, natural cadence
 const VOICE_CONFIG = {
   female: {
-    // voiceId: "pFZP5JQG7iQjIQuC4Bku", 
+    // voiceId: "pFZP5JQG7iQjIQuC4Bku",
     // voiceId: "21m00Tcm4TlvDq8ikWAM",
-    voiceId:"Neha",// "Lily" — warm, natural Indian-English female
+    voiceId: "Neha", // "Lily" — warm, natural Indian-English female
     // stability: 0.6,
     // similarityBoost: 0.78,
     // style: 0.62,
@@ -60,7 +61,7 @@ const VOICE_CONFIG = {
   male: {
     // voiceId: "nPczCjzI2devNBz1zQrb",
     // voiceId: "pNInz6obpgDQGcFmaJgB",
-     voiceId:"Rohan",// "Brian" — replace with Indian male voice ID
+    voiceId: "Rohan", // "Brian" — replace with Indian male voice ID
     // stability: 0.6,
     // similarityBoost: 0.75,
     // style: 0.6,
@@ -1098,6 +1099,14 @@ const VideoInterview: React.FC = () => {
     micOnRef.current = micOn;
   }, [micOn]);
 
+
+  // ── Screen recorder ────────────────────────────────────────────────────
+  const screenRecorder = useScreenRecorder({
+    interview_id,
+    candidateId: cand_id?.candidateId?._id ?? "",
+    getMicStream: () => streamRef.current,
+  });
+
   // ── Keyboard lock ──────────────────────────────────────────────────────
   useEffect(() => {
     const blk = (e: KeyboardEvent) => {
@@ -1284,6 +1293,7 @@ const VideoInterview: React.FC = () => {
       await heygenSvcRef.current.destroy();
       heygenSvcRef.current = null;
     }
+    await screenRecorder.stop(); // ← stop + finalize screen recording
     await tryExitFS();
   }, [stopAllProctoring]);
 
@@ -2110,13 +2120,13 @@ ${RULES}`;
             });
           } catch {}
         } else {
-         const prompts = [
-  "The candidate hasn't responded yet. Gently check in — say something like 'Just checking — can you still hear me okay? No rush, take your time.' Then wait for their answer before moving on.",
-  "Still quiet. Ask warmly 'Are you still there? Feel free to take a moment to think.' Do NOT move to the next question yet.",
-  "Ask if they are having technical issues. Say something like 'I want to make sure we're connected — are you experiencing any audio issues?' Wait for their reply.",
-  "Check in one more time. Ask 'Would you like me to repeat the question?' and then repeat it clearly. Wait.",
-  "Final check — say 'I just want to give you one more moment in case you're having trouble. We can move on whenever you're ready.' Then wait.",
-];
+          const prompts = [
+            "The candidate hasn't responded yet. Gently check in — say something like 'Just checking — can you still hear me okay? No rush, take your time.' Then wait for their answer before moving on.",
+            "Still quiet. Ask warmly 'Are you still there? Feel free to take a moment to think.' Do NOT move to the next question yet.",
+            "Ask if they are having technical issues. Say something like 'I want to make sure we're connected — are you experiencing any audio issues?' Wait for their reply.",
+            "Check in one more time. Ask 'Would you like me to repeat the question?' and then repeat it clearly. Wait.",
+            "Final check — say 'I just want to give you one more moment in case you're having trouble. We can move on whenever you're ready.' Then wait.",
+          ];
           try {
             vapiRef.current?.send({
               type: "add-message",
@@ -2200,7 +2210,7 @@ ${RULES}`;
       setIsGenFeedback(false);
       navigate(userPath("complete", interview_id));
     }
-  }, [interview_id, navigate, userData, interviewInfo]);
+  }, [interview_id, navigate, userData, interviewInfo, cand_id]);
 
   useEffect(() => {
     if (!vapi) return;
@@ -2232,11 +2242,16 @@ ${RULES}`;
   }, [vapi, generateFeedback, clearPauseTimers]);
 
   // ── Controls ────────────────────────────────────────────────────────────
+
   const handleJoin = () => {
     tryEnterFS();
     startCall();
     startSilenceMonitor();
+  
     setScreen("spotlight");
+    
+    // Start recording 1s after call starts — gives Vapi time to inject its <audio> element
+    setTimeout(() => { screenRecorder.start(); }, 1000); 
   };
 
   // Manual end — still submits (user chose to end)
@@ -2247,8 +2262,10 @@ ${RULES}`;
     try {
       vapi?.stop();
     } catch {}
+    setIsCallActive(false);
     tryExitFS();
-    setScreen("lobby");
+    screenRecorder.stop(); // ← stop + finalize screen recording 
+    setScreen("lobby"); // ← This re-renders the component  
     setElapsed(0);
     setVapiReady(false);
     setHeygenStreamLive(false);
@@ -2720,26 +2737,61 @@ ${RULES}`;
             </div>
             <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#0d1535] border border-white/5">
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#0d1535] to-[#060c25]">
-                <motion.div 
+                <motion.div
                   className="w-20 h-20 rounded-full bg-[#2D55FB]/30 border-2 border-[#2D55FB]/50 flex items-center justify-center"
-                  animate={isSpeaking ? { boxShadow: ["0 0 0 0 rgba(45,85,251,0.4)", "0 0 0 15px rgba(45,85,251,0)"] } : {}}
-                  transition={isSpeaking ? { duration: 1.5, repeat: Infinity } : {}}
+                  animate={
+                    isSpeaking
+                      ? {
+                          boxShadow: [
+                            "0 0 0 0 rgba(45,85,251,0.4)",
+                            "0 0 0 15px rgba(45,85,251,0)",
+                          ],
+                        }
+                      : {}
+                  }
+                  transition={
+                    isSpeaking ? { duration: 1.5, repeat: Infinity } : {}
+                  }
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <motion.div 
-                      className="w-3 h-3 bg-[#2D55FB] rounded-full" 
-                      animate={isSpeaking ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] } : { scale: 0.8, opacity: 0.5 }}
-                      transition={isSpeaking ? { duration: 0.7, repeat: Infinity, delay: 0 } : { duration: 0.3 }}
+                    <motion.div
+                      className="w-3 h-3 bg-[#2D55FB] rounded-full"
+                      animate={
+                        isSpeaking
+                          ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }
+                          : { scale: 0.8, opacity: 0.5 }
+                      }
+                      transition={
+                        isSpeaking
+                          ? { duration: 0.7, repeat: Infinity, delay: 0 }
+                          : { duration: 0.3 }
+                      }
                     />
-                    <motion.div 
-                      className="w-3 h-3 bg-[#2D55FB] rounded-full" 
-                      animate={isSpeaking ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] } : { scale: 0.8, opacity: 0.5 }}
-                      transition={isSpeaking ? { duration: 0.7, repeat: Infinity, delay: 0.15 } : { duration: 0.3 }}
+                    <motion.div
+                      className="w-3 h-3 bg-[#2D55FB] rounded-full"
+                      animate={
+                        isSpeaking
+                          ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }
+                          : { scale: 0.8, opacity: 0.5 }
+                      }
+                      transition={
+                        isSpeaking
+                          ? { duration: 0.7, repeat: Infinity, delay: 0.15 }
+                          : { duration: 0.3 }
+                      }
                     />
-                    <motion.div 
-                      className="w-3 h-3 bg-[#2D55FB] rounded-full" 
-                      animate={isSpeaking ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] } : { scale: 0.8, opacity: 0.5 }}
-                      transition={isSpeaking ? { duration: 0.7, repeat: Infinity, delay: 0.3 } : { duration: 0.3 }}
+                    <motion.div
+                      className="w-3 h-3 bg-[#2D55FB] rounded-full"
+                      animate={
+                        isSpeaking
+                          ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }
+                          : { scale: 0.8, opacity: 0.5 }
+                      }
+                      transition={
+                        isSpeaking
+                          ? { duration: 0.7, repeat: Infinity, delay: 0.3 }
+                          : { duration: 0.3 }
+                      }
                     />
                   </div>
                 </motion.div>
@@ -2854,26 +2906,61 @@ ${RULES}`;
               </div>
               <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#0d1535] border border-white/5">
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#0d1535] to-[#060c25]">
-                  <motion.div 
+                  <motion.div
                     className="w-20 h-20 rounded-full bg-[#2D55FB]/30 border-2 border-[#2D55FB]/50 flex items-center justify-center"
-                    animate={isSpeaking ? { boxShadow: ["0 0 0 0 rgba(45,85,251,0.4)", "0 0 0 15px rgba(45,85,251,0)"] } : {}}
-                    transition={isSpeaking ? { duration: 1.5, repeat: Infinity } : {}}
+                    animate={
+                      isSpeaking
+                        ? {
+                            boxShadow: [
+                              "0 0 0 0 rgba(45,85,251,0.4)",
+                              "0 0 0 15px rgba(45,85,251,0)",
+                            ],
+                          }
+                        : {}
+                    }
+                    transition={
+                      isSpeaking ? { duration: 1.5, repeat: Infinity } : {}
+                    }
                   >
                     <div className="flex items-center justify-center gap-2">
-                      <motion.div 
-                        className="w-3 h-3 bg-[#2D55FB] rounded-full" 
-                        animate={isSpeaking ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] } : { scale: 0.8, opacity: 0.5 }}
-                        transition={isSpeaking ? { duration: 0.7, repeat: Infinity, delay: 0 } : { duration: 0.3 }}
+                      <motion.div
+                        className="w-3 h-3 bg-[#2D55FB] rounded-full"
+                        animate={
+                          isSpeaking
+                            ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }
+                            : { scale: 0.8, opacity: 0.5 }
+                        }
+                        transition={
+                          isSpeaking
+                            ? { duration: 0.7, repeat: Infinity, delay: 0 }
+                            : { duration: 0.3 }
+                        }
                       />
-                      <motion.div 
-                        className="w-3 h-3 bg-[#2D55FB] rounded-full" 
-                        animate={isSpeaking ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] } : { scale: 0.8, opacity: 0.5 }}
-                        transition={isSpeaking ? { duration: 0.7, repeat: Infinity, delay: 0.15 } : { duration: 0.3 }}
+                      <motion.div
+                        className="w-3 h-3 bg-[#2D55FB] rounded-full"
+                        animate={
+                          isSpeaking
+                            ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }
+                            : { scale: 0.8, opacity: 0.5 }
+                        }
+                        transition={
+                          isSpeaking
+                            ? { duration: 0.7, repeat: Infinity, delay: 0.15 }
+                            : { duration: 0.3 }
+                        }
                       />
-                      <motion.div 
-                        className="w-3 h-3 bg-[#2D55FB] rounded-full" 
-                        animate={isSpeaking ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] } : { scale: 0.8, opacity: 0.5 }}
-                        transition={isSpeaking ? { duration: 0.7, repeat: Infinity, delay: 0.3 } : { duration: 0.3 }}
+                      <motion.div
+                        className="w-3 h-3 bg-[#2D55FB] rounded-full"
+                        animate={
+                          isSpeaking
+                            ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }
+                            : { scale: 0.8, opacity: 0.5 }
+                        }
+                        transition={
+                          isSpeaking
+                            ? { duration: 0.7, repeat: Infinity, delay: 0.3 }
+                            : { duration: 0.3 }
+                        }
                       />
                     </div>
                   </motion.div>
