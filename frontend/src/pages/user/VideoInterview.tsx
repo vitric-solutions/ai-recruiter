@@ -2255,22 +2255,64 @@ ${RULES}`;
   };
 
   // Manual end — still submits (user chose to end)
-  const handleEnd = () => {
-    setIsCallActive(false);
-    if (silenceRef.current) clearInterval(silenceRef.current);
-    clearPauseTimers();
-    try {
-      vapi?.stop();
-    } catch {}
-    setIsCallActive(false);
-    tryExitFS();
-    screenRecorder.stop(); // ← stop + finalize screen recording 
-    setScreen("lobby"); // ← This re-renders the component  
-    setElapsed(0);
-    setVapiReady(false);
-    setHeygenStreamLive(false);
-    setHeygenReady(false);
-  };
+//   const handleEnd = async () => {
+//   if (silenceRef.current) clearInterval(silenceRef.current);
+//   clearPauseTimers();
+
+//    setIsCallActive(false);
+//   isCallActiveRef.current = false;
+
+// try {
+//     vapi?.stop();
+//   } catch {}
+
+//   screenRecorder.stop().catch(() => {});
+//   tryExitFS();
+
+//   setIsSpeaking(false);
+//   setAvatarState("idle");
+//   setTurnState("idle");
+//   setElapsed(0);
+//   setVapiReady(false);
+//   setHeygenStreamLive(false);
+//   setHeygenReady(false);
+
+//   };
+
+
+const handleEnd = async () => {
+  if (silenceRef.current) clearInterval(silenceRef.current);
+  clearPauseTimers();
+
+  setIsCallActive(false);
+  isCallActiveRef.current = false;
+
+  setIsSpeaking(false);
+  setAvatarState("idle");
+  setTurnState("idle");
+  setElapsed(0);
+  setVapiReady(false);
+  setHeygenStreamLive(false);
+  setHeygenReady(false);
+
+  // ── Step 1: Stop screen recording FIRST and wait for it ──────────────
+  try {
+    await screenRecorder.stop();
+    console.log("[handleEnd] Screen recording stopped");
+  } catch (err) {
+    console.warn("[handleEnd] Screen recorder stop error:", err);
+  }
+
+  // ── Step 2: Small delay to let final chunk upload begin ───────────────
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // ── Step 3: Now stop Vapi — this triggers call-end → generateFeedback ─
+  try {
+    vapi?.stop();
+  } catch {}
+
+  tryExitFS();
+};
 
   const toggleMic = () => {
     const n = !micOn;

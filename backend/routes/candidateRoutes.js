@@ -154,9 +154,7 @@ async function mergeInterviewChunks(sessionDir, ext = "webm") {
   };
 }
 
-// =============================================================================
-// EXISTING ROUTES — UNCHANGED
-// =============================================================================
+
 
 // Candidate login for interview
 router.post("/login/:id", async (req, res) => {
