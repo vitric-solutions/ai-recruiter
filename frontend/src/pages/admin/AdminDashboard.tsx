@@ -340,7 +340,6 @@ const Dashboard = () => {
   const { user } = useAuth();
 
   const navigate = useNavigate();
-
   const fetchDashboardData = async () => {
     try {
       setLoading(true);

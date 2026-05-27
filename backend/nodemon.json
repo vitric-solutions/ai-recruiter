@@ -1,0 +1,16 @@
+{
+  "watch": ["server.js", "routes/", "models/", "config/", "middleware/", "services/", "controllers/", "socket.js"],
+  "ext": "js,mjs,json",
+  "ignore": [
+    "public/",
+    "uploads/",
+    "*.webm",
+    "*.mp4",
+    "*.mkv",
+    "*.pdf",
+    "*.png",
+    "*.jpg",
+    "*.jpeg"
+  ],
+  "exec": "node server.js"
+}
